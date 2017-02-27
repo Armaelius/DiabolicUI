@@ -4,15 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][1.1.28] 2017-02-23
+## [Unreleased][1.1.29] 
 ### Added
 - Added custom scaling options.
 - Added PvP Capture Bars.
 - Added WorldState info (Battleground scores, World PvP score, dungeon waves, etc) to the minimap. 
 - Added a new point based resource system for all classes using such. This also fixes the Rogue combo point bugs.  
+- Added timers to timed quests in the custom objectives tracker.
 
 ### Changed
 - Side actionbars have changed layout and position, and won't interfere with the quest tracker anymore.
+
+## [1.1.28] 2017-02-27 
+### Changed
+- Moved the bag bar to the left side of the bag button, from its old position above it, as it was colliding with the bags. 
+- Wrote a new text parser for the objective's tracker to better decide number of lines and words per line for all text entries.
+
+### Fixed
+- Fixed a bug with the tooltip module that occurred while holding shift and hovering over auras with no available caster unitID.
+- Fixed an alignment bug in the custom quest tracker in Legion related to some fontstrings not having a default size, as required in Legion. 
+- Fixed a bug with the custom tracker that would open empty windows instead of the correct quest log entry when clicking on quest titles.
 
 ## [1.1.27] 2017-02-23
 ### Added
@@ -27,7 +38,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 - Removed the old combo point system altogether, even for Druids. The upcoming new resource point system will replace it.
-
 
 ## [1.1.26] 2017-02-22
 ### Added

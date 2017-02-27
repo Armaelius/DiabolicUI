@@ -1168,6 +1168,9 @@ frameWidgetPrototype = {
 			local point, anchor, rpoint, xoffset, yoffset = ...
 			self:ClearAllPoints()
 			self:SetPoint(point, parseAnchor(anchor), rpoint, xoffset, yoffset)
+		else
+			self:ClearAllPoints()
+			self:SetPoint(...)
 		end
 	end,
 
@@ -1187,6 +1190,8 @@ frameWidgetPrototype = {
 		elseif numArgs == 5 then
 			local point, anchor, rpoint, xoffset, yoffset = ...
 			self:SetPoint(point, parseAnchor(anchor), rpoint, xoffset, yoffset)
+		else
+			self:SetPoint(...)
 		end
 	end,
 

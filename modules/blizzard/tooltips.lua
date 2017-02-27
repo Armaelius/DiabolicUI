@@ -828,10 +828,12 @@ Module.Tooltip_SetUnitBuff = function(self, tooltip, unit, index, filter)
 	if IsShiftKeyDown() then
 		GameTooltip:AddLine(" ")
 		GameTooltip:AddDoubleLine(L["SpellID:"], spellId, C.General.Blue[1], C.General.Blue[2], C.General.Blue[3], C.General.OffWhite[1], C.General.OffWhite[2], C.General.OffWhite[3])
-		local casterName = UnitName(unitCaster)
-		local caster = (unitCaster == "player") and YOU or (casterName and (casterName ~= "")) and casterName or unitCaster
-		if caster then
-			GameTooltip:AddDoubleLine(L["Caster:"], caster, C.General.Blue[1], C.General.Blue[2], C.General.Blue[3], C.General.OffWhite[1], C.General.OffWhite[2], C.General.OffWhite[3])
+		if (unitCaster) then
+			local casterName = UnitName(unitCaster)
+			local caster = (unitCaster == "player") and YOU or (casterName and (casterName ~= "")) and casterName or unitCaster
+			if caster then
+				GameTooltip:AddDoubleLine(L["Caster:"], caster, C.General.Blue[1], C.General.Blue[2], C.General.Blue[3], C.General.OffWhite[1], C.General.OffWhite[2], C.General.OffWhite[3])
+			end
 		end
 		GameTooltip:Show()
 	end

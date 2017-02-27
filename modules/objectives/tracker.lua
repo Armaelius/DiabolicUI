@@ -7,14 +7,21 @@ local C = Engine:GetStaticConfig("Data: Colors")
 local _G = _G
 local ipairs = ipairs
 local math_ceil = math.ceil
+local math_floor = math.floor
 local math_huge = math.huge
 local math_min = math.min
 local pairs = pairs
 local select = select
 local setmetatable = setmetatable
 local string_match = string.match
+local string_format = string.format
+local string_gmatch = string.gmatch
+local string_gsub = string.gsub
+local string_lower = string.lower
 local string_split = string.split
+local string_upper = string.upper
 local table_remove = table.remove
+local table_wipe = table.wipe
 local tonumber = tonumber
 local unpack = unpack
 
@@ -22,6 +29,9 @@ local unpack = unpack
 local AddAutoQuestPopUp = _G.AddAutoQuestPopUp
 local AddQuestWatch = _G.AddQuestWatch
 local C_TaskQuest = _G.C_TaskQuest
+local ChatEdit_GetActiveWindow = _G.ChatEdit_GetActiveWindow
+local ChatEdit_InsertLink = _G.ChatEdit_InsertLink
+local CloseDropDownMenus = _G.CloseDropDownMenus
 local GetAuctionItemClasses = _G.GetAuctionItemClasses
 local GetAuctionItemSubClasses = _G.GetAuctionItemSubClasses
 local GetContainerItemID = _G.GetContainerItemID
@@ -47,10 +57,13 @@ local GetQuestWorldMapAreaID = _G.GetQuestWorldMapAreaID
 local GetRealZoneText = _G.GetRealZoneText
 local GetSuperTrackedQuestID = _G.GetSuperTrackedQuestID
 local GetWorldQuestWatchInfo = _G.GetWorldQuestWatchInfo
+local IsModifiedClick = _G.IsModifiedClick
 local IsPlayerInMicroDungeon = _G.IsPlayerInMicroDungeon
 local IsWorldQuestWatched = _G.IsWorldQuestWatched
 local PlaySound = _G.PlaySound
 local QuestHasPOIInfo = _G.QuestHasPOIInfo
+local QuestLog_OpenToQuest = _G.QuestLog_OpenToQuest
+local QuestLogPopupDetailFrame_Show = _G.QuestLogPopupDetailFrame_Show
 local QuestMapFrame_IsQuestWorldQuest = _G.QuestMapFrame_IsQuestWorldQuest
 local RemoveQuestWatch = _G.RemoveQuestWatch
 local SetMapToCurrentZone = _G.SetMapToCurrentZone
@@ -75,11 +88,13 @@ local ENGINE_WOD 		= Engine:IsBuild("WoD")
 local ENGINE_MOP 		= Engine:IsBuild("MoP")
 local ENGINE_CATA 		= Engine:IsBuild("Cata")
 
--- Localized string
+-- Localized strings
 local L_ACCEPT = _G.ACCEPT
 local L_CONTINUE = _G.CONTINUE
+local L_FAILED = _G.FAILED
 local L_OBJECTIVES = _G.OBJECTIVES_TRACKER_LABEL
 local L_QUEST_COMPLETE = _G.QUEST_WATCH_QUEST_READY or _G.QUEST_WATCH_QUEST_COMPLETE or _G.QUEST_COMPLETE
+local L_QUEST_FAILED = _G.QUEST_FAILED
 local L_QUEST = ENGINE_LEGION and GetItemSubClassInfo(_G.LE_ITEM_CLASS_QUESTITEM, (select(1, GetAuctionItemSubClasses(_G.LE_ITEM_CLASS_QUESTITEM)))) or ENGINE_CATA and 	(select(10, GetAuctionItemClasses())) or (select(12, GetAuctionItemClasses())) or "Quest" -- the fallback isn't actually needed
 
 -- Create search patterns from these later on, 
@@ -126,6 +141,7 @@ local questData = {} -- quest status and objectives by questID
 local allTrackedQuests = {} -- all tracked quests
 local zoneTrackedQuests = {} -- quests auto tracked by zone
 local userTrackedQuests = {} -- quests manually tracked by the user
+local worldQuests = {} -- Legion world quests
 
 local itemButtons = {} -- item button cache, mostly for easier naming
 
@@ -146,44 +162,225 @@ local questMapIDOverrides = {
 
 -- Utility functions and stuff
 -----------------------------------------------------
+-- Strip a string of its line breaks
+local stripString = function(msg)
+	if (not msg) then
+		return ""
+	end
+	msg = string_gsub(msg, "\|n", "")
+	msg = string_gsub(msg, "\\n", "")
+	return msg
+end
 
--- Set a message and calculate it's best size for display
--- Have to revisit this one, as it's far from perfect, 
--- doesn't count words or spaces, and fails miserably 
--- at times which ends up with too few lines and truncated text.
+-- Capitalize the first letter in each word
+local titleCase = function(first, rest) return string_upper(first)..string_lower(rest) end
+local capitalizeString = function(msg)
+	return string_gsub(msg or "", "(%a)([%w_']*)", titleCase)
+end
+
+
+-- Parse a string for info about sizes and words.
+-- The fontString should be set to a LARGE size before doing this. 
+local parseString = function(msg, fontString, words, wordWidths)
+	words = words and table_wipe(words) or {}
+	wordWidths = wordWidths and table_wipe(wordWidths) or {}
+
+	-- Retrieve the dummyString for calculations
+	local dummyString = fontString.dummyString
+
+	-- Get the width of the full string
+	dummyString:SetText(msg)
+	local fullWidth = math_floor(dummyString:GetStringWidth() + .5)
+
+	-- Get the width of a single space character
+	dummyString:SetText(" ")
+	local spaceWidth = math_floor(dummyString:GetStringWidth() + .5)
+
+	-- Split the string into words
+	for word in  string_gmatch(msg, "%S+") do 
+		words[#words + 1] = word
+	end
+
+	-- Calculate word word widths
+	for i in ipairs(words) do
+		dummyString:SetText(words[i])
+		wordWidths[i] = math_floor(dummyString:GetStringWidth() + .5)
+	end
+
+	-- Return sized and tables 
+	return fullWidth, spaceWidth, wordWidths, words
+end
+
+
+-- Set a message and calculate it's best size for display.
+-- *The excessive amount of comments here is because my brain 
+-- turns to mush when working with scripts like this, 
+-- and without them I just keep messing things up. 
+-- I guess my near photographic memory from my teenage years is truly dead. :'(
+local dummy = Engine:CreateFrame("Frame", nil, "UICenter")
+dummy:Place("TOP", "UICenter", "BOTTOM", 0, -100)
+dummy:SetSize(2,2)
+
 local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
 	fontString:Hide() -- hide the madness we're about to do
 
 	local lineSpacing = fontString:GetSpacing()
-	local newWidth, newHeight
+	local newHeight, newMsg
 
-	-- Max the text size for proper calculations
-	fontString:SetWidth(minWidth * 6) 
-	fontString:SetHeight(minHeight * 6 + lineSpacing*5)
+	-- Get rid of line breaks, we're making our own later on instead.
+	msg = capitalizeString(stripString(msg))
 
-	-- Set the title text
-	fontString:SetText(msg)
+	local dummyString = fontString.dummyString 
+	if (not dummyString) then
+		dummyString = dummy:CreateFontString()
+		dummyString:SetFontObject(fontString:GetFontObject())
+		dummyString:SetPoint("TOP", 0, 0)
+		fontString.dummyString = dummyString
+	end
+	dummyString:SetSize(minWidth*10, minHeight*10 + lineSpacing*9)
+	dummyString:Show()
 
-	-- Get the current, full, untruncated text pixel width
-	local fontStringWidth = fontString:GetStringWidth()
+	-- Parse the string, split into words and calculate all sizes 
+	fontString.fullWidth, fontString.spaceWidth, fontString.wordWidths, 
+	fontString.words = parseString(msg, fontString, fontString.words, fontString.wordWidths)
 
-	-- Figure out the height and lines of the title text
-	if fontStringWidth > minWidth then
-		-- The minHeight*10 addition to the string width 
-		-- is an attempt to make up for the fact that words 
-		-- have different lengths, and some lines will be longer 
-		-- than others. 
-		local numLines = math_ceil((fontStringWidth + minHeight*10) / minWidth) 
+	dummyString:Hide()
 
-		newHeight = minHeight*numLines + numLines*lineSpacing
-		newWidth = math_min(minWidth, math_ceil(fontStringWidth / numLines) + (fontStringWidth / 5))
+	-- Because Blizzard keeps changing 20 to 19.9999995
+	-- We also need an extra space's width to avoid the strings
+	-- getting truncated in Legion. Because large enough isn't large enough anymore. /sigh
+	minWidth = math_floor(minWidth + .5 + fontString.spaceWidth)
+
+	local wordsPerLine = table_wipe(fontString.wordsPerLine or {})
+
+	-- Figure out the height and lines of the text
+	if fontString.fullWidth > minWidth then
+		local currentWidth = 0
+		local currentLineWords = 0
+
+		-- Figure out the minimum number of lines
+		local numLines = 1
+		for i in ipairs(fontString.wordWidths) do
+			-- Retrieve the length of the next word
+			local nextWordWidth = fontString.wordWidths[i]
+
+			-- see if it's space for the current word, if not start a new line
+			if ((currentWidth + nextWordWidth) > minWidth) then
+
+				-- Store the number of words on the current line
+				wordsPerLine[numLines] = currentLineWords
+
+				-- Increase the line counter, as one more is needed
+				numLines = numLines + 1
+				
+				-- Reset the width of the current line, as we're starting a new one
+				currentWidth = 0
+
+				-- Reset the number of words on the current line, as we're starting a new one
+				currentLineWords = 0
+			end
+
+			-- Add the width of the current word to the length of the current line
+			currentWidth = currentWidth + nextWordWidth
+
+			-- Add the current word to the current line's word count
+			currentLineWords = currentLineWords + 1
+
+			-- are there more words, if so should we break or continue?
+			if (i < #fontString.wordWidths) then
+
+				-- see if there's room for a space, if not we start a new line
+				if (currentWidth + fontString.spaceWidth) > minWidth then
+					-- Store the number of words on the current line
+					wordsPerLine[numLines] = currentLineWords
+
+					-- Increase the line counter, as one more is needed
+					numLines = numLines + 1
+					
+					-- Reset the width of the current line, as we're starting a new one
+					currentWidth = 0
+
+					-- Reset the number of words on the current line, as we're starting a new one
+					currentLineWords = 0
+
+				else
+					-- We have room for a space character, so we add one.
+					currentWidth = currentWidth + fontString.spaceWidth
+				end
+			else
+				-- Last word, so store the number of words on this line now, 
+				-- as this loop won't run again and it feels clunky adding it afterwords. :)
+				wordsPerLine[numLines] = currentLineWords
+			end
+		end
+
+		-- Store the table with the number of words per line in the fontstring
+		fontString.wordsPerLine = wordsPerLine
+
+		-- Figure out if the last line has so few words it looks weird
+		if (numLines > 1) then
+			local wordsOnLastLine = fontString.wordsPerLine[numLines]
+			local wordsOnSecondToLastLine = fontString.wordsPerLine[numLines - 1]
+			local lastWord = #fontString.wordWidths
+			local lastWordOnSecondToLastLine = lastWord - wordsOnLastLine
+
+			-- Get the width of the last line
+			local lastLineWidth = 0
+			for i = 1, fontString.wordsPerLine[numLines] do
+				lastLineWidth = lastLineWidth + fontString.wordWidths[lastWordOnSecondToLastLine + i]
+			end
+
+			-- Get the width of the second to last line
+			local secondToLastLineWidth = 0
+			local lastWordOnThirdLastLine = lastWordOnSecondToLastLine - wordsOnSecondToLastLine
+			for i = 1, fontString.wordsPerLine[numLines - 1] do
+				secondToLastLineWidth = secondToLastLineWidth + fontString.wordWidths[lastWordOnThirdLastLine + i]
+			end
+
+			-- Split the words on the 2 last lines, but keep the second to last larger
+			for i = lastWord - 1, 1, -1 do
+				local currentWordWidth = fontString.wordWidths[i]
+				if ((lastLineWidth + currentWordWidth) < minWidth) and ((secondToLastLineWidth - currentWordWidth) > (lastLineWidth + currentWordWidth)) then
+					fontString.wordsPerLine[numLines] = fontString.wordsPerLine[numLines] + 1
+					fontString.wordsPerLine[numLines - 1] = fontString.wordsPerLine[numLines - 1] - 1
+
+					secondToLastLineWidth = secondToLastLineWidth - currentWordWidth
+					lastLineWidth = lastLineWidth + currentWordWidth
+				else
+					break
+				end
+			end
+		end
+
+		-- Format the string with our own line breaks
+		newMsg = ""
+		local currentWord = 1
+		for currentLine, numWords in ipairs(fontString.wordsPerLine) do
+			for i = 1, numWords do
+				newMsg = newMsg .. fontString.words[currentWord]
+				if (i == numWords) then
+					if (currentLine < numLines) then
+						newMsg = newMsg .. "\n" -- add a line break
+					end
+				else
+					newMsg = newMsg .. " " -- add a space between the words
+				end
+				currentWord = currentWord + 1
+			end
+		end
+		newHeight = minHeight*numLines + (numLines-1)*lineSpacing
 	end
 
-	fontString:SetSize(newWidth or minWidth, newHeight or minHeight) -- set our new sizes
-	fontString:Show() -- show the fontstring again
+	-- Set our new sizes
+	fontString:SetHeight(newHeight or minHeight) 
 
-	-- return the sizes as well
-	return newWidth or minWidth, newHeight or minHeight, lineSpacing
+	fontString:SetText(newMsg or msg)
+
+	-- Show the fontstring again
+	fontString:Show() 
+
+	-- Return the sizes
+	return newHeight or minHeight
 end
 
 -- Create a square/dot used for unfinished objectives (and the completion texts)
@@ -266,13 +463,6 @@ end
 local Item = Engine:CreateFrame("Button")
 Item_MT = { __index = Item }
 
-local Container = Engine:CreateFrame("Frame")
-Container_MT = { __index = function(self, bagID)
-	self[bagID] = self:CreateFrame("Frame")
-	self[bagID]:SetID(bagID)
-	return self[bagID]
-end }
-
 
 -- Entry Title (clickable button)
 -----------------------------------------------------
@@ -282,7 +472,12 @@ Title_MT = { __index = Title }
 Title.OnClick = function(self, mouseButton)
 	local questLogIndex = self._owner.questLogIndex
 
-	--local questLogIndex = GetQuestLogIndexByID(owner.questID)
+	-- This is needed to open to the correct index in Legion
+	-- *Might be needed in other versions too, not sure. 
+	if ENGINE_CATA then
+		questLogIndex = GetQuestLogIndexByID(self._owner.questID)
+	end
+
 	if IsModifiedClick("CHATLINK") and ChatEdit_GetActiveWindow() then
 		local questLink = GetQuestLink(questLogIndex)
 		if questLink then
@@ -308,16 +503,16 @@ Entry_MT = { __index = Entry }
 Entry.AddObjective = function(self, objectiveType)
 	local objectives = self.objectives
 
+	local width = math_floor(self:GetWidth() + .5)
+
 	local objective = self:CreateFrame("Frame")
-	objective:SetHeight(.0001)
+	objective:SetSize(width, .0001)
 
 	-- Objective text
 	local msg = objective:CreateFontString()
 	msg:SetHeight(objectives.standardHeight)
-	msg:SetWidth(self:GetWidth() - objectives.leftMargin - objectives.rightMargin)
-	msg:Point("TOP", 0, 0)
-	msg:Point("LEFT", objectives.leftMargin, 0)
-	msg:Point("RIGHT", -objectives.rightMargin, 0)
+	msg:SetWidth(width)
+	msg:Place("TOPLEFT", objective, "TOPLEFT", objectives.leftMargin, 0)
 	msg:SetDrawLayer("BACKGROUND")
 	msg:SetJustifyH("LEFT")
 	msg:SetJustifyV("TOP")
@@ -329,7 +524,7 @@ Entry.AddObjective = function(self, objectiveType)
 
 	-- Unfinished objective dot
 	local dot = createDot(objective)
-	dot:Place("TOP", msg, "TOPLEFT", -floor(objectives.leftMargin/2), objectives.dotAdjust)
+	dot:Place("TOP", msg, "TOPLEFT", -math_floor(objectives.leftMargin/2), objectives.dotAdjust)
 
 	objective.msg = msg
 	objective.dot = dot
@@ -415,14 +610,9 @@ Entry.AddQuestItem = function(self)
 		newIconTexture:SetTexture(...)
 	end
 
-	item:Show()
-
-	-- test
-	--local tex = item:CreateTexture()
-	--tex:SetColorTexture(0, 0, 0, .5)
-	--tex:SetAllPoints()
-
 	itemButtons[num] = item
+
+	item:Show()
 
 	return item
 end
@@ -434,8 +624,7 @@ Entry.SetObjective = function(self, objectiveID)
 	local currentQuestData = questData[self.questID] 
 	local currentQuestObjectives = currentQuestData.questObjectives[objectiveID]
 
-	local width, height = setTextAndGetSize(objective.msg, currentQuestObjectives.description, objectives.standardWidth, objectives.standardHeight)
-	objective:SetHeight(height)
+	objective:SetHeight(setTextAndGetSize(objective.msg, currentQuestObjectives.description, objectives.standardWidth, objectives.standardHeight))
 	objective:Show()
 
 	-- Update the pointer in case it's a new objective, 
@@ -482,8 +671,8 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 	local completionText = self.completionText
 
 	-- Set and size the title
-	local titleWidth, titleHeight = setTextAndGetSize(titleText, currentQuestData.questTitle, title:GetWidth(), title.standardHeight)
-	title:SetHeight(titleHeight) -- set the size of the title frame as well
+	local titleHeight = setTextAndGetSize(titleText, currentQuestData.questTitle, title:GetWidth(), title.standardHeight)
+	title:SetHeight(titleHeight) 
 
 	entryHeight = entryHeight + titleHeight
 
@@ -499,7 +688,8 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 
 		-- Change quest description to the completion text
 		local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or L_QUEST_COMPLETE
-		local width, height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
+		local height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
+		completionText:SetHeight(height)
 		completionText.dot:Show()
 
 		entryHeight = entryHeight + completionText.topMargin + height + completionText.bottomMargin
@@ -521,16 +711,15 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		if numObjectives > 0 then
 			for objectiveID = 1, numObjectives  do
 				-- Only display unfinished quest objectives
-				if (not currentQuestObjectives[objectiveID].isCompleted) then
+				if (currentQuestObjectives[objectiveID].isCompleted) then
+					self:ClearObjective(objectiveID)
+				else
 					local objective = self:SetObjective(objectiveID)
 
 					-- Since the order and visibility of the objectives 
 					-- change based on the visible ones, we need to reset
 					-- all the points here, or the objective will "disappear".
-					objective:ClearAllPoints()
-					objective:Point("TOP", self.title, "BOTTOM", 0, -objectiveOffset)
-					objective:Point("LEFT", 0, 0)
-					objective:Point("RIGHT", 0, 0)
+					objective:Place("TOPLEFT", self.title, "BOTTOMLEFT", 0, -objectiveOffset)
 
 					local height = objectives.topMargin + objective:GetHeight()
 					objectiveOffset = objectiveOffset + height
@@ -549,7 +738,8 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		if visibleObjectives == 0 then
 			-- Change quest description to the completion text
 			local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or L_QUEST_COMPLETE
-			local width, height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
+			local height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
+			completionText:SetHeight(height)
 			completionText.dot:Show()
 
 			entryHeight = entryHeight + completionText.topMargin + height + completionText.bottomMargin
@@ -621,20 +811,20 @@ Tracker_MT = { __index = Tracker }
 Tracker.AddEntry = function(self)
 	local config = self.config
 
+	local width = math_floor(self:GetWidth() + .5) 
+
 	local entry = setmetatable(self.body:CreateFrame("Frame"), Entry_MT)
 	entry:Hide()
 	entry:SetHeight(0.0001)
-	entry:SetWidth(self:GetWidth())
+	entry:SetWidth(width)
 	entry.config = config
 	entry.topMargin = config.body.entry.topMargin
 	
 	-- Title region
 	-----------------------------------------------------------
 	local title = setmetatable(entry:CreateFrame("Button"), Title_MT)
-	title:Point("TOP", 0, 0)
-	title:Point("LEFT", 0, 0)
-	title:Point("RIGHT", 0, 0)
-	title:SetWidth(self:GetWidth() - config.body.entry.title.leftMargin - config.body.entry.title.rightMargin)
+	title:Place("TOPLEFT", 0, 0)
+	title:SetWidth(width)
 	title:SetHeight(config.body.entry.title.height)
 	title.standardHeight = config.body.entry.title.height
 	title.maxLines = config.body.entry.title.maxLines -- not currently used
@@ -643,13 +833,14 @@ Tracker.AddEntry = function(self)
 
 	title._owner = entry
 	title:EnableMouse(true)
+	title:SetHitRectInsets(-10, -10, -10, -10)
 	title:RegisterForClicks("LeftButtonUp")
 	title:SetScript("OnClick", Title.OnClick)
 
 	-- Quest title
 	local titleText = title:CreateFontString()
 	titleText:SetHeight(title.standardHeight)
-	titleText:SetWidth(self:GetWidth() - config.body.entry.title.leftMargin - config.body.entry.title.rightMargin)
+	titleText:SetWidth(width)
 	titleText:Place("TOPLEFT", 0, 0)
 	titleText:SetDrawLayer("BACKGROUND")
 	titleText:SetJustifyH("LEFT")
@@ -672,10 +863,9 @@ Tracker.AddEntry = function(self)
 	-- Body region
 	-----------------------------------------------------------
 	local body = entry:CreateFrame("Frame")
-	body:SetWidth(self:GetWidth())
-	body:Point("TOP", title, "BOTTOM", 0, config.body.margins.top)
-	body:Point("LEFT", config.body.margins.left, 0)
-	body:Point("RIGHT", config.body.margins.right, 0)
+	body:SetWidth(width)
+	body:SetHeight(.0001)
+	body:Place("TOPLEFT", title, "BOTTOM", config.body.margins.left, config.body.margins.top)
 
 	-- Quest complete text
 	local completionText = body:CreateFontString()
@@ -685,17 +875,16 @@ Tracker.AddEntry = function(self)
 	completionText.bottomMargin = config.body.entry.complete.bottomMargin
 	completionText.lineSpacing = config.body.entry.complete.lineSpacing
 	completionText.standardHeight = config.body.entry.complete.height
-	completionText.standardWidth = self:GetWidth() - completionText.leftMargin - completionText.rightMargin
+	completionText.standardWidth = width - completionText.leftMargin - completionText.rightMargin
 	completionText.maxLines = config.body.entry.complete.maxLines -- not currently used
 	completionText.dotAdjust = config.body.entry.complete.dotAdjust
 
 	completionText:SetFontObject(config.body.entry.complete.normalFont)
 	completionText:SetSpacing(completionText.lineSpacing)
-	completionText:SetWidth(self:GetWidth() - completionText.leftMargin - completionText.rightMargin)
+	completionText:SetWidth(width)
 	completionText:SetHeight(completionText.standardHeight)
-	completionText:Point("TOP", title, "BOTTOM", 0, -completionText.topMargin)
-	completionText:Point("LEFT", completionText.leftMargin, 0)
-	completionText:Point("RIGHT", -completionText.rightMargin, 0)
+
+	completionText:Place("TOPLEFT", title, "BOTTOM", completionText.leftMargin, -completionText.topMargin)
 	completionText:SetDrawLayer("BACKGROUND")
 	completionText:SetJustifyH("LEFT")
 	completionText:SetJustifyV("TOP")
@@ -704,13 +893,13 @@ Tracker.AddEntry = function(self)
 	completionText:SetNonSpaceWrap(false)
 
 	completionText.dot = createDot(body)
-	completionText.dot:Place("TOP", completionText, "TOPLEFT", -floor(completionText.leftMargin/2), completionText.dotAdjust)
+	completionText.dot:Place("TOP", completionText, "TOPLEFT", -math_floor(completionText.leftMargin/2), completionText.dotAdjust)
 	completionText.dot:Hide()
 
 	-- Cache of the current quest objectives
 	local objectives = {
 		standardHeight = config.body.entry.objective.height,
-		standardWidth = self:GetWidth() - config.body.entry.objective.leftMargin - config.body.entry.objective.rightMargin,
+		standardWidth = width - config.body.entry.objective.leftMargin - config.body.entry.objective.rightMargin,
 		topOffset = config.body.entry.objective.topOffset,
 		leftMargin = config.body.entry.objective.leftMargin,
 		rightMargin = config.body.entry.objective.rightMargin,
@@ -746,6 +935,7 @@ Tracker.Update = function(self)
 
 	-- Update existing and create new entries
 	local anchor = self.header
+	local offset = 0
 	for i = 1, numZoneQuests do
 
 		-- Get the zone quest data
@@ -778,15 +968,23 @@ Tracker.Update = function(self)
 			-- Don't show more entries than there's room for,
 			-- forcefully quit and hide the rest when it would overflow.
 			-- Will add a better system later.
-			if ((currentTrackerHeight + entry.topMargin + entry:GetHeight()) > maxTrackerHeight) then
+			local entrySize = entry.topMargin + entry:GetHeight()
+			if ((currentTrackerHeight + entrySize) > maxTrackerHeight) then
 				numZoneQuests = i-1
 				break
 			else
-				currentTrackerHeight = currentTrackerHeight + entry.topMargin + entry:GetHeight()
+				-- Add the top margin to the offset
+				offset = offset + entry.topMargin
 
-				entry:Place("TOPLEFT", anchor, "BOTTOMLEFT", 0, -entry.topMargin)
+				-- Position the entry
+				entry:Place("TOPLEFT", anchor, "BOTTOMLEFT", 0, -offset)
 				entry:Show()
-				anchor = entry
+
+				-- Add the entry's size to the offset
+				offset = offset + entry:GetHeight()
+
+				-- Add the full size of the entry with its margin to the tracker height 
+				currentTrackerHeight = currentTrackerHeight + entrySize
 			end
 		else
 			-- hide finished entries
@@ -807,6 +1005,31 @@ Tracker.Update = function(self)
 		entry:ClearAllPoints() 
 	end
 
+end
+
+--local timers = { GetQuestTimers() }
+--local questLogIndex = GetQuestIndexForTimer(timerId)
+
+local allQuestTimers = {}
+local activeQuestTimers = {}
+local finishedQuestTimers = {}
+
+Module.ParseTimers = function(self, ...)
+	local numTimers = select("#", ...)
+	for timerId = 1, numTimers do
+		local questLogIndex = GetQuestIndexForTimer(timerId)
+
+		local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID
+		if ENGINE_WOD then
+			questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID = GetQuestLogTitle(questLogIndex)
+		else
+			questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questID = GetQuestLogTitle(questLogIndex)
+		end
+
+		local timeFirst = select(timerId, ...)
+		activeQuestTimers[questID] = timeFirst
+
+	end
 end
 
 
@@ -857,6 +1080,25 @@ Module.ParseQuests = function(self, event)
 	-- Retrieve number of entries in the game quest log
 	local numEntries, numQuests = GetNumQuestLogEntries()
 
+	-- Manually tracking it the number of quests, 
+	-- since our zoneTrackedQuests table sometimes 
+	-- ends up with an empty entry for some reason.
+	local numZoneQuests = 0 
+
+	-- This is a bug that's been around since 3.3.0 
+	-- when Blizzard added quests that were automatically 
+	-- accepted once you simply talked to the NPC.
+	-- The button text says "Accept", which is misleading.
+	if QuestFrame:IsShown() and QuestGetAutoAccept() then
+		local button = QuestFrameAcceptButton
+		local msg = button:GetText()
+		if (msg == L_ACCEPT) then
+			button:SetText(L_CONTINUE)
+		end
+	end
+
+	self:ParseTimers(GetQuestTimers())
+
 	-- Parse the quest log
 	for questLogIndex = 1, numEntries do
 
@@ -874,8 +1116,8 @@ Module.ParseQuests = function(self, event)
 			-- Trying to fix a problem with QuestFrameAcceptButton 
 			-- when auto-accepting quests and the window remains open 
 			-- with the button saying "accept", even though it's already accepted!
-			-- This is not the same bug as when manually completed quests in WotLK
-			-- remain open, so I'll have to figure out something else for them.
+			-- Probably the same bug as the WotLK one above, but since we didn't get
+			-- the API call GetQuestID() until CATA, we're doing a double check here to be sure.
 			if ENGINE_CATA and (QuestFrame:IsShown() and (GetQuestID() == questID)) then
 				local button = QuestFrameAcceptButton
 				local msg = button:GetText()
@@ -888,16 +1130,19 @@ Module.ParseQuests = function(self, event)
 			local mapId, floorNumber = GetQuestWorldMapAreaID(questID)
 			if (((mapID == mapId) or questMapIDOverrides[questID]) and (not (questID == IGNORE_QUEST))) then
 				local currentQuestData = questData[questID] or {}
+				
+				numZoneQuests = numZoneQuests + 1
 
-				if isComplete then
-					-- If the quest is complete, we only show the completion text ("Return to blabla" etc)
+				if (isComplete == 1) then
 					local completionText = GetQuestLogCompletionText(questLogIndex)
 
 					currentQuestData.isComplete = true
+					currentQuestData.isFailed = false
 					currentQuestData.questObjectives = nil -- just remove the whole objectives table
 					currentQuestData.completionText = completionText 
 
 				else
+
 					local difficultyColor = GetQuestDifficultyColor(level)
 					local questObjectives = currentQuestData.questObjectives or {}
 
@@ -925,7 +1170,8 @@ Module.ParseQuests = function(self, event)
 
 					-- put the data into our cache
 					currentQuestData.isComplete = nil
-					currentQuestData.completionText = nil
+					currentQuestData.isFailed = (isComplete == -1)
+					currentQuestData.completionText = (isComplete == -1) and L_QUEST_FAILED or nil
 					currentQuestData.questObjectives = questObjectives 
 
 					-- Figure out if there's an item connected to the quest
@@ -1081,7 +1327,7 @@ Module.ParseQuests = function(self, event)
 	self:UpdateTracker()
 
 	-- Hide it if we have no quests in the current zone
-	self:UpdateTrackerVisibility()
+	self:UpdateTrackerVisibility(numZoneQuests)
 
 	-- Supertracking!
 	-- Our own current version just supertracks whatever is closest,
@@ -1104,18 +1350,30 @@ end
 -- Should only be done out of combat. 
 -- To have more control we user our own combat tracking system here, 
 -- instead of relying on the Engine's secure wrapper handler.  
-Module.UpdateTrackerVisibility = function(self)
+Module.UpdateTrackerVisibility = function(self, numZoneQuests)
 	if UnitAffectingCombat("player") then
 		self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
 	else
 		local tracker = self.tracker
-		if #zoneTrackedQuests > 0 then
-			if (not tracker:IsShown()) then
-				tracker:Show()
+		if numZoneQuests then
+			if numZoneQuests > 0 then
+				if (not tracker:IsShown()) then
+					tracker:Show()
+				end
+			else
+				if tracker:IsShown() then
+					tracker:Hide()
+				end
 			end
 		else
-			if tracker:IsShown() then
-				tracker:Hide()
+			if #zoneTrackedQuests > 0 then
+				if (not tracker:IsShown()) then
+					tracker:Show()
+				end
+			else
+				if tracker:IsShown() then
+					tracker:Hide()
+				end
 			end
 		end
 	end	
@@ -1357,7 +1615,7 @@ Module.OnInit = function(self)
 	-- Tracker frame
 	-----------------------------------------------------------
 	local tracker = setmetatable(visibility:CreateFrame("Frame"), Tracker_MT)
-	tracker:SetFrameStrata("MEDIUM")
+	tracker:SetFrameStrata("LOW")
 	tracker:SetFrameLevel(15)
 	tracker.config = config
 	tracker.entries = {} -- table to hold entries
@@ -1441,6 +1699,7 @@ Module.OnInit = function(self)
 	button.maximizeHighlightTexture = buttonMaximizeHighlightTexture
 	button.disabledTexture = buttonDisabledTexture
 
+
 	-- Body region
 	-----------------------------------------------------------
 	local body = tracker:CreateFrame("Frame")
@@ -1452,8 +1711,6 @@ Module.OnInit = function(self)
 
 	-- Apply scripts
 	-----------------------------------------------------------
-	-- These are mostly for visual stuff, anything else is 
-	-- done through the secure state drivers and click handlers. 
 	button.body = body
 	button.currentState = "maximized" -- todo: save this between sessions(?)
 
@@ -1464,11 +1721,6 @@ Module.OnInit = function(self)
 	button:SetScript("OnClick", MinMaxButton.OnClick)
 	button:UpdateLayers()
 	
-
-	-- test
-	--local tex = body:CreateTexture()
-	--tex:SetColorTexture(0, 0, 0, .5)
-	--tex:SetAllPoints()
 
 	tracker.header = header
 	tracker.body = body

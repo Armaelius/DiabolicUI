@@ -202,7 +202,7 @@ Engine:NewStaticConfig("UnitFrames", {
 					}
 				},
 				debuffs = {
-					position = { "BOTTOMRIGHT", "Main", "TOPRIGHT", -16, 46 },
+					position = { "BOTTOMRIGHT", "Main", "TOPRIGHT", -26, 46 },
 					size = { 
 						["1"] = { math_floor((BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + bar_padding*(NUM_ACTIONBAR_SLOTS-1))/2) -(16 + 10), 38*2 + 8 + 3 + 2 },
 						["2"] = { math_floor((BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + bar_padding*(NUM_ACTIONBAR_SLOTS-1))/2) -(16 + 10), 38*2 + 8 + 3 + 2 },
