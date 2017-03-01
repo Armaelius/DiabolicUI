@@ -2,6 +2,7 @@ local _, Engine = ...
 local Module = Engine:NewModule("ObjectiveTracker")
 local L = Engine:GetLocale()
 local C = Engine:GetStaticConfig("Data: Colors")
+local UICenter = Engine:GetFrame()
 
 -- Lua API
 local _G = _G
@@ -147,6 +148,50 @@ local itemButtons = {} -- item button cache, mostly for easier naming
 
 local scheduledForRemoval = {} -- temporary cache for quests no longer tracked 
 local scheduledForTracking = {} -- temporary cache for quests to be tracked
+
+-- A little magic to at least attempt 
+-- to keep the pixel borders locked to actual pixels. 
+-- This will fail if the user has manually resized the window 
+-- to a size not matching the chosen resolution, 
+-- or if the window is maximized when the chosen resolution
+-- does not match the actual screen resolution. 
+-- There's no workaround for those cases, as WoW simply 
+-- does't provide any API to retrieve the actual sizes with.
+local PIXEL_SIZE
+local backdropCache = {}
+local GetBackdrop = function()
+	local pixelSize = UICenter:GetSizeOfPixel()
+	return {
+		bgFile = BLANK_TEXTURE,
+		edgeFile = BLANK_TEXTURE,
+		edgeSize = pixelSize,
+		insets = {
+			left = -pixelSize,
+			right = -pixelSize,
+			top = -pixelSize,
+			bottom = -pixelSize
+		}
+	}
+end
+local UpdateScale = function(self, event, ...)
+	local arg = ...
+	if (event == "CVAR_UPDATE") and (arg ~= "WINDOWED_MAXIMIZED") then
+		return
+	end
+	local pixelSize = UICenter:GetSizeOfPixel()
+	if (PIXEL_SIZE ~= pixelSize) then
+		local newBackdrop = GetBackdrop()
+		for frame, backdrop in pairs(backdropCache) do
+			local r, g, b, a = frame:GetBackdropColor()
+			local r2, g2, b2, a2 = frame:GetBackdropBorderColor()
+			frame:SetBackdrop(nil)
+			frame:SetBackdrop(newBackdrop)
+			frame:SetBackdropColor(r, g, b, a)
+			frame:SetBackdropBorderColor(r2, g2, b2, a2)
+		end
+		PIXEL_SIZE = pixelSize
+	end
+end
 
 
 -- Here we correct incorrect mapIDs for various quests. 
@@ -385,11 +430,15 @@ end
 
 -- Create a square/dot used for unfinished objectives (and the completion texts)
 local createDot = function(parent)
+	local backdrop = GetBackdrop()
 	local dot = parent:CreateFrame("Frame")
 	dot:SetSize(10, 10)
-	dot:SetBackdrop(BUTTON_BACKDROP)
+	dot:SetBackdrop(backdrop)
 	dot:SetBackdropColor(0, 0, 0, .75)
 	dot:SetBackdropBorderColor( 240/255, 240/255, 240/255, .85)
+
+	backdropCache[dot] = backdrop
+
 	return dot
 end
 
@@ -474,6 +523,7 @@ Title.OnClick = function(self, mouseButton)
 
 	-- This is needed to open to the correct index in Legion
 	-- *Might be needed in other versions too, not sure. 
+	--  Function got added in Cata, so that's where we start too.
 	if ENGINE_CATA then
 		questLogIndex = GetQuestLogIndexByID(self._owner.questID)
 	end
@@ -485,7 +535,7 @@ Title.OnClick = function(self, mouseButton)
 		end
 	elseif not(mouseButton == "RightButton") then
 		CloseDropDownMenus()
-		if (ENGINE_WOD) then
+		if ENGINE_WOD then
 			QuestLogPopupDetailFrame_Show(questLogIndex)
 		else
 			QuestLog_OpenToQuest(questLogIndex)
@@ -586,7 +636,7 @@ Entry.AddQuestItem = function(self)
 	overlay:SetFrameLevel(item:GetFrameLevel() + 1)
 	overlay:SetPoint("CENTER", 0, 0)
 	overlay:SetSize(config.body.entry.item.border.size[1], config.body.entry.item.border.size[2])
-	overlay:SetBackdrop(config.body.entry.item.border.backdrop)
+	overlay:SetBackdrop(GetBackdrop())
 	overlay:SetBackdropColor(0, 0, 0, .75)
 	overlay:SetBackdropBorderColor(C.General.UIBorder[1], C.General.UIBorder[2], C.General.UIBorder[3], .85)
 
@@ -692,7 +742,7 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		completionText:SetHeight(height)
 		completionText.dot:Show()
 
-		entryHeight = entryHeight + completionText.topMargin + height + completionText.bottomMargin
+		entryHeight = entryHeight + completionText.topOffset + height + completionText.bottomMargin
 
 	else
 		-- Just make sure the completion text is hidden
@@ -714,21 +764,31 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 				if (currentQuestObjectives[objectiveID].isCompleted) then
 					self:ClearObjective(objectiveID)
 				else
+					visibleObjectives = visibleObjectives + 1
+
 					local objective = self:SetObjective(objectiveID)
+					local height = objective:GetHeight()
+
+					if visibleObjectives > 1 then
+						objectiveOffset = objectiveOffset + objectives.topMargin
+						entryHeight = entryHeight + objectives.topMargin
+					end
 
 					-- Since the order and visibility of the objectives 
 					-- change based on the visible ones, we need to reset
 					-- all the points here, or the objective will "disappear".
 					objective:Place("TOPLEFT", self.title, "BOTTOMLEFT", 0, -objectiveOffset)
 
-					local height = objectives.topMargin + objective:GetHeight()
 					objectiveOffset = objectiveOffset + height
 					entryHeight = entryHeight + height
-
-					visibleObjectives = visibleObjectives + 1
 				end
 			end
-			entryHeight = entryHeight + objectives.bottomMargin
+			
+			-- Only add the bottom padding if there 
+			-- actually was any unfinished objectives to show. 
+			if visibleObjectives > 0 then
+				entryHeight = entryHeight + objectives.bottomMargin
+			end
 		end
 
 		-- A lot of quests in especially in the Cata (and higher) starting zones are 
@@ -736,13 +796,14 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		-- For some reason though they still get counted as not finished in my tracker,
 		-- so we simply squeeze in a slightly more descriptive text here. 
 		if visibleObjectives == 0 then
+
 			-- Change quest description to the completion text
 			local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or L_QUEST_COMPLETE
 			local height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
 			completionText:SetHeight(height)
 			completionText.dot:Show()
 
-			entryHeight = entryHeight + completionText.topMargin + height + completionText.bottomMargin
+			entryHeight = entryHeight + completionText.topOffset + height + completionText.bottomMargin
 		end
 
 		-- Clear finished objectives (or remnants from previously tracked quests)
@@ -865,10 +926,11 @@ Tracker.AddEntry = function(self)
 	local body = entry:CreateFrame("Frame")
 	body:SetWidth(width)
 	body:SetHeight(.0001)
-	body:Place("TOPLEFT", title, "BOTTOM", config.body.margins.left, config.body.margins.top)
+	body:Place("TOPLEFT", title, "BOTTOMLEFT", config.body.margins.left, config.body.margins.top)
 
 	-- Quest complete text
 	local completionText = body:CreateFontString()
+	completionText.topOffset = config.body.entry.complete.topOffset
 	completionText.leftMargin = config.body.entry.complete.leftMargin
 	completionText.rightMargin = config.body.entry.complete.rightMargin
 	completionText.topMargin = config.body.entry.complete.topMargin
@@ -884,7 +946,7 @@ Tracker.AddEntry = function(self)
 	completionText:SetWidth(width)
 	completionText:SetHeight(completionText.standardHeight)
 
-	completionText:Place("TOPLEFT", title, "BOTTOM", completionText.leftMargin, -completionText.topMargin)
+	completionText:Place("TOPLEFT", title, "BOTTOMLEFT", completionText.leftMargin, -completionText.topOffset)
 	completionText:SetDrawLayer("BACKGROUND")
 	completionText:SetJustifyH("LEFT")
 	completionText:SetJustifyV("TOP")
@@ -1032,6 +1094,12 @@ Module.ParseTimers = function(self, ...)
 	end
 end
 
+Module.GetQuestLogLeaderBoard = function(self, i, questLogIndex)
+	local min, max
+	local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(i, questLogIndex)
+	
+	return description, objectiveType, isCompleted, min, max
+end
 
 
 -- Parse the quest log for quests and items valid in the current zone, 
@@ -1149,7 +1217,8 @@ Module.ParseQuests = function(self, event)
 					-- Parse objectives for our tracker entries
 					local numQuestLogLeaderBoards = GetNumQuestLeaderBoards(questLogIndex)
 					for i = 1, numQuestLogLeaderBoards do
-						local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(i, questLogIndex)
+						--local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(i, questLogIndex)
+						local description, objectiveType, isCompleted, min, max = self:GetQuestLogLeaderBoard(i, questLogIndex)
 
 						-- Should parse the description and objectiveType here 
 						-- to figure out items, rep, money needed and so on,
@@ -1753,6 +1822,11 @@ Module.OnEnable = function(self)
 		self:RegisterEvent("QUEST_AUTOCOMPLETE", "OnEvent")
 		self:RegisterEvent("QUEST_POI_UPDATE", "OnEvent")
 	end
+
+	self:RegisterEvent("UI_SCALE_CHANGED", UpdateScale)
+	self:RegisterEvent("DISPLAY_SIZE_CHANGED", UpdateScale)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", UpdateScale)
+	self:RegisterEvent("CVAR_UPDATE", UpdateScale)
 
 	-- Our quest parser will forcefully keep the WorldMapFrame set to the current zone, 
 	-- so currently we're queueing updates to when the map is hidden. 

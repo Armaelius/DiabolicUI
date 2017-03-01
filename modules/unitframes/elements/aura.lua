@@ -3,6 +3,7 @@ local Handler = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
 local C = Engine:GetStaticConfig("Data: Colors")
 local L = Engine:GetLocale()
+local UICenter = Engine:GetFrame()
 
 -- Lua API
 local _G = _G
@@ -80,6 +81,50 @@ local Elements = setmetatable({}, { __index = function(self, element)
 
 	return tbl
 end })
+
+-- A little magic to at least attempt 
+-- to keep the pixel borders locked to actual pixels. 
+-- This will fail if the user has manually resized the window 
+-- to a size not matching the chosen resolution, 
+-- or if the window is maximized when the chosen resolution
+-- does not match the actual screen resolution. 
+-- There's no workaround for those cases, as WoW simply 
+-- does't provide any API to retrieve the actual sizes with.
+local PIXEL_SIZE
+local backdropCache = {}
+local GetBackdrop = function()
+	local pixelSize = UICenter:GetSizeOfPixel()
+	return {
+		bgFile = BLANK_TEXTURE,
+		edgeFile = BLANK_TEXTURE,
+		edgeSize = pixelSize,
+		insets = {
+			left = -pixelSize,
+			right = -pixelSize,
+			top = -pixelSize,
+			bottom = -pixelSize
+		}
+	}
+end
+local UpdateScale = function(self, event, ...)
+	local arg = ...
+	if (event == "CVAR_UPDATE") and (arg ~= "WINDOWED_MAXIMIZED") then
+		return
+	end
+	local pixelSize = UICenter:GetSizeOfPixel()
+	if (PIXEL_SIZE ~= pixelSize) then
+		local newBackdrop = GetBackdrop()
+		for frame, backdrop in pairs(backdropCache) do
+			local r, g, b, a = frame:GetBackdropColor()
+			local r2, g2, b2, a2 = frame:GetBackdropBorderColor()
+			frame:SetBackdrop(nil)
+			frame:SetBackdrop(newBackdrop)
+			frame:SetBackdropColor(r, g, b, a)
+			frame:SetBackdropBorderColor(r2, g2, b2, a2)
+		end
+		PIXEL_SIZE = pixelSize
+	end
+end
 
 
 --[[
@@ -194,19 +239,6 @@ end
 
 local Aura = Engine:CreateFrame("Button")
 local Aura_MT = { __index = Aura }
-
-local AURA_SIZE = 40 
-local AURA_BACKDROP = {
-	bgFile = BLANK_TEXTURE,
-	edgeFile = BLANK_TEXTURE,
-	edgeSize = 1,
-	insets = {
-		left = -1,
-		right = -1,
-		top = -1,
-		bottom = -1
-	}
-}
 
 Aura.SetElement = function(self, name, element)
 	Elements[self][name] = element
@@ -368,11 +400,15 @@ local CreateAuraButton = function(self)
 	button:RegisterForClicks("RightButtonUp")
 	button._owner = self
 
+	local currentBackdrop = GetBackdrop()
+
 	local Scaffold = button:CreateFrame()
 	Scaffold:SetPoint("TOPLEFT", 0, 0)
 	Scaffold:SetPoint("BOTTOMRIGHT", 0, 0)
-	Scaffold:SetBackdrop(AURA_BACKDROP)
+	Scaffold:SetBackdrop(currentBackdrop)
 	Scaffold:SetFrameLevel(button:GetFrameLevel() + 1)
+
+	backdropCache[Scaffold] = currentBackdrop
 
 	local Icon = Scaffold:CreateTexture()
 	Icon:SetPoint("TOPLEFT", 2, -2)
@@ -423,9 +459,12 @@ local CreateAuraButton = function(self)
 	local TimerScaffold = Timer:CreateFrame()
 	TimerScaffold:SetPoint("TOPLEFT", 0, 0)
 	TimerScaffold:SetPoint("BOTTOMRIGHT", 0, 0)
-	TimerScaffold:SetBackdrop(AURA_BACKDROP)
+	TimerScaffold:SetBackdrop(currentBackdrop)
 	TimerScaffold:SetFrameLevel(Timer:GetFrameLevel() + 1)
 	Timer.Scaffold = TimerScaffold
+
+	backdropCache[TimerScaffold] = currentBackdrop
+	
 
 	local TimerBarBackground = TimerScaffold:CreateTexture()
 	TimerBarBackground:SetDrawLayer("BACKGROUND")
@@ -946,6 +985,12 @@ local Enable = function(self, unit)
 				self:RegisterEvent("PLAYER_TARGET_CHANGED", Update)
 			end
 		end
+
+		self:RegisterEvent("UI_SCALE_CHANGED", UpdateScale)
+		self:RegisterEvent("DISPLAY_SIZE_CHANGED", UpdateScale)
+		self:RegisterEvent("PLAYER_ENTERING_WORLD", UpdateScale)
+		self:RegisterEvent("CVAR_UPDATE", UpdateScale)
+
 		return true
 	end
 end
@@ -977,6 +1022,12 @@ local Disable = function(self, unit)
 				self:UnregisterEvent("PLAYER_TARGET_CHANGED", Update)
 			end
 		end
+
+		self:UnregisterEvent("UI_SCALE_CHANGED", UpdateScale)
+		self:UnregisterEvent("DISPLAY_SIZE_CHANGED", UpdateScale)
+		self:UnregisterEvent("PLAYER_ENTERING_WORLD", UpdateScale)
+		self:UnregisterEvent("CVAR_UPDATE", UpdateScale)
+
 	end
 end
 

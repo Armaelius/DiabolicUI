@@ -90,22 +90,6 @@ Engine:NewStaticConfig("Objectives", {
 							}
 						}
 					},
-					border = {
-						size = { 26, 26 },
-						backdrop = {
-							bgFile = [[Interface\ChatFrame\ChatFrameBackground]],
-							edgeFile = [[Interface\ChatFrame\ChatFrameBackground]],
-							edgeSize = 1,
-							tile = false,
-							tileSize = 0,
-							insets = {
-								left = -1,
-								right = -1,
-								top = -1,
-								bottom = -1
-							}
-						}
-					},
 					shade = path .. [[textures\DiabolicUI_Shade_64x64.tga]]
 				},
 				-- Objectives (e.g "Kill many wolves: 0/many")
@@ -125,12 +109,13 @@ Engine:NewStaticConfig("Objectives", {
 				-- This has pretty much the same settings as the objectives, 
 				-- but we separate them since I intend to upgrade it later.
 				complete = {
+					topOffset = 10,
 					height = 12,
 					maxLines = 6,
 					lineSpacing = 4,
 					leftMargin = 30, -- space for dots
 					rightMargin = 56, -- space for quest items,
-					topMargin = 10,
+					topMargin = 6,
 					bottomMargin = 0, -- something else is being added, can't seem to figure out what :S 
 					dotAdjust = -2,
 					normalFont = DiabolicFont_SansRegular12White

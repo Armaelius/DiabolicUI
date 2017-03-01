@@ -4,9 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][1.1.29] 
+## [Unreleased][1.1.30]
 ### Added
-- Added custom scaling options.
 - Added PvP Capture Bars.
 - Added WorldState info (Battleground scores, World PvP score, dungeon waves, etc) to the minimap. 
 - Added a new point based resource system for all classes using such. This also fixes the Rogue combo point bugs.  
@@ -14,6 +13,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Side actionbars have changed layout and position, and won't interfere with the quest tracker anymore.
+
+## [1.1.29] 2017-03-01
+### Changed
+- Pixel borders on unfinished quest objectives as well as unitframe aura borders now rescale when resolution, display size or UI scale changes. Will still return faulty sizes if the game window have been manually resized to a size not matching the chosen resolution, though. The same applies to if the user maximizes the window while a different resolution is chosen than the actual one. We simply can't retrieve the actual window size in these case from within the addon API. 
+- Worked some more on stream lining the custom quest tracker text alignment.
+
+### Fixed
+- Fixed a bug where the top left corner of the completion text in the quest tracker was anchored to the bottom center of the quest title instead of the bottom left. Ouch.
 
 ## [1.1.28] 2017-02-27 
 ### Changed
