@@ -29,18 +29,20 @@ Module.LoadArtWork = function(self)
 	overlay:SetFrameStrata("MEDIUM")
 	overlay:SetAllPoints()
 
-	local new = function(parent, config)
-		local artwork = parent:CreateTexture(nil, "ARTWORK")
+	local new = function(parent, config, flip)
+		local artwork = parent:CreateTexture(nil, drawLayer or "ARTWORK")
 		artwork:SetSize(unpack(config.size))
 		artwork:SetTexture(config.texture)
 		artwork:SetVertexColor(unpack(config.color))
 		artwork:SetPoint(unpack(config.position))
+		artwork:SetBlendMode(alhpaMode or "BLEND")
 		return artwork
 	end
 	
-	self.artwork["healthbackdrop"] = new(backdrop, config.health.backdrop)
+	self.artwork["healthshade"] = new(backdrop, config.health.shade)
 	self.artwork["healthborder"] = new(overlay, config.health.overlay)
-	self.artwork["powerbackdrop"] = new(backdrop, config.power.backdrop)
+
+	self.artwork["powershade"] = new(backdrop, config.power.shade)
 	self.artwork["powerborder"] = new(overlay, config.power.overlay)
 
 end

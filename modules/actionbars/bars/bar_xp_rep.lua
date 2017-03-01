@@ -296,6 +296,7 @@ BarWidget.OnEnable = function(self)
 				self.InVehicle = nil
 			end
 		end
+		self:Update()
 	end)
 	
 	self:RegisterEvent("PLAYER_ALIVE", "Update")

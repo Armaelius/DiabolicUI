@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased][1.1.30]
+## [Unreleased]
 ### Added
 - Added PvP Capture Bars.
 - Added WorldState info (Battleground scores, World PvP score, dungeon waves, etc) to the minimap. 
@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Side actionbars have changed layout and position, and won't interfere with the quest tracker anymore.
+
+## [1.1.30] 2017-03-01
+### Changed
+- Toggled the player debuff display to only filter away debuffs with a total duration above 5 minutes while currently engaged in combat. 
+- Whitelisted some important player debuffs to always be shown, like Fatigue, Sated, Insanity, Exhaustion and Resurrection Sickness. 
+- Cooldown numbers on the aura buttons and action bars are now hidden by default. Custom ones will be added later. 
+
+### Fixed
+- Fixed a bug that would leave the backdrop of the XP bar visible while using a vehicleUI.
+- Fixed a bug that would cause the display of itembuttons in the quest tracker to fail.
 
 ## [1.1.29] 2017-03-01
 ### Changed

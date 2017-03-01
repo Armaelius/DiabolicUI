@@ -118,6 +118,12 @@ local L_QUEST = ENGINE_LEGION and GetItemSubClassInfo(_G.LE_ITEM_CLASS_QUESTITEM
 
 -- Blank texture used as a fallback for borders and bars
 local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]] 
+
+-- these exist (or are used) in WoD and beyond
+local BLING_TEXTURE = [[Interface\Cooldown\star4]]
+local EDGE_LOC_TEXTURE = [[Interface\Cooldown\edge-LoC]]
+local EDGE_NORMAL_TEXTURE = [[Interface\Cooldown\edge]]
+
 local BUTTON_SIZE = 40 
 local BUTTON_BACKDROP = {
 	bgFile = BLANK_TEXTURE,
@@ -145,6 +151,7 @@ local userTrackedQuests = {} -- quests manually tracked by the user
 local worldQuests = {} -- Legion world quests
 
 local itemButtons = {} -- item button cache, mostly for easier naming
+local activeItemButtons = {} -- cache of active and visible item buttons
 
 local scheduledForRemoval = {} -- temporary cache for quests no longer tracked 
 local scheduledForTracking = {} -- temporary cache for quests to be tracked
@@ -200,8 +207,17 @@ end
 -- 
 -- MapIDs retrieved from: http://wow.gamepedia.com/MapID
 local questMapIDOverrides = {
+	-- Icecrown dailies (WotLK)
 	[13789] = 492, 		-- Taking The Battle To The Enemy
-	[14096] = 492 		-- You've Really Done It This Time, Kul
+	[14096] = 492, 		-- You've Really Done It This Time, Kul
+
+	-- Death Knight starter zone (WotLK)
+	[12679] = 502,		-- Tonight We Dine In Havenshire
+	[12687] = 502, 		-- Into The Realm Of Shadows
+	[12697] = 502, 		-- Gothik The Harvester
+	[12698] = 502, 		-- The Gift That Keeps On Giving
+	[12701] = 502, 		-- Massacre At Light's Point
+	[12733] = 502		-- Death's Challenge
 }
 
 
@@ -630,20 +646,39 @@ Entry.AddQuestItem = function(self)
 	glow:SetSize(config.body.entry.item.glow.size[1], config.body.entry.item.glow.size[2])
 	glow:SetBackdrop(config.body.entry.item.glow.backdrop)
 	glow:SetBackdropColor(0, 0, 0, 0)
-	glow:SetBackdropBorderColor(0, 0, 0, .75)
+	glow:SetBackdropBorderColor(0, 0, 0, 1)
 
-	local overlay = item:CreateFrame("Frame")
-	overlay:SetFrameLevel(item:GetFrameLevel() + 1)
-	overlay:SetPoint("CENTER", 0, 0)
-	overlay:SetSize(config.body.entry.item.border.size[1], config.body.entry.item.border.size[2])
-	overlay:SetBackdrop(GetBackdrop())
-	overlay:SetBackdropColor(0, 0, 0, .75)
-	overlay:SetBackdropBorderColor(C.General.UIBorder[1], C.General.UIBorder[2], C.General.UIBorder[3], .85)
+	local scaffold = item:CreateFrame("Frame")
+	scaffold:SetFrameLevel(item:GetFrameLevel() + 1)
+	scaffold:SetPoint("CENTER", 0, 0)
+	scaffold:SetSize(config.body.entry.item.border.size[1], config.body.entry.item.border.size[2])
+	scaffold:SetBackdrop(GetBackdrop())
+	scaffold:SetBackdropColor(0, 0, 0, 1)
+	scaffold:SetBackdropBorderColor(C.General.UIBorder[1], C.General.UIBorder[2], C.General.UIBorder[3], 1)
 
-	local newIconTexture = overlay:CreateTexture()
+	local newIconTexture = scaffold:CreateTexture()
 	newIconTexture:SetDrawLayer("BORDER")
 	newIconTexture:SetPoint("CENTER", 0, 0)
-	newIconTexture:SetSize(22, 22)
+	newIconTexture:SetSize(config.body.entry.item.icon.size[1], config.body.entry.item.icon.size[2])
+
+	local newCooldown = item:CreateFrame("Cooldown")
+	newCooldown:SetFrameLevel(item:GetFrameLevel() + 2)
+	newCooldown:Hide()
+	newCooldown:SetAllPoints(newIconTexture)
+
+	if ENGINE_WOD then
+		newCooldown:SetSwipeColor(0, 0, 0, .75)
+		newCooldown:SetBlingTexture(BLING_TEXTURE, .3, .6, 1, .75) -- what wow uses, only with slightly lower alpha
+		newCooldown:SetEdgeTexture(EDGE_NORMAL_TEXTURE)
+		newCooldown:SetDrawSwipe(true)
+		newCooldown:SetDrawBling(true)
+		newCooldown:SetDrawEdge(false)
+		newCooldown:SetHideCountdownNumbers(true) -- todo: add better numbering
+	end
+
+	local overlay = item:CreateFrame("Frame")
+	overlay:SetFrameLevel(item:GetFrameLevel() + 3)
+	overlay:SetAllPoints(scaffold)
 
 	local newIconDarken = overlay:CreateTexture()
 	newIconDarken:SetDrawLayer("ARTWORK")
@@ -655,6 +690,30 @@ Entry.AddQuestItem = function(self)
 	newIconShade:SetAllPoints(newIconTexture)
 	newIconShade:SetTexture(config.body.entry.item.shade)
 	newIconShade:SetVertexColor(0, 0, 0, 1)
+
+	item.SetItemCooldown = ENGINE_WOD and function(self, start, duration, enable)
+		newCooldown:SetSwipeColor(0, 0, 0, .75)
+		newCooldown:SetDrawEdge(false)
+		newCooldown:SetDrawBling(false)
+		newCooldown:SetDrawSwipe(true)
+
+		if duration > .5 then
+			newCooldown:SetCooldown(start, duration)
+			newCooldown:Show()
+		else
+			newCooldown:Hide()
+		end
+
+	end or function(self, start, duration, enable)
+		-- Try to prevent the strange WotLK bug where the end shine effect
+		-- constantly pops up for a random period of time. 
+		if duration > .5 then
+			newCooldown:SetCooldown(start, duration)
+			newCooldown:Show()
+		else
+			newCooldown:Hide()
+		end
+	end
 	
 	item.SetItemTexture = function(self, ...)
 		newIconTexture:SetTexture(...)
@@ -821,11 +880,12 @@ end
 Entry.SetQuestItem = function(self)
 	local item = self.questItem or self:AddQuestItem()
 	item:SetID(self.questLogIndex)
-	item:Place("TOPRIGHT", -(10), 0)
+	item:Place("TOPRIGHT", -10, -4)
 	item:SetItemTexture(questData[self.questID].icon)
 	item:Show()
 
 	self.questItem = item
+	activeItemButtons[item] = self
 
 	return questItem
 end
@@ -838,6 +898,7 @@ Entry.ClearQuestItem = function(self)
 	local item = self.questItem
 	if item then
 		item:Hide()
+		activeItemButtons[item] = nil
 	end
 end
 
@@ -1067,6 +1128,13 @@ Tracker.Update = function(self)
 		entry:ClearAllPoints() 
 	end
 
+end
+
+Module.UpdateItemCooldowns = function(self)
+	for item,entry in pairs(activeItemButtons) do
+		local start, duration, enable = GetQuestLogSpecialItemCooldown(item:GetID())
+		item:SetItemCooldown(start, duration, enable)
+	end
 end
 
 --local timers = { GetQuestTimers() }
@@ -1629,6 +1697,10 @@ Module.OnEvent = function(self, event, ...)
 
 		return
 	
+	elseif event == "BAG_UPDATE_COOLDOWN" then
+		self:UpdateItemCooldowns()
+		return
+	
 	elseif event == "UNIT_INVENTORY_CHANGED" then
 
 		return
@@ -1812,6 +1884,7 @@ Module.OnEnable = function(self)
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
 
 	self:RegisterEvent("BAG_UPDATE", "OnEvent")
+	self:RegisterEvent("BAG_UPDATE_COOLDOWN", "OnEvent")
 	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "OnEvent")
 
 	if (not ENGINE_MOP) then

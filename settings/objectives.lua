@@ -75,7 +75,7 @@ Engine:NewStaticConfig("Objectives", {
 				item = {
 					size = { 26, 26 },
 					glow = {
-						size = { 32, 32 },
+						size = { 36, 36 },
 						backdrop = {
 							bgFile = nil, 
 							edgeFile = path .. [[textures\DiabolicUI_GlowBorder_128x16.tga]],
@@ -89,6 +89,12 @@ Engine:NewStaticConfig("Objectives", {
 								bottom = 0
 							}
 						}
+					},	
+					border = {
+						size = { 30, 30 }
+					},
+					icon = {
+						size = { 26, 26 }
 					},
 					shade = path .. [[textures\DiabolicUI_Shade_64x64.tga]]
 				},
@@ -102,7 +108,7 @@ Engine:NewStaticConfig("Objectives", {
 					rightMargin = 56, -- space for quest items
 					topMargin = 6, -- margin before every objective
 					bottomMargin = 12, -- margin after ALL objectives are listed
-					dotAdjust = -2,
+					dotAdjust = -1,
 					normalFont = DiabolicFont_SansRegular12White
 				},
 				-- Completed quest (e.g "Return to some NPC at some place")
@@ -117,7 +123,7 @@ Engine:NewStaticConfig("Objectives", {
 					rightMargin = 56, -- space for quest items,
 					topMargin = 6,
 					bottomMargin = 0, -- something else is being added, can't seem to figure out what :S 
-					dotAdjust = -2,
+					dotAdjust = -1,
 					normalFont = DiabolicFont_SansRegular12White
 				}
 			}

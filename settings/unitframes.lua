@@ -27,7 +27,7 @@ Engine:NewStaticConfig("UnitFrames", {
 		-- artwork is attached to the actionbar module's "Controller: Main" widget's frame
 		artwork = {
 			health = {
-				backdrop = {
+				shade = {
 					size = { 256, 256 },
 					position = { "BOTTOMLEFT", -256 + (256 - 160)/2 -8, -(256 - 160)/2 -6},
 					texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Backdrop.tga]],
@@ -41,7 +41,7 @@ Engine:NewStaticConfig("UnitFrames", {
 				}
 			},
 			power = {
-				backdrop = {
+				shade = {
 					size = { 256, 256 },
 					position = { "BOTTOMRIGHT", 256 - (256 - 160)/2 +8, -(256 - 160)/2 -6},
 					texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Backdrop.tga]],

@@ -431,7 +431,7 @@ local CreateAuraButton = function(self)
 		Cooldown:SetDrawSwipe(true)
 		Cooldown:SetDrawBling(true)
 		Cooldown:SetDrawEdge(false)
-		Cooldown:SetHideCountdownNumbers(false) -- todo: add better numbering
+		Cooldown:SetHideCountdownNumbers(true) -- todo: add better numbering
 	end
 
 	local Overlay = button:CreateFrame()

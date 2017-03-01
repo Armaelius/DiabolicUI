@@ -63,7 +63,7 @@ Orb.Update = function(self, elapsed)
 	if value == max or value == min then
 		if spark:IsShown() then
 			spark:Hide()
-			--spark:SetAlpha(spark.minAlpha)
+			spark:SetAlpha(spark.minAlpha)
 			spark.flashDirection = "IN"
 			spark.glow:Hide()
 			spark.glow:SetAlpha(spark.minAlpha)
@@ -140,8 +140,8 @@ Orb.Update = function(self, elapsed)
 					spark.flashDirection = "IN"
 				end
 			end
-			--spark:SetAlpha(currentAlpha)
-			spark:SetAlpha(1)
+			spark:SetAlpha(currentAlpha)
+			--spark:SetAlpha(spark.maxAlpha)
 			glow:SetAlpha(currentAlpha)
 		end
 		if not spark:IsShown() then
@@ -317,18 +317,22 @@ Orb.SetStatusBarColor = function(self, r, g, b, ...)
 	
 	-- Changed the base color for the spark from "bar" to "smoke", 
 	-- as in most cases its' the smoke layer that has the original color.
-	if id == "smoke" or id == "ALL" then
-		-- make the spark a brighter shade of the same colors, 
+	if (id == "smoke") or (id == "ALL") then
+		-- make the spark a really bright shade of the same colors, 
 		-- but take the "green" effect of darker overlays into account.
-		local newRed =  (1 - r)*0.3 + r
-		local newGreen =  (1 - g)*0.3 + g
-		local newBlue =  (1 - b)*0.3 + b
-		if newRed > newGreen then 
+		local newRed =  (1 - r)*.75 + r
+		local newGreen =  (1 - g)*.75 + g
+		local newBlue =  (1 - b)*.75 + b
+		if (newRed > newGreen) and (newRed > newBlue) then 
 			newGreen = newGreen * .8
 		end
-		if newBlue > newRed then 
-			newRed = newRed * .9
+		if (newBlue > newRed) and (newBlue > newGreen) then 
+			newGreen = newGreen * .75
+			newRed = newRed * .5
 		end
+		if (newGreen > newRed) and (newGreen > newBlue) then
+		end
+
 		self.overlay.spark:SetVertexColor(newRed, newGreen, newBlue)
 		self.overlay.spark.glow:SetVertexColor(newRed, newGreen, newBlue)
 	end
@@ -358,8 +362,17 @@ Orb.SetStatusBarTexture = function(self, ...)
 	if path then
 		self.scaffold[id]:SetTexture(path)
 	else
-		self.scaffold[id]:SetTexture(r, g, b, a)
+		self.scaffold[id]:SetColorTexture(r, g, b, a)
 	end
+	--if id == "shade" then
+	--	local id = "backgroundShade"
+	--	if path then
+	--		self.scaffold[id]:SetTexture(path)
+	--		self.scaffold[id]:SetVertexColor(0, 0, 0, .75)
+	--	else
+	--		self.scaffold[id]:SetColorTexture(0, 0, 0, .75)
+	--	end
+	--end
 end
 
 Orb.SetSparkTexture = function(self, path)
@@ -528,7 +541,7 @@ Handler.New = function(self, parent, rotateClockwise, speedModifier)
 	-- The scaffold is the top level frame object 
 	-- that will respond to SetSize, SetPoint and similar.
 	local scaffold = CreateFrame("Frame", nil, parent)
-	
+
 	-- The scrollchild is where we put rotating textures that needs to be cropped.
 	local scrollchild = CreateFrame("Frame", nil, scaffold)
 	scrollchild:SetSize(1,1)
@@ -543,7 +556,7 @@ Handler.New = function(self, parent, rotateClockwise, speedModifier)
 	local overlay = CreateFrame("Frame", nil, scaffold)
 	overlay:SetFrameLevel(scaffold:GetFrameLevel() + 5)
 	overlay:SetAllPoints(scaffold)
-	
+
 	local bar = scrollchild:CreateTexture(nil, "BACKGROUND")
 	bar:SetAllPoints()
 	
@@ -575,6 +588,15 @@ Handler.New = function(self, parent, rotateClockwise, speedModifier)
 	local shade = shadeFrame:CreateTexture(nil, "OVERLAY")
 	shade:SetAllPoints()
 
+	-- Backdrop frame
+	local backdropFrame  = CreateFrame("Frame", nil, scaffold)
+	backdropFrame:SetFrameLevel(scaffold:GetFrameLevel() - 1)
+	backdropFrame:SetAllPoints(scaffold)
+
+	-- We want the backdrops darker, to be easier on the eye on bright backgrounds.
+	--local backgroundShade = backdropFrame:CreateTexture(nil, "BACKGROUND")
+	--backgroundShade:SetAllPoints()
+
 	local spark = scrollchild:CreateTexture(nil, "OVERLAY")
 	spark:SetPoint("CENTER", scrollframe, "TOP", 0, -1)
 	spark:SetSize(1,1)
@@ -583,8 +605,8 @@ Handler.New = function(self, parent, rotateClockwise, speedModifier)
 	spark._width = 1
 	spark.overflowWidth = 0 
 	spark.flashDirection = "IN"
-	spark.durationIn = 2.75
-	spark.durationOut = 1.25
+	spark.durationIn = .75 -- 2.75
+	spark.durationOut = .55 -- 1.25
 	spark.minAlpha = .35
 	spark.maxAlpha = .85
 
@@ -601,6 +623,7 @@ Handler.New = function(self, parent, rotateClockwise, speedModifier)
 	scaffold.moon = moon
 	scaffold.smoke = smoke
 	scaffold.shade = shade
+	--scaffold.backgroundShade = backgroundShade -- not part of the layer cache, still grabs the same texture as 'shade', though'
 	scaffold.layers = { bar, moon, smoke, shade }
 	scaffold.colors = {
 		bar = { .6, .6, .6, 1 },

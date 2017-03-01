@@ -247,6 +247,19 @@ local DAY = 86400
 local TIME_LIMIT = MINUTE * 5
 local TIME_LIMIT_LOW = MINUTE
 
+-- Move to the general aura lists later
+local whiteList = {
+	-- Player debuffs of importance 
+	[57723] 	= true, 	-- Exhaustion "Cannot benefit from Heroism or other similar effects." (Alliance version)
+	[57724] 	= true, 	-- Sated "Cannot benefit from Bloodlust or other similar effects." (Horde version)
+	[160455]	= true, 	-- Fatigued "Cannot benefit from Netherwinds or other similar effects." (Pet version)
+	[95809] 	= true, 	-- Insanity "Cannot benefit from Ancient Hysteria or other similar effects." (Pet version)
+
+	[15007] 	= true 		-- Resurrection Sickness
+
+}
+
+
 -- Combat relevant buffs
 local shortBuffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
 	if duration and (duration > 0) then
@@ -260,8 +273,11 @@ end
 
 -- Combat relevant debuffs
 local shortDebuffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
+	if whiteList[spellId] then
+		return true
+	end
 	if duration and (duration > 0) then
-		if duration > TIME_LIMIT then
+		if UnitAffectingCombat("player") and (duration > TIME_LIMIT) then
 			return false
 		end
 		return true
@@ -309,7 +325,7 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	Health:SetSparkTexture(configHealthSpark.texture)
 	Health:SetSparkSize(unpack(configHealthSpark.size))
 	Health:SetSparkOverflow(configHealthSpark.overflow)
-	Health:SetSparkFlash(unpack(configHealthSpark.flash))
+	--Health:SetSparkFlash(unpack(configHealthSpark.flash))
 	Health:SetSparkFlashSize(unpack(configHealthSpark.flash_size))
 	Health:SetSparkFlashTexture(configHealthSpark.flash_texture)
 
@@ -480,7 +496,7 @@ local StyleRightOrb = function(self, unit, index, numBars, inVehicle)
 	Power:SetSparkTexture(configPowerSpark.texture)
 	Power:SetSparkSize(unpack(configPowerSpark.size))
 	Power:SetSparkOverflow(configPowerSpark.overflow)
-	Power:SetSparkFlash(unpack(configPowerSpark.flash))
+	--Power:SetSparkFlash(unpack(configPowerSpark.flash))
 	Power:SetSparkFlashSize(unpack(configPowerSpark.flash_size))
 	Power:SetSparkFlashTexture(configPowerSpark.flash_texture)
 
@@ -520,7 +536,7 @@ local StyleRightOrb = function(self, unit, index, numBars, inVehicle)
 	Mana:SetSparkTexture(configPowerSpark.texture)
 	Mana:SetSparkSize(unpack(configPowerSpark.size))
 	Mana:SetSparkOverflow(configPowerSpark.overflow)
-	Mana:SetSparkFlash(unpack(configPowerSpark.flash))
+	--Mana:SetSparkFlash(unpack(configPowerSpark.flash))
 	Mana:SetSparkFlashSize(unpack(configPowerSpark.flash_size))
 	Mana:SetSparkFlashTexture(configPowerSpark.flash_texture)
 

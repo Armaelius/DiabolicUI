@@ -441,7 +441,9 @@ Handler.New = function(self, unit, parent, styleFunc, nonSecure, ...)
 				--RegisterStateDriver(unitframe, "visibility", format("[@%s,exists]show;hide",new_unit))
 			end
 		]])
+
 		VehicleUpdater.UpdateUnit = function(self, unit) object.unit = unit end
+
 		RegisterStateDriver(VehicleUpdater, "vehicleupdate", "[vehicleui] invehicle; notinvehicle")
 	end
 

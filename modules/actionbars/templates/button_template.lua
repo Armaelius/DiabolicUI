@@ -1298,7 +1298,7 @@ Button.UpdateCooldown = function(self)
 		self:SetCooldownTimer(locStart, locDuration, 1, nil, nil, true) 
 	else
 		if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL then
-			self.cooldown:SetHideCountdownNumbers(false)
+			self.cooldown:SetHideCountdownNumbers(true)
 			self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL
 		end
 		self.cooldown.locQueued = locStart > 0
@@ -2306,7 +2306,7 @@ ButtonWidget.New = function(self, buttonType, id, header)
 		button.cooldown:SetDrawSwipe(true)
 		button.cooldown:SetDrawBling(true)
 		button.cooldown:SetDrawEdge(false)
-		button.cooldown:SetHideCountdownNumbers(false) -- todo: add better numbering
+		button.cooldown:SetHideCountdownNumbers(true) -- todo: add better numbering
 
 		button.cooldown.shine = Engine:GetHandler("Shine"):ApplyShine(button, 1, .75, 3) -- alpha, duration, scale
 		button.cooldown.shine:SetFrameLevel(button:GetFrameLevel() + 4)
