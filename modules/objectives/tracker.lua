@@ -217,6 +217,9 @@ local questMapIDOverrides = {
 	[12697] = 502, 		-- Gothik The Harvester
 	[12698] = 502, 		-- The Gift That Keeps On Giving
 	[12701] = 502, 		-- Massacre At Light's Point
+	[12707] = 502, 		-- Victory At Death's Breach
+	[12714] = 502, 		-- The Will Of The Lich King
+	[12715] = 502, 		-- The Crypt Of Remembrance
 	[12733] = 502		-- Death's Challenge
 }
 
@@ -229,7 +232,7 @@ local stripString = function(msg)
 		return ""
 	end
 	msg = string_gsub(msg, "\|n", "")
-	msg = string_gsub(msg, "\\n", "")
+	msg = string_gsub(msg, "|n", "")
 	return msg
 end
 
@@ -1263,8 +1266,11 @@ Module.ParseQuests = function(self, event)
 			end
 
 			-- Figure out if the quest is in our current zone or not
+			-- @return mapId should only be 0 if the player isn't on the quest, 
+			-- but for some reason it also returns this for instanced starter zone quests (like the Death Knight quests).
+			-- Son in that case we simply assume we're in the correct zone and the quest should be tracked.
 			local mapId, floorNumber = GetQuestWorldMapAreaID(questID)
-			if (((mapID == mapId) or questMapIDOverrides[questID]) and (not (questID == IGNORE_QUEST))) then
+			if (((mapID == mapId) or questMapIDOverrides[questID] or (mapId == 0)) and (not (questID == IGNORE_QUEST))) then
 				local currentQuestData = questData[questID] or {}
 				
 				numZoneQuests = numZoneQuests + 1

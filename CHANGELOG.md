@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Side actionbars have changed layout and position, and won't interfere with the quest tracker anymore.
 
+## [1.1.31] 2017-03-01
+### Changed
+- Quests in some instanced starter zones like the Death Knight one will now automatically be tracked, even though they don't always carry a valid mapID. 
+
 ## [1.1.30] 2017-03-01
 ### Changed
 - Toggled the player debuff display to only filter away debuffs with a total duration above 5 minutes while currently engaged in combat. 
