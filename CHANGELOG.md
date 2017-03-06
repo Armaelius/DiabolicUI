@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Side actionbars have changed layout and position, and won't interfere with the quest tracker anymore.
 
+## [1.1.32] 2017-03-06
+### Changed
+- Minimap coordinates should now be hidden when the WorldMap is visible and set to another zone than the current.
+
+### Fixed 
+- Spell Activation Overlay Glows should fire more correctly now.
+
 ## [1.1.31] 2017-03-01
 ### Changed
 - Quests in some instanced starter zones like the Death Knight one will now automatically be tracked, even though they don't always carry a valid mapID. 

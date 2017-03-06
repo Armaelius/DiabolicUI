@@ -26,10 +26,6 @@ local UnitIsPlayer = _G.UnitIsPlayer
 -- Time limit in seconds where we separate between short and long buffs
 local TIME_LIMIT = 300
 
-local _, playerClass = UnitClass("player")
-local PlayerIsRogue = playerClass == "ROGUE" -- to check for rogue anticipation
-
-
 
 -- Utility Functions
 --------------------------------------------------------------------------
@@ -179,18 +175,6 @@ local updateArtworkLayers = function(self)
 	
 end
 
--- This one will only be called in Legion, and only for Rogues
-local updateComboPoints = function(self)
-	local vehicle = UnitHasVehicleUI("player")
-	local combo_unit = vehicle and "vehicle" or "player"
-	local cp = UnitPower(combo_unit, SPELL_POWER_COMBO_POINTS)
-	local cp_max = UnitPowerMax(combo_unit, SPELL_POWER_COMBO_POINTS)
-	if cp_max == 8 then
-		cp_max = 5
-	end
-	self:SetSize(self.point_width*cp_max + self.point_padding*(cp_max-1), self.point_height)
-end
-
 local postCreateAuraButton = function(self, button)
 	local config = self.buttonConfig
 	local width, height = unpack(config.size)
@@ -262,6 +246,8 @@ local buffFilter = function(self, name, rank, icon, count, debuffType, duration,
 		return true
 	elseif isStealable then
 		return true
+	elseif (not isCastByPlayer) then
+		return false
 	elseif duration and (duration > 0) then
 		if duration > TIME_LIMIT then
 			return false

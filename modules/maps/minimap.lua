@@ -20,6 +20,7 @@ local table_wipe = table.wipe
 local unpack = unpack
 
 -- WoW API
+local GetCurrentMapAreaID = _G.GetCurrentMapAreaID
 local GetCursorPosition = _G.GetCursorPosition
 local GetDifficultyInfo = _G.GetDifficultyInfo
 local GetGameTime = _G.GetGameTime
@@ -43,6 +44,7 @@ local MinimapBackdrop = _G.MinimapBackdrop
 local MinimapCluster = _G.MinimapCluster
 local MinimapZoomIn = _G.MinimapZoomIn
 local MinimapZoomOut = _G.MinimapZoomOut
+local WorldMapFrame = _G.WorldMapFrame
 
 
 -- WoW strings
@@ -147,6 +149,14 @@ local onUpdate = function(self, elapsed)
 		local coordinates = self.widgets.coordinates
 		local x, y = GetPlayerMapPosition("player")
 
+		local worldMapVisible = WorldMapFrame:IsShown()
+		if worldMapVisible then
+			local mapID = GetCurrentMapAreaID()
+			if (mapID ~= self.data.currentZoneID) then
+				x, y = 0, 0
+			end
+		end
+
 		if ((x == 0) and (y == 0)) or (not x) or (not y) then
 			coordinates:SetAlpha(0)
 		else
@@ -227,6 +237,7 @@ Module.UpdateZoneData = function(self)
 	
 	SetMapToCurrentZone() -- required for coordinates to function too
 
+	local mapID, isContinent = GetCurrentMapAreaID()
 	local minimapZoneName = GetMinimapZoneText()
 	local pvpType, isSubZonePvP, factionName = GetZonePVPInfo()
 	local zoneName = GetZoneText()
@@ -400,6 +411,7 @@ Module.UpdateZoneData = function(self)
 		self.data.instanceName = ""
 	end
 	
+	self.data.currentZoneID = mapID
 	self.data.minimapZoneName = minimapZoneName or ""
 	self.data.zoneName = zoneName or ""
 	self.data.subZoneName = subzoneName or ""
@@ -485,6 +497,7 @@ Module.OnInit = function(self)
 	local config = self:GetStaticConfig("Minimap")
 	local db = self:GetConfig("Minimap")
 	local data = {
+		currentZoneID = 0,
 		minimapZoneName = "",
 		difficulty = "",
 		instanceName = "",

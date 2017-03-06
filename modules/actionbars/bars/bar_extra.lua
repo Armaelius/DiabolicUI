@@ -86,17 +86,19 @@ BarWidget.Build = function(self, button)
 					end
 				end)
 			end
-			
-			
 			reset_cooldown()
-			
 		end
 	end
 
-	
+	-- If the buttons won't stay locked after this, 
+	-- we might be dealing with addon conflicts from
+	-- other addons trying to move them. 
+	-- I'm hoping we can avoid creating "fake" buttons 
+	-- for this since they strictly speaking don't fully work, 
+	-- but we'll do what we have to.
 	button:SetSize(unpack(config.size))
 	button:ClearAllPoints()
-	button:SetPoint("BOTTOMLEFT", 0, 0)
+	button:SetPoint("BOTTOMLEFT", self.Bar, "BOTTOMLEFT", 0, 0)
 	
 	-- make the icon better looking
 	build.icon:SetDrawLayer("BACKGROUND")
@@ -239,6 +241,9 @@ BarWidget.OnEnable = function(self)
 		self:ClearAllPoints(); 
 		self:SetPoint(point, anchor, point, x, y); 
 	]=])
+
+	-- The scripts below need this for positioning
+	self.Bar = Bar
 	
 	RegisterStateDriver(Bar, "pos", ENGINE_MOP and "[target=vehicle,exists,canexitvehicle] vehicle; novehicle" or "[target=vehicle,exists] vehicle; novehicle")
 
@@ -275,7 +280,6 @@ BarWidget.OnEnable = function(self)
 		self:Build(ZoneAbilityFrame.SpellButton)
 	end
 
-	self.Bar = Bar
 end
 
 BarWidget.GetFrame = function(self)

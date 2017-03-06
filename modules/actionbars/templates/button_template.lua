@@ -4,61 +4,69 @@ local ButtonWidget = Module:SetWidget("Template: Button")
 local C = Engine:GetStaticConfig("Data: Colors")
 
 -- Lua API
-local strmatch = string.match
-local tonumber, tostring = tonumber, tostring
-local select, pairs, ipairs, unpack = select, pairs, ipairs, unpack
+local _G = _G
+local ipairs = ipairs
+local pairs = pairs
+local select = select
 local setmetatable = setmetatable
+local string_match = string.match
+local table_insert = table.insert
+local table_remove = table.remove
+local tonumber = tonumber
+local tostring = tostring
+local unpack = unpack
 
 -- WoW API
-local AutoCastShine_AutoCastStart = AutoCastShine_AutoCastStart
-local AutoCastShine_AutoCastStop = AutoCastShine_AutoCastStop
-local CreateFrame = CreateFrame
-local FindSpellBookSlotBySpellID = FindSpellBookSlotBySpellID
-local GetActionCharges = GetActionCharges
-local GetActionCooldown = GetActionCooldown
-local GetActionCount = GetActionCount
-local GetActionInfo = GetActionInfo
-local GetActionLossOfControlCooldown = GetActionLossOfControlCooldown
-local GetActionText = GetActionText
-local GetActionTexture = GetActionTexture
-local GetItemCooldown = GetItemCooldown
-local GetItemCount = GetItemCount
-local GetItemIcon = GetItemIcon
-local GetItemInfo = GetItemInfo
-local GetMacroInfo = GetMacroInfo
-local GetMacroSpell = GetMacroSpell
-local GetPetActionCooldown = GetPetActionCooldown
-local GetPetActionInfo = GetPetActionInfo
-local GetPetActionsUsable = GetPetActionsUsable
-local GetShapeshiftFormCooldown = GetShapeshiftFormCooldown
-local GetShapeshiftFormInfo = GetShapeshiftFormInfo
-local GetSpellCharges = GetSpellCharges
-local GetSpellCooldown = GetSpellCooldown
-local GetSpellCount = GetSpellCount
-local GetSpellTexture = GetSpellTexture
-local HasAction = HasAction
-local IsActionInRange = IsActionInRange
-local IsAttackAction = IsAttackAction
-local IsAttackSpell = IsAttackSpell
-local IsAutoRepeatAction = IsAutoRepeatAction
-local IsAutoRepeatSpell = IsAutoRepeatSpell
-local IsCurrentAction = IsCurrentAction
-local IsConsumableAction = IsConsumableAction
-local IsConsumableItem = IsConsumableItem
-local IsConsumableSpell = IsConsumableSpell
-local IsCurrentItem = IsCurrentItem
-local IsCurrentSpell = IsCurrentSpell
-local IsEquippedAction = IsEquippedAction
-local IsEquippedItem = IsEquippedItem
-local IsFlying = IsFlying
-local IsItemAction = IsItemAction
-local IsItemInRange = IsItemInRange
-local IsSpellInRange = IsSpellInRange
-local IsStackableAction = IsStackableAction
-local IsUsableAction = IsUsableAction
-local IsUsableItem = IsUsableItem
-local IsUsableSpell = IsUsableSpell
-local UnitOnTaxi = UnitOnTaxi
+local AutoCastShine_AutoCastStart = _G.AutoCastShine_AutoCastStart
+local AutoCastShine_AutoCastStop = _G.AutoCastShine_AutoCastStop
+local CreateFrame = _G.CreateFrame
+local FindSpellBookSlotBySpellID = _G.FindSpellBookSlotBySpellID
+local FlyoutHasSpell = _G.FlyoutHasSpell
+local GetActionCharges = _G.GetActionCharges
+local GetActionCooldown = _G.GetActionCooldown
+local GetActionCount = _G.GetActionCount
+local GetActionInfo = _G.GetActionInfo
+local GetActionLossOfControlCooldown = _G.GetActionLossOfControlCooldown
+local GetActionText = _G.GetActionText
+local GetActionTexture = _G.GetActionTexture
+local GetItemCooldown = _G.GetItemCooldown
+local GetItemCount = _G.GetItemCount
+local GetItemIcon = _G.GetItemIcon
+local GetItemInfo = _G.GetItemInfo
+local GetMacroInfo = _G.GetMacroInfo
+local GetMacroSpell = _G.GetMacroSpell
+local GetPetActionCooldown = _G.GetPetActionCooldown
+local GetPetActionInfo = _G.GetPetActionInfo
+local GetPetActionsUsable = _G.GetPetActionsUsable
+local GetShapeshiftFormCooldown = _G.GetShapeshiftFormCooldown
+local GetShapeshiftFormInfo = _G.GetShapeshiftFormInfo
+local GetSpellCharges = _G.GetSpellCharges
+local GetSpellCooldown = _G.GetSpellCooldown
+local GetSpellCount = _G.GetSpellCount
+local GetSpellTexture = _G.GetSpellTexture
+local HasAction = _G.HasAction
+local IsActionInRange = _G.IsActionInRange
+local IsAttackAction = _G.IsAttackAction
+local IsAttackSpell = _G.IsAttackSpell
+local IsAutoRepeatAction = _G.IsAutoRepeatAction
+local IsAutoRepeatSpell = _G.IsAutoRepeatSpell
+local IsCurrentAction = _G.IsCurrentAction
+local IsConsumableAction = _G.IsConsumableAction
+local IsConsumableItem = _G.IsConsumableItem
+local IsConsumableSpell = _G.IsConsumableSpell
+local IsCurrentItem = _G.IsCurrentItem
+local IsCurrentSpell = _G.IsCurrentSpell
+local IsEquippedAction = _G.IsEquippedAction
+local IsEquippedItem = _G.IsEquippedItem
+local IsFlying = _G.IsFlying
+local IsItemAction = _G.IsItemAction
+local IsItemInRange = _G.IsItemInRange
+local IsSpellInRange = _G.IsSpellInRange
+local IsStackableAction = _G.IsStackableAction
+local IsUsableAction = _G.IsUsableAction
+local IsUsableItem = _G.IsUsableItem
+local IsUsableSpell = _G.IsUsableSpell
+local UnitOnTaxi = _G.UnitOnTaxi
 
 -- Will replace these with our custom tooltiplib later on!
 local GameTooltip = GameTooltip 
@@ -66,7 +74,7 @@ local GameTooltip_SetDefaultAnchor = GameTooltip_SetDefaultAnchor
 
 -- Cache the client version constants we need
 local ENGINE_MOP = Engine:IsBuild("MoP")
-
+local ENGINE_CATA = Engine:IsBuild("Cata")
 
 
 local Button = CreateFrame("CheckButton")
@@ -944,7 +952,11 @@ Button.Update = function(self)
 	self:UpdateBindings()
 	self:UpdateLayers()
 	self:UpdateCount()
-	self:UpdateOverlayGlow()
+
+	if ENGINE_CATA then 
+		self:UpdateOverlayGlow()
+	end
+
 	self:UpdateFlyout()
 	
 	-- UpdateLayers also does this... redundant?
@@ -991,7 +1003,7 @@ Button.SetStateAction = function(self, button_state, button_type, button_action)
 		if tonumber(button_action) then
 			button_action = format("item:%s", button_action)
 		else
-			local itemString = strmatch(button_action, "^|c%x+|H(item[%d:]+)|h%[")
+			local itemString = string_match(button_action, "^|c%x+|H(item[%d:]+)|h%[")
 			if itemString then
 				button_action = itemString
 			end
@@ -1353,55 +1365,69 @@ Button.UpdateCount = function(self)
 end
 
 
-local overlay_cache = {}
-local num_overlays = 0
+local spellOverlayCache = {}
+local numSpellOverlays = 0
 
 local OverlayGlowAnimOutFinished = function(animGroup)
 	local overlay = animGroup:GetParent()
-	local button = overlay:GetParent()
+	--local button = overlay:GetParent()
 	overlay:Hide()
-	tinsert(overlay_cache, overlay)
-	button.OverlayGlow = nil
+	--table_insert(spellOverlayCache, overlay)
+	--button.OverlayGlow = nil
 end
 
 local OverlayGlow_OnHide = function(self)
 	if self.animOut:IsPlaying() then
 		self.animOut:Stop()
-		OverlayGlowAnimOutFinished(self.animOut)
+		self:Hide()
+		--OverlayGlowAnimOutFinished(self.animOut)
 	end
 end
 
 local GetOverlayGlow = function(self)
-	local overlay = tremove(overlay_cache);
-	if not overlay then
-		num_overlays = num_overlays + 1
-		overlay = CreateFrame("Frame", "EngineActionButtonOverlay"..num_overlays, UIParent, "ActionBarButtonSpellActivationAlert")
+	local overlay = table_remove(spellOverlayCache);
+	if (not overlay) then
+		numSpellOverlays = numSpellOverlays + 1
+		overlay = Engine:CreateFrame("Frame", "EngineActionButtonSpellOverlay"..numSpellOverlays, "UICenter", "ActionBarButtonSpellActivationAlert")
 		overlay.animOut:SetScript("OnFinished", OverlayGlowAnimOutFinished)
 		overlay:SetScript("OnHide", OverlayGlow_OnHide)
 	end
 	return overlay
 end
 
-Button.ShowOverlayGlow = function(self)
+Button.ShowOverlayGlow = ENGINE_CATA and function(self)
 	if self.OverlayGlow then
 		if self.OverlayGlow.animOut:IsPlaying() then
 			self.OverlayGlow.animOut:Stop()
-			self.OverlayGlow.animIn:Play()
 		end
+		self.OverlayGlow:Show()
+		self.OverlayGlow.animIn:Play()
 	else
-		self.OverlayGlow = GetOverlayGlow()
-		local frameWidth, frameHeight = self:GetSize()
-		self.OverlayGlow:SetParent(self.border)
+		self.OverlayGlow = self.border:CreateFrame("Frame", "EngineActionButtonSpellOverlay"..numSpellOverlays, "ActionBarButtonSpellActivationAlert")
+		self.OverlayGlow:SetFrameLevel(self:GetFrameLevel() + 5)
+		self.OverlayGlow.animOut:SetScript("OnFinished", function() 
+			self.OverlayGlow:Hide()
+		end)
+		self.OverlayGlow:SetScript("OnHide", function(self) 
+			if self.animOut:IsPlaying() then
+				self.animOut:Stop()
+			end
+		end)
+
+		--self.OverlayGlow = GetOverlayGlow()
+		--self.OverlayGlow:SetParent(self.border)
 		self.OverlayGlow:ClearAllPoints()
+
 		--Make the height/width available before the next frame:
+		local frameWidth, frameHeight = self:GetSize()
 		self.OverlayGlow:SetSize(frameWidth * 1.4, frameHeight * 1.4)
-		self.OverlayGlow:SetPoint("TOPLEFT", self, "TOPLEFT", -frameWidth * 0.2, frameHeight * 0.2)
-		self.OverlayGlow:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", frameWidth * 0.2, -frameHeight * 0.2)
+		self.OverlayGlow:SetPoint("TOPLEFT", self, "TOPLEFT", -frameWidth * .2, frameHeight * .2)
+		self.OverlayGlow:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", frameWidth * .2, -frameHeight * .2)
 		self.OverlayGlow.animIn:Play()
 	end
 end
 
-Button.HideOverlayGlow = function(self)
+Button.HideOverlayGlow = ENGINE_CATA and function(self)
 	if self.OverlayGlow then
 		if self.OverlayGlow.animIn:IsPlaying() then
 			self.OverlayGlow.animIn:Stop()
@@ -1409,21 +1435,19 @@ Button.HideOverlayGlow = function(self)
 		if self:IsVisible() then
 			self.OverlayGlow.animOut:Play()
 		else
-			OverlayGlowAnimOutFinished(self.OverlayGlow.animOut)
+			self.OverlayGlow:Hide()
 		end
 	end
 end
 
-Button.UpdateOverlayGlow = function(self)
-	if self.OverlayGlow then
-		local spellId = self:GetSpellId()
-		if spellId and (IsSpellOverlayed and IsSpellOverlayed(spellId)) then
-			self:ShowOverlayGlow()
-		else
-			self:HideOverlayGlow()
-		end
+Button.UpdateOverlayGlow = ENGINE_CATA and function(self)
+	local spellId = self:GetSpellId()
+	if spellId and IsSpellOverlayed(spellId) then
+		self:ShowOverlayGlow()
+	else
+		self:HideOverlayGlow()
 	end
-end
+end 
 
 Button.UpdateFlyout = function(self)
 	if not self.FlyoutBorder or not self.FlyoutBorderShadow then
@@ -1866,10 +1890,10 @@ ButtonWidget.OnEvent = function(self, event, ...)
 	elseif event == "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW" then
 		for button in next, ActiveButtons do
 			local spellId = button:GetSpellId()
-			if spellId and spellId == arg1 then
-				button:ShowOverlayGlow()
-			else
-				if button.type_by_state == "action" then
+			if spellId then 
+				if (spellId == arg1) or IsSpellOverlayed(spellId) then
+					button:ShowOverlayGlow()
+				elseif button.type_by_state == "action" then
 					local actionType, id = GetActionInfo(button.action_by_state)
 					if actionType == "flyout" and FlyoutHasSpell(id, arg1) then
 						button:ShowOverlayGlow()
@@ -1881,10 +1905,10 @@ ButtonWidget.OnEvent = function(self, event, ...)
 	elseif event == "SPELL_ACTIVATION_OVERLAY_GLOW_HIDE" then
 		for button in next, ActiveButtons do
 			local spellId = button:GetSpellId()
-			if spellId and spellId == arg1 then
-				button:HideOverlayGlow()
-			else
-				if button.type_by_state == "action" then
+			if spellId then 
+				if (spellId == arg1) or IsSpellOverlayed(spellId) then
+					button:HideOverlayGlow()
+				elseif button.type_by_state == "action" then
 					local actionType, id = GetActionInfo(button.action_by_state)
 					if actionType == "flyout" and FlyoutHasSpell(id, arg1) then
 						button:HideOverlayGlow()
@@ -2008,8 +2032,12 @@ ButtonWidget.LoadEvents = function(self)
 	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnEvent")
 	self:RegisterEvent("PET_STABLE_UPDATE", "OnEvent")
 	self:RegisterEvent("PET_STABLE_SHOW", "OnEvent")
-	self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "OnEvent")
-	self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE", "OnEvent")
+
+	if ENGINE_CATA then 
+		self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "OnEvent")
+		self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE", "OnEvent")
+	end
+
 	self:RegisterEvent("SPELL_UPDATE_CHARGES", "OnEvent")
 	self:RegisterEvent("UPDATE_SUMMONPETS_ACTION", "OnEvent")
 
@@ -2099,27 +2127,27 @@ ButtonWidget.New = function(self, buttonType, id, header)
 	
 	local button
 	if buttonType == "pet" then
-		button = setmetatable(CreateFrame("CheckButton", name , header, "PetActionButtonTemplate"), Button_MT)
+		button = setmetatable(Engine:CreateFrame("CheckButton", name , header, "PetActionButtonTemplate"), Button_MT)
 		button:UnregisterAllEvents()
 		button:SetScript("OnEvent", nil)
 		button:SetScript("OnUpdate", nil)
 		
 	elseif buttonType == "stance" then
 		if ENGINE_MOP then
-			button = setmetatable(CreateFrame("CheckButton", name , header, "StanceButtonTemplate"), Button_MT)
+			button = setmetatable(Engine:CreateFrame("CheckButton", name , header, "StanceButtonTemplate"), Button_MT)
 		else
-			button = setmetatable(CreateFrame("CheckButton", name , header, "ShapeshiftButtonTemplate"), Button_MT)
+			button = setmetatable(Engine:CreateFrame("CheckButton", name , header, "ShapeshiftButtonTemplate"), Button_MT)
 		end
 		button:UnregisterAllEvents()
 		button:SetScript("OnEvent", nil)
 		
 	--elseif buttonType == "extra" then
-	--	button = setmetatable(CreateFrame("CheckButton", name , header, "ExtraActionButtonTemplate"), Button_MT)
+	--	button = setmetatable(Engine:CreateFrame("CheckButton", name , header, "ExtraActionButtonTemplate"), Button_MT)
 	--	button:UnregisterAllEvents()
 	--	button:SetScript("OnEvent", nil)
 	
 	else
-		button = setmetatable(CreateFrame("CheckButton", name , header, "SecureActionButtonTemplate, ActionButtonTemplate"), Button_MT)
+		button = setmetatable(Engine:CreateFrame("CheckButton", name , header, "SecureActionButtonTemplate, ActionButtonTemplate"), Button_MT)
 		button:RegisterForDrag("LeftButton", "RightButton")
 		
 		local cast_on_down = GetCVarBool("ActionButtonUseKeyDown")
@@ -2279,7 +2307,7 @@ ButtonWidget.New = function(self, buttonType, id, header)
 		button.cooldown:SetAllPoints(button.icon)
 		button.cooldown:SetFrameLevel(button:GetFrameLevel() + 2)
 	else
-		button.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+		button.cooldown = button:CreateFrame("Cooldown", nil, "CooldownFrameTemplate")
 		button.cooldown:SetAllPoints(button.icon)
 		button.cooldown:SetFrameLevel(button:GetFrameLevel() + 2)
 	end
@@ -2324,7 +2352,7 @@ ButtonWidget.New = function(self, buttonType, id, header)
 	end
 		
 	-- overlay frame holding border, gloss and texts
-	button.border = CreateFrame("Frame", nil, button)
+	button.border = button:CreateFrame("Frame")
 	button.border:SetAllPoints()
 	button.border:SetFrameLevel(button:GetFrameLevel() + 3)
 	
