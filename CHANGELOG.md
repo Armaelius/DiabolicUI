@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.34] 2017-07-06
+### Fixed
+- Attempted to bypass some errors in the objectives tracker by temporarily ignoring invasion quests. Will add them back in when the issue is sorted.  
+
 ## [1.2.33] 2017-07-06
 ### Added
 - Added PvP Capture Bars. Tested in both outdoors PvP and all battlegrounds that have them.

@@ -73,6 +73,7 @@ local GetWorldQuestWatchInfo = _G.GetWorldQuestWatchInfo
 local HaveQuestData = _G.HaveQuestData
 local IsModifiedClick = _G.IsModifiedClick
 local IsQuestBounty = _G.IsQuestBounty
+local IsQuestInvasion = _G.IsQuestInvasion
 local IsQuestTask = _G.IsQuestTask
 local IsQuestWatched = _G.IsQuestWatched
 local IsWorldQuestWatched = _G.IsWorldQuestWatched
@@ -1899,7 +1900,7 @@ Module.GatherWorldQuestData = function(self)
 		if (worldQuests ~= nil) and (#worldQuests > 0) then
 			for i,questInfo in ipairs(worldQuests) do
 				local questID = questInfo.questId
-				if (HaveQuestData(questID) and QuestUtils_IsQuestWorldQuest(questID)) then
+				if (HaveQuestData(questID) and QuestUtils_IsQuestWorldQuest(questID) and (not (IsQuestInvasion and IsQuestInvasion(questID)))) then
 
 					-- If this is a new quest, report that we need an update
 					if (not oldCache[questID]) then
