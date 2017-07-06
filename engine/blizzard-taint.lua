@@ -315,15 +315,19 @@ if LEGION_710 and (not LEGION_23478) then
 	-- This little fix was supplied by Ellypse@WowInterface. 
 	-- http://www.wowinterface.com/forums/showthread.php?t=54979
 	
-	local DropDownList1 = _G.DropDownList1
-	local oldUpdate = _G.WorldMapLevelDropDown_Update
-	local newUpdate = function()
-		if not DropDownList1:IsVisible() then
-			oldUpdate()
-		end
-	end
+	-- 2017-06-24-1349: 
+	-- "Script ran too long"
+	-- Not going to use this for now. 
 
-	_G.WorldMapLevelDropDown_Update = newUpdate
+	--local DropDownList1 = _G.DropDownList1
+	--local oldUpdate = _G.WorldMapLevelDropDown_Update
+	--local newUpdate = function()
+	--	if not DropDownList1:IsVisible() then
+	--		oldUpdate()
+	--	end
+	--end
+
+	--_G.WorldMapLevelDropDown_Update = newUpdate
 
 end
 

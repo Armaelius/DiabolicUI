@@ -2,6 +2,8 @@ local Addon, Engine = ...
 local Module = Engine:NewModule("ChatWindows")
 local L = Engine:GetLocale()
 
+-- Bail if Prat is enabled
+Module:SetIncompatible("Prat-3.0")
 
 -- Lua API
 local _G = _G
@@ -141,10 +143,6 @@ Module.OnEnter = function(self)
 end
 
 Module.OnInit = function(self, event, ...)
-	-- Bail if Prat is enabled. Too many incompabilities.
-	if Engine:IsAddOnEnabled("Prat-3.0") then
-		return
-	end
 
 	self.config = self:GetStaticConfig("ChatWindows") -- setup
 	self.db = self:GetConfig("ChatWindows") -- user settings
@@ -756,10 +754,6 @@ Module.PositionChatFrames = function(self)
 end
 
 Module.OnEnable = function(self, event, ...)
-	-- Bail if Prat is enabled. Too many incompabilities.
-	if Engine:IsAddOnEnabled("Prat-3.0") then
-		return
-	end
 
 	-- fired when chat window settings are loaded into the client
 	self:RegisterEvent("UPDATE_CHAT_WINDOWS", "PositionChatFrames")

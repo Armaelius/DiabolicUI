@@ -1,6 +1,6 @@
 local _, Engine = ...
 local Module = Engine:GetModule("ActionBars")
-local BarWidget = Module:SetWidget("Bar: 1")
+local Widget = Module:SetWidget("Bar: 1")
 
 -- Lua API
 local _G = _G
@@ -21,31 +21,25 @@ local ENGINE_MOP = Engine:IsBuild("MoP")
 
 local NUM_ACTIONBAR_BUTTONS = _G.NUM_ACTIONBAR_BUTTONS or 12
 
-
-BarWidget.OnEnable = function(self)
+Widget.OnEnable = function(self)
 	local config = Module.config
 	local db = Module.db
 
-	local Bar = Module:GetWidget("Template: Bar"):New(1, Module:GetWidget("Controller: Main"):GetFrame())
-	
+	local Artwork = Module:GetWidget("Artwork")
+	local Bar = Module:GetHandler("ActionBar"):New(1, Module:GetWidget("Controller: Main"):GetFrame(), Artwork:GetBarTemplate())
+
+
 	--------------------------------------------------------------------
 	-- Buttons
 	--------------------------------------------------------------------
 
 	-- Spawn the action buttons
 	for i = 1,NUM_ACTIONBAR_BUTTONS do
-		-- Make sure the standard bars
-		-- get button IDs that reflect their actual actions
-		-- local button_id = (Bar.id - 1) * NUM_ACTIONBAR_BUTTONS + i
-		
-		local button = Bar:NewButton("action", i)
+		local button = Bar:NewButton("action", i, Artwork:GetButtonTemplate())
 		button:SetStateAction(0, "action", i)
 		for state = 1,14 do
 			button:SetStateAction(state, "action", (state - 1) * NUM_ACTIONBAR_BUTTONS + i)
 		end
-		
-		-- button:SetStateAction(0, "action", button_id)
-		-- table_insert(Bar.buttons, button)
 	end
 	
 
@@ -109,21 +103,21 @@ BarWidget.OnEnable = function(self)
 	-- Main actionbar paging based on class/stance
 	-- also supports user changed paging
 	local driver = {}
-	local _, player_class = UnitClass("player")
+	local _, playerClass = UnitClass("player")
 
 	if ENGINE_MOP then -- also applies to WoD and (possibly) Legion
 		table_insert(driver, "[vehicleui][overridebar][possessbar][shapeshift]possess")
 		table_insert(driver, "[bar:2]2; [bar:3]3; [bar:4]4; [bar:5]5; [bar:6]6")
 
-		if player_class == "DRUID" then
+		if playerClass == "DRUID" then
 			table_insert(driver, "[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 7; [bonusbar:2] 8; [bonusbar:3] 9; [bonusbar:4] 10")
-		elseif player_class == "MONK" then
+		elseif playerClass == "MONK" then
 			table_insert(driver, "[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9")
-		elseif player_class == "PRIEST" then
+		elseif playerClass == "PRIEST" then
 			table_insert(driver, "[bonusbar:1] 7")
-		elseif player_class == "ROGUE" then
+		elseif playerClass == "ROGUE" then
 			table_insert(driver, ("[%s:%s] %s; "):format("form", GetNumShapeshiftForms() + 1, 7) .. "[form:1] 7; [form:3] 7")
-		elseif player_class == "WARRIOR" then
+		elseif playerClass == "WARRIOR" then
 			table_insert(driver, "[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9")
 		end
 
@@ -131,15 +125,15 @@ BarWidget.OnEnable = function(self)
 		table_insert(driver, "[bonusbar:5]11")
 		table_insert(driver, "[bar:2]2; [bar:3]3; [bar:4]4; [bar:5]5; [bar:6]6")
 
-		if player_class == "DRUID" then
+		if playerClass == "DRUID" then
 			table_insert(driver, "[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 7; [bonusbar:2] 8; [bonusbar:3] 9; [bonusbar:4] 10")
-		elseif player_class == "PRIEST" then
+		elseif playerClass == "PRIEST" then
 			table_insert(driver, "[bonusbar:1] 7")
-		elseif player_class == "ROGUE" then
+		elseif playerClass == "ROGUE" then
 			table_insert(driver, "[bonusbar:1] 7; [form:3] 8")
-		elseif player_class == "WARLOCK" then
+		elseif playerClass == "WARLOCK" then
 			table_insert(driver, "[form:2] 7")
-		elseif player_class == "WARRIOR" then
+		elseif playerClass == "WARRIOR" then
 			table_insert(driver, "[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9")
 		end
 		
@@ -176,10 +170,6 @@ BarWidget.OnEnable = function(self)
 	local visibilityDriver = table_concat(driver, "; ")
 	RegisterStateDriver(Bar, "vis", visibilityDriver)
 	
-	-- Give the secure environment access to the current visibility macro, 
-	-- so it can check for the correct visibility when user enabling the bar!
-	Bar:SetAttribute("visibility-driver", visibilityDriver)
-
 	local Visibility = Bar:GetParent()
 	Visibility:SetAttribute("_childupdate-set_numbars", [[
 		local num = tonumber(message);
@@ -237,14 +227,11 @@ BarWidget.OnEnable = function(self)
 	Bar:SetAttribute("growth_y", bar_config.growthY)
 	Bar:SetAttribute("padding", bar_config.padding)
 	
-	local button_config = config.visuals.buttons
-
 	for i = 1,3 do
 		local id = tostring(i)
 		Bar:SetAttribute("bar_width-"..id, bar_config.bar_size[id][1])
 		Bar:SetAttribute("bar_height-"..id, bar_config.bar_size[id][2])
 		Bar:SetAttribute("button_size-"..id, bar_config.buttonsize[id])
-		Bar:SetStyleTableFor(bar_config.buttonsize[id], button_config[bar_config.buttonsize[id]])
 	end
 	
 	Bar:SetPoint("BOTTOM")
@@ -252,6 +239,6 @@ BarWidget.OnEnable = function(self)
 	self.Bar = Bar
 end
 
-BarWidget.GetFrame = function(self)
+Widget.GetFrame = function(self)
 	return self.Bar
 end

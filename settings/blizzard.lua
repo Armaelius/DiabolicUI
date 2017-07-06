@@ -89,6 +89,7 @@ Engine:NewStaticConfig("Blizzard", {
 	-- also applies to the new TimerTrackers in ... uh... WoD? MoP? :/
 	mirrortimers = {
 		position = { "TOP", "UIParent", "TOP", 0, -300 }, -- default anchor -180
+		positionOffsetByOne = { "TOP", "UIParent", "TOP", 0, -(300 + 50) }, -- notch it 1 bar down (give room for the capture bar)
 		padding = 50, -- padding from one bar to the next
 		font_object = DiabolicTooltipNormal,
 		backdrop_texture = path .. [[textures\DiabolicUI_Target_227x15_Backdrop.tga]],
@@ -98,6 +99,10 @@ Engine:NewStaticConfig("Blizzard", {
 		statusbar_texture = path .. [[statusbars\DiabolicUI_StatusBar_512x64_Dark_Warcraft.tga]],
 		spark_size = { 128, 128 },
 		spark_texture = path .. [[statusbars\DiabolicUI_StatusBar_128x128_Spark_Warcraft.tga]]
+	},
+	talkinghead = {
+		position = { "TOP", "UICenter", "TOP", 0, -330 },
+		size = { 570, 155 } -- size taken from Blizzard_TalkingHeadUI.xml
 	},
 	tracker = {
 		togglebutton = {

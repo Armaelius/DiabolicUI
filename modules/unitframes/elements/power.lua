@@ -4,20 +4,57 @@ local C = Engine:GetStaticConfig("Data: Colors")
 local F = Engine:GetStaticConfig("Data: Functions")
 
 -- Lua API
-local tostring, tonumber = tostring, tonumber
-local pairs, unpack = pairs, unpack
-local floor = math.floor
+local math_floor = math.floor
+local pairs = pairs
+local tonumber = tonumber
+local tostring = tostring
+local unpack = unpack
 
 -- WoW API
-local UnitIsConnected = UnitIsConnected
-local UnitIsDeadOrGhost = UnitIsDeadOrGhost
-local UnitIsTapDenied = UnitIsTapDenied 
-local UnitPower = UnitPower
-local UnitPowerMax = UnitPowerMax
-local UnitPowerType = UnitPowerType
+local GetSpecialization = _G.GetSpecialization
+local UnitHealthMax = _G.UnitHealthMax
+local UnitIsConnected = _G.UnitIsConnected
+local UnitIsDeadOrGhost = _G.UnitIsDeadOrGhost
+local UnitIsTapDenied = _G.UnitIsTapDenied 
+local UnitPower = _G.UnitPower
+local UnitPowerMax = _G.UnitPowerMax
+local UnitPowerType = _G.UnitPowerType
+local UnitStagger = _G.UnitStagger
+
+local STAGGER_YELLOW_TRANSITION
+local STAGGER_RED_TRANSITION
+local STAGGER_GREEN_INDEX
+local STAGGER_YELLOW_INDEX
+local STAGGER_RED_INDEX
+
+local _, playerClass = UnitClass("player")
+
+local ENGINE_LEGION = Engine:IsBuild("Legion")
+local ENGINE_MOP = Engine:IsBuild("MoP")
+local ENGINE_CATA = Engine:IsBuild("Cata")
+
+if ENGINE_MOP then
+	-- percentages at which the bar should change color
+	STAGGER_YELLOW_TRANSITION = _G.STAGGER_YELLOW_TRANSITION
+	STAGGER_RED_TRANSITION = _G.STAGGER_RED_TRANSITION
+
+	-- table indices of bar colors
+	STAGGER_GREEN_INDEX = _G.STAGGER_GREEN_INDEX or 1
+	STAGGER_YELLOW_INDEX = _G.STAGGER_YELLOW_INDEX or 2
+	STAGGER_RED_INDEX = _G.STAGGER_RED_INDEX or 3
+end
+
+local _SECONDARY_RESOURCE_NAME = "MANA"
+local _SECONDARY_RESOURCE_TOKEN = SPELL_POWER_MANA
 
 
-Update = function(self, event, ...)
+local playerSpec
+local UpdateSpec = function(Self, event, ...)
+	local spec = GetSpecialization()
+
+end
+
+local Update = function(self, event, ...)
 	local Power = self.Power
 	local Mana = self.Mana
 
@@ -37,11 +74,11 @@ Update = function(self, event, ...)
 			powermax = 0
 		end
 
-		local object_type = Power:GetObjectType()
+		local objectType = Power:GetObjectType()
 
-		if object_type == "Orb" then
-			local multi_color = powerType and C.Orb[powerType] 
-			local single_color = powerType and C.Power[powerType] or C.Power.UNUSED
+		if objectType == "Orb" then
+			local colorMulti = powerType and C.Orb[powerType] 
+			local colorSingle = powerType and C.Power[powerType] or C.Power.UNUSED
 
 			if Power.powerType ~= powerType then
 				Power:Clear() -- forces the orb to empty, for a more lively animation on power/form changes
@@ -51,17 +88,17 @@ Update = function(self, event, ...)
 			Power:SetMinMaxValues(0, powermax)
 			Power:SetValue(power)
 			
-			if multi_color then
+			if colorMulti then
 				for i = 1,4 do
-					Power:SetStatusBarColor(unpack(multi_color[i]))
+					Power:SetStatusBarColor(unpack(colorMulti[i]))
 				end
 			else
 				--for i = 1,4 do
-					Power:SetStatusBarColor(unpack(single_color))
+					Power:SetStatusBarColor(unpack(colorSingle))
 				--end
 			end
 
-		elseif object_type == "StatusBar" then
+		elseif objectType == "StatusBar" then
 			local color = powerType and C.Power[powerType] or C.Power.UNUSED
 			if Power.powerType ~= powerType then
 				Power.powerType = powerType
@@ -90,9 +127,9 @@ Update = function(self, event, ...)
 				if Power.Value.showDeficit then
 					if Power.Value.showPercent then
 						if Power.Value.showMaximum then
-							Power.Value:SetFormattedText("%s / %s - %d%%", F.Short(powermax - power), F.Short(powermax), floor(power/powermax * 100))
+							Power.Value:SetFormattedText("%s / %s - %d%%", F.Short(powermax - power), F.Short(powermax), math_floor(power/powermax * 100))
 						else
-							Power.Value:SetFormattedText("%s / %d%%", F.Short(powermax - power), floor(power/powermax * 100))
+							Power.Value:SetFormattedText("%s / %d%%", F.Short(powermax - power), math_floor(power/powermax * 100))
 						end
 					else
 						if Power.Value.showMaximum then
@@ -104,9 +141,9 @@ Update = function(self, event, ...)
 				else
 					if Power.Value.showPercent then
 						if Power.Value.showMaximum then
-							Power.Value:SetFormattedText("%s / %s - %d%%", F.Short(power), F.Short(powermax), floor(power/powermax * 100))
+							Power.Value:SetFormattedText("%s / %s - %d%%", F.Short(power), F.Short(powermax), math_floor(power/powermax * 100))
 						else
-							Power.Value:SetFormattedText("%s / %d%%", F.Short(power), floor(power/powermax * 100))
+							Power.Value:SetFormattedText("%s / %d%%", F.Short(power), math_floor(power/powermax * 100))
 						end
 					else
 						if Power.Value.showMaximum then
@@ -125,8 +162,8 @@ Update = function(self, event, ...)
 	end
 
 	if Mana then
-		local mana = UnitPower(unit, SPELL_POWER_MANA)
-		local manamax = UnitPowerMax(unit, SPELL_POWER_MANA)
+		local mana = UnitPower(unit, _SECONDARY_RESOURCE_TOKEN)
+		local manamax = UnitPowerMax(unit, _SECONDARY_RESOURCE_TOKEN)
 
 		if powerType == "MANA" or manamax == 0 then
 			Mana:Hide()
@@ -136,26 +173,26 @@ Update = function(self, event, ...)
 				manamax = 0
 			end
 
-			local object_type = Mana:GetObjectType()
+			local objectType = Mana:GetObjectType()
 
-			if object_type == "Orb" then
-				local multi_color = C.Orb.MANA 
-				local single_color = C.Power.MANA or C.Power.UNUSED
+			if (objectType == "Orb") then
+				local colorMulti = C.Orb.MANA 
+				local colorSingle = C.Power.MANA or C.Power.UNUSED
 
 				Mana:SetMinMaxValues(0, manamax)
 				Mana:SetValue(mana)
 				
-				if multi_color then
+				if colorMulti then
 					for i = 1,4 do
-						Mana:SetStatusBarColor(unpack(multi_color[i]))
+						Mana:SetStatusBarColor(unpack(colorMulti[i]))
 					end
 				else
 					for i = 1,4 do
-						Mana:SetStatusBarColor(unpack(single_color))
+						Mana:SetStatusBarColor(unpack(colorSingle))
 					end
 				end
 
-			elseif object_type == "StatusBar" then
+			elseif (objectType == "StatusBar") then
 				local color = C.Power.MANA or C.Power.UNUSED
 
 				Mana:SetMinMaxValues(0, manamax)
@@ -198,7 +235,7 @@ local Enable = function(self)
 		if Power.frequent or Mana.frequent then
 			self:EnableFrequentUpdates("Power", Power.frequent or Mana.frequent)
 		else
-			if Engine:IsBuild("Cata") then
+			if ENGINE_CATA then
 				self:RegisterEvent("UNIT_POWER", Update)
 				self:RegisterEvent("UNIT_MAXPOWER", Update)
 			else
@@ -216,6 +253,16 @@ local Enable = function(self)
 			end
 			self:RegisterEvent("PLAYER_ENTERING_WORLD", Update)
 		end
+
+		-- We want to track these events regardless of wheter or not we're using frequent updates
+		if (playerClass == "MONK") then
+			self:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateSpec)
+			self:RegisterEvent("CHARACTER_POINTS_CHANGED", UpdateSpec)
+			self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", UpdateSpec)
+			self:RegisterEvent("PLAYER_TALENT_UPDATE", UpdateSpec)
+
+			UpdateSpec(self)
+		end
 	end
 end
 
@@ -224,9 +271,12 @@ local Disable = function(self)
 	local Mana = self.Mana
 	if Power or Mana then
 		if not (Power.frequent or Mana.frequent) then
-			if Engine:IsBuild("Cata") then
+			if ENGINE_CATA then
 				self:UnregisterEvent("UNIT_POWER", Update)
 				self:UnregisterEvent("UNIT_MAXPOWER", Update)
+
+				if ENGINE_MOP then
+				end
 			else
 				self:UnregisterEvent("UNIT_MANA", Update)
 				self:UnregisterEvent("UNIT_RAGE", Update)

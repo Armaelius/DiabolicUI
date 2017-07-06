@@ -4,6 +4,7 @@ local UnitFrameWidget = Module:SetWidget("Unit: Focus")
 
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
+local C = Engine:GetStaticConfig("Data: Colors")
 
 -- Lua API
 local tostring = tostring
@@ -11,7 +12,51 @@ local unpack, pairs = unpack, pairs
 local tinsert, tconcat = table.insert, table.concat
 
 -- WoW API
-local CreateFrame = CreateFrame
+local CreateFrame = _G.CreateFrame
+local UnitClass = _G.UnitClass
+local UnitIsEnemy = _G.UnitIsEnemy
+local UnitIsFriend = _G.UnitIsFriend
+local UnitIsPlayer = _G.UnitIsPlayer
+local UnitIsTapDenied = _G.UnitIsTapDenied
+local UnitPlayerControlled = _G.UnitPlayerControlled
+local UnitReaction = _G.UnitReaction
+
+local postUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavailable)
+
+	local r, g, b
+	if (not isUnavailable) then
+		if UnitIsPlayer(unit) then
+			local _, class = UnitClass(unit)
+			r, g, b = unpack(class and C.Class[class] or C.Class.UNKNOWN)
+		elseif UnitPlayerControlled(unit) then
+			if UnitIsFriend(unit, "player") then
+				r, g, b = unpack(C.Reaction[5])
+			elseif UnitIsEnemy(unit, "player") then
+				r, g, b = unpack(C.Reaction[1])
+			else
+				r, g, b = unpack(C.Reaction[4])
+			end
+		elseif (not UnitIsFriend(unit, "player")) and UnitIsTapDenied(unit) then
+			r, g, b = unpack(C.Status.Tapped)
+		elseif UnitReaction(unit, "player") then
+			r, g, b = unpack(C.Reaction[UnitReaction(unit, "player")])
+		else
+			r, g, b = unpack(C.Orb.HEALTH[1])
+		end
+	elseif (isUnavailable == "dead") or (isUnavailable == "ghost") then
+		r, g, b = unpack(C.Status.Dead)
+	elseif (isUnavailable == "offline") then
+		r, g, b = unpack(C.Status.Disconnected)
+	end
+
+	if r then
+		if not((r == health.r) and (g == health.g) and (b == health.b)) then
+			health:SetStatusBarColor(r, g, b)
+			health.r, health.g, health.b = r, g, b
+		end
+	end
+
+end
 
 local UpdateLayers = function(self)
 	if self:IsMouseOver() then
@@ -74,6 +119,7 @@ local Style = function(self, unit)
 	Health:SetPoint(unpack(config.health.position))
 	Health:SetStatusBarTexture(config.health.texture)
 	Health.frequent = 1/120
+	Health.PostUpdate = postUpdateHealth
 
 	
 	-- Power

@@ -1,6 +1,9 @@
 local ADDON, Engine = ...
 local L = Engine:GetLocale()
 
+-- Uncomment when the saved settings bug out,
+-- or just to reset the saved settings.
+--local DEVELOPER_RESET = true
 
 -------------------------------------------------------------
 -- Lua API
@@ -95,6 +98,7 @@ local scale = {} -- screen resolution and UI scale data (not used?)
 
 local keyWords = {} -- keyword registry to translate words to frame handles used for anchoring or parenting
 
+local incompats = {} -- table holding module/widget/handler incompatibilities
 
 -------------------------------------------------------------
 -- Flags and other values meant to be read-only
@@ -111,17 +115,20 @@ local DEFAULT_MODULE_PRIORITY = "NORMAL" -- default load priority for new module
 local KEYWORD_DEFAULT -- default keyword used as a fallback. this will not be user editable.
 
 -- Expansion and patch to game client build translation table
--- *Changed from the original full list to only registering relevant client versions.
+-- *Changed from the original full list to only include relevant client versions.
+-- *source: http://wow.gamepedia.com/Public_client_builds
 local GAME_VERSIONS_TO_BUILD = {
+	["The Burning Crusade"] 		=  8606, 	["TBC"] 	=  8606, 	["2.4.3"] 	=  8606,
 	["Wrath of the Lich King"] 		= 12340, 	["WotLK"]	= 12340, 	["3.3.5a"] 	= 12340,
 	["Cataclysm"] 					= 15595, 	["Cata"] 	= 15595, 	["4.3.4"] 	= 15595,
 	["Mists of Pandaria"] 			= 18414, 	["MoP"] 	= 18414, 	["5.4.8"] 	= 18414,
 	["Warlords of Draenor"] 		= 20779, 	["WoD"] 	= 20779, 	["6.2.3"] 	= 20779, 
 																		["6.2.3a"] 	= 21742,
-	["Legion"] 						= 22410, 							["7.0.3"] 	= 22410, -- 22594 on wowpedia?
+	["Legion"] 						= 23420, 							["7.0.3"] 	= 22410, 
 																		["7.1.0"] 	= 22578,
-																		["7.1.5"] 	= 23360, -- PTR was 23138
-																		["7.2.0"] 	= 23436 -- current PTR build
+																		["7.1.5"] 	= 23420, 
+																		["7.2.0"] 	= 24015,
+																		["7.2.5"] 	= 24367
 }
 
 -- Much faster lookup table to determine if we're at 
@@ -135,7 +142,7 @@ do
 	for version, build in pairs(GAME_VERSIONS_TO_BUILD) do
 		local isBuild = BUILD >= build
 		CLIENT_IS_GAME_VERSION[version] = isBuild 
-		CLIENT_IS_GAME_VERSION[tostring(build)] = isBuild 
+		CLIENT_IS_GAME_VERSION[build] = isBuild 
 		CLIENT_IS_GAME_VERSION[tostring(build)] = isBuild 
 	end
 end
@@ -236,7 +243,7 @@ end
 -- Embed source methods into target.
 local embed = function(target, source)
 	for i,v in pairs(source) do
-		if type(v) == "function" then
+		if (type(v) == "function") then
 			target[i] = v
 		end
 	end
@@ -249,8 +256,8 @@ local copyTable
 copyTable = function(source, target)
 	local new = target or {}
 	for i,v in pairs(source) do
-		if type(v) == "table" then
-			if new[i] and type(new[i] == "table") then
+		if (type(v) == "table") then
+			if (new[i] and (type(new[i]) == "table")) then
 				new[i] = copyTable(source[i], new[i]) 
 			else
 				new[i] = copyTable(source[i])
@@ -688,11 +695,12 @@ end
 -------------------------------------------------------------
 
 Engine.ParseSavedVariables = function(self)
-	--[[
-
 	-- Fix format changes during development. 
-	wipe(DiabolicUI_DB) 
+	if DEVELOPER_RESET then
+		wipe(DiabolicUI_DB) 
+	end
 
+	--[[
 	-- Fix broken saved settings during development. 
 	for name,data in pairs(DiabolicUI_DB) do
 		for i,v in pairs(DiabolicUI_DB[name]) do
@@ -701,7 +709,6 @@ Engine.ParseSavedVariables = function(self)
 			end
 		end
 	end
-
 	]]--
 	
 	-- Merge and/or overwrite current configs with stored settings.
@@ -936,7 +943,10 @@ local Update = function(self, event, ...)
 end
 
 local Init = function(self, ...)
-	if not initializedObjects[self] then 
+	if self:IsIncompatible() then
+		return
+	end
+	if (not initializedObjects[self]) then 
 		initializedObjects[self] = true
 		if self.OnInit then
 			return self:OnInit(...)
@@ -945,11 +955,15 @@ local Init = function(self, ...)
 end
 
 local Enable = function(self, ...)
-	if not enabledObjects[self] then 
+	if self:IsIncompatible() then
+		return
+	end
+	if (not enabledObjects[self]) then 
 		enabledObjects[self] = true
 		if self.OnEnable then
-			return self:OnEnable(...)
+			self:OnEnable(...)
 		end
+		return
 	end
 end
 
@@ -988,6 +1002,48 @@ local GetModule = function(self, name, silent)
 	end
 end
 
+local IsIncompatible = function(self)
+	if (not incompats[self]) then
+		return false
+	end
+	for addonName, condition in pairs(incompats[self]) do
+		if (type(condition) == "function") then
+			if Engine:IsAddOnEnabled(addonName) then
+				return condition(self)
+			end
+		else
+			if Engine:IsAddOnEnabled(addonName) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local SetIncompatible = function(self, ...)
+	if (not incompats[self]) then
+		incompats[self] = {}
+	end
+	local numArgs = select("#", ...)
+	local currentArg = 1
+
+	while currentArg <= numArgs do
+		local addonName = select(currentArg, ...)
+		self:Check(addonName, currentArg, "string")
+
+		local condition
+		if (numArgs > currentArg) then
+			local nextArg = select(currentArg + 1, ...)
+			if (type(nextArg) == "function") then
+				condition = nextArg
+				currentArg = currentArg + 1
+			end
+		end
+		currentArg = currentArg + 1
+		incompats[self][addonName] = condition and condition or true
+	end
+end
+
 -- core object that all inherits from
 local corePrototype = {
 	Check = check,
@@ -1001,6 +1057,8 @@ local corePrototype = {
 	UnregisterMessage = UnregisterMessage,
 	IsEventRegistered = IsEventRegistered,
 	IsMessageRegistered = IsMessageRegistered,
+	SetIncompatible = SetIncompatible,
+	IsIncompatible = IsIncompatible,
 	SendMessage = Fire,
 	GetHandler = GetHandler,
 	GetModule = GetModule,
@@ -1465,16 +1523,16 @@ Engine.NewModule = function(self, name, loadPriority, makeUnsecure)
 end
 
 -- perform a function or method on all registered modules
-Engine.ForAll = function(self, func, priority_filter, ...) 
+Engine.ForAll = function(self, func, priorityFilter, ...) 
 	self:Check(func, 1, "string", "function")
-	self:Check(func, 2, "string", "nil")
+	self:Check(priorityFilter, 2, "string", "nil")
 
 	-- if a valid priority filter is set, only modules of that given priority will be called
-	if priority_filter then
-		if not PRIORITY_HASH[priority_filter] then
-			return error(L["Bad argument #%d to '%s': The load priority '%s' is invalid! Valid priorities are: %s"]:format(2, "ForAll", priority_filter, table_concat(PRIORITY_INDEX, ", ")))
+	if priorityFilter then
+		if (not PRIORITY_HASH[priorityFilter]) then
+			return error(L["Bad argument #%d to '%s': The load priority '%s' is invalid! Valid priorities are: %s"]:format(2, "ForAll", priorityFilter, table_concat(PRIORITY_INDEX, ", ")))
 		end
-		for name,module in pairs(moduleLoadPriority[priority_filter]) do
+		for name,module in pairs(moduleLoadPriority[priorityFilter]) do
 			if type(func) == "string" then
 				if module[func] then
 					--protected_call(module[func], module, ...)
@@ -1522,7 +1580,7 @@ do
 	local currentPixelScale = 1 -- initial pixel scale of the UICenter frame 
 	local screenPixelWidth, screenPixelHeight -- on-screen pixel size of the frame
 
-	-- Returns the current game resolution
+	-- Returns the current game resolution -- /run print(({GetScreenResolutions(tonumber(GetCVar("gxMonitor")))})[GetCurrentResolution(tonumber(GetCVar("gxMonitor")))])
 	UICenter.GetResolution = function(self)
 		local resolution
 		if Engine:IsBuild("Legion") then
@@ -1568,8 +1626,12 @@ do
 		-- The UI was designed for FHD 1920x1080, 
 		-- so we're scaling to more or less maintain that look,
 		-- in both higher and lower resolutions.
+		--
+		-- 
 		if (aspectRatio >= 1.6) then
 			if (viewPortWidth or screenWidth) >= 7680 then
+				HD_MODIFIER = 4
+			elseif (viewPortWidth or screenWidth) >= 7680 then
 				HD_MODIFIER = 4
 			elseif (viewPortWidth or screenWidth) >= 3840 then
 				HD_MODIFIER = 2
@@ -1842,15 +1904,16 @@ Engine.Init = function(self, event, ...)
 		LoadAddOn("Blizzard_ObjectiveTracker")
 	end
 
-	-- initialize all handlers here
+	-- Initialize all handlers here.
+	-- They will not be optional.
 	for name, handler in pairs(handlers) do
 		handler:Enable()
 	end
 
 	-- Cache up shortcuts to some select handlers
 	-- we want modules to gain access to directly.
-	Orb = self:GetHandler("Orb")
-	StatusBar = self:GetHandler("StatusBar")
+	Orb 		= self:GetHandler("Orb")
+	StatusBar 	= self:GetHandler("StatusBar")
 	
 	-- register UI scaling events
 	self:RegisterEvent("UI_SCALE_CHANGED", "UpdateScale")
@@ -1858,12 +1921,12 @@ Engine.Init = function(self, event, ...)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateScale")
 	self:RegisterEvent("CINEMATIC_STOP", "UpdateScale")
 
-	if VideoOptionsFrameApply then
-		VideoOptionsFrameApply:HookScript("OnClick", function() Engine:UpdateScale("VideoOptionsFrameApply") end)
+	if _G.VideoOptionsFrameApply then
+		_G.VideoOptionsFrameApply:HookScript("OnClick", function() Engine:UpdateScale("VideoOptionsFrameApply") end)
 	end
 
-	if VideoOptionsFrameOkay then
-		VideoOptionsFrameOkay:HookScript("OnClick", function() Engine:UpdateScale("VideoOptionsFrameOkay") end)
+	if _G.VideoOptionsFrameOkay then
+		_G.VideoOptionsFrameOkay:HookScript("OnClick", function() Engine:UpdateScale("VideoOptionsFrameOkay") end)
 	end
 
 	-- initial UI scale update
@@ -1893,14 +1956,14 @@ Engine.Init = function(self, event, ...)
 	initializedObjects[self] = true
 	
 	-- this could happen on WotLK clients
-	if IsLoggedIn() and not self:IsEnabled() then
+	if IsLoggedIn() and (not self:IsEnabled()) then
 		self:Enable()
 	end
 end
 
 -- called after the player has logged in
 Engine.Enable = function(self, event, ...)
-	if not self:IsInitialized() then
+	if (not self:IsInitialized()) then
 		-- Since the :Init() procedure will call this function, 
 		-- we need to return to avoid duplicate calls
 		return self:Init("Forced", ADDON)
@@ -1913,6 +1976,9 @@ Engine.Enable = function(self, event, ...)
 
 	-- This happens sometimes on the very first login 
 	-- on chars without saved settings in WTF in WotLK.
+	-- As both handlers and modules rely on this event,
+	-- we need to fire it once manually to make 
+	-- sure everything starts as intended.
 	if queueWorldEnterEvent then
 		self:Fire("PLAYER_ENTERING_WORLD")
 	end
@@ -2015,3 +2081,19 @@ Engine:RegisterEvent("PLAYER_LEAVING_WORLD", "UpdateOffWorld")
 -- apply scripts to our event/update frame
 Frame:SetScript("OnEvent", OnEvent)
 Frame:SetScript("OnUpdate", OnUpdate)
+
+--[[ 
+-- Dim down the world's brightness
+if false then
+	local dimmer = WorldFrame:CreateTexture(nil, "BORDER")
+	dimmer:SetAllPoints()
+	dimmer:SetColorTexture(0,0,0,.25)
+end
+
+-- Warm the world up a bit
+if false then
+	local warmer = WorldFrame:CreateTexture(nil, "BORDER")
+	warmer:SetAllPoints()
+	warmer:SetColorTexture((.3 + .5*73/255) *.75, (.3 + .5*25/255) *.75, (.3 + .5*9/255) *.75, .25)
+end
+]]--

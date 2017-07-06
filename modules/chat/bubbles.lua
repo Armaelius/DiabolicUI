@@ -2,6 +2,9 @@ local Addon, Engine = ...
 local Module = Engine:NewModule("ChatBubbles")
 local UICenter = Engine:GetFrame()
 
+-- Allow the user to use the stand-alone instead
+Module:SetIncompatible("NiceBubbles")
+
 -- Lua API
 local _G = _G
 
@@ -14,13 +17,27 @@ local tostring = tostring
 
 -- WoW API
 local CreateFrame = _G.CreateFrame
+local IsInInstance = _G.IsInInstance
+local SetCVar = _G.SetCVar
 local WorldFrame = _G.WorldFrame
 
-local bubbles = {}
+-- Client Constants
+local ENGINE_LEGION = Engine:IsBuild("Legion")
+local ENGINE_LEGION_720 = Engine:IsBuild("7.2.0")
+local ENGINE_LEGION_725 = Engine:IsBuild("7.2.5")
+
+-- Bubble Data
+local bubbles = {} -- local bubble registry
 local fontsize = 12
-local numChildren, numBubbles = -1, 0
+local numChildren, numBubbles = -1, 0 -- bubble counters
+
+local minsize, maxsize, fontsize = 12, 16, 12 -- bubble font size
+local offsetX, offsetY = 0, -100 -- bubble offset from its original position
+
+-- Textures
 local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]]
 local BUBBLE_TEXTURE = [[Interface\Tooltips\ChatBubble-Background]]
+local TOOLTIP_BORDER = [[Interface\Tooltips\UI-Tooltip-Border]]
 
 local getPadding = function()
 	return fontsize / 1.2
@@ -34,7 +51,7 @@ end
 local getBackdrop = function(scale) 
 	return {
 		bgFile = BLANK_TEXTURE,  
-		edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], 
+		edgeFile = TOOLTIP_BORDER, 
 		edgeSize = 16 * scale,
 		insets = {
 			left = 2.5 * scale,
@@ -54,7 +71,18 @@ local Updater = Engine:CreateFrame("Frame", nil, WorldFrame)
 Updater:SetFrameStrata("TOOLTIP")
 
 -- check whether the given frame is a bubble or not
-Updater.IsBubble = function(self, bubble)
+Updater.IsBubble = ENGINE_LEGION_720 and function(self, bubble)
+	if (bubble.IsForbidden and bubble:IsForbidden()) then
+		return 
+	end
+	local name = bubble.GetName and bubble:GetName()
+	local region = bubble.GetRegions and bubble:GetRegions()
+	if name or not region then 
+		return 
+	end
+	local texture = region.GetTexture and region:GetTexture()
+	return texture and texture == BUBBLE_TEXTURE
+end or function(self, bubble)
 	local name = bubble.GetName and bubble:GetName()
 	local region = bubble.GetRegions and bubble:GetRegions()
 	if name or not region then 
@@ -205,11 +233,28 @@ Module.OnInit = function(self, event, ...)
 	
 	-- give the updater a reference to the bubble parent
 	self.Updater.BubbleBox = self.BubbleBox
+	
+	-- Just kill off the chat bubbles within instances in 7.2.5, 
+	-- as these have become forbidden to change.  
+	-- The original Blizzard bubbles are screen covering spam, and suck.
+	if ENGINE_LEGION_725 then
+		self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateBubbleDisplay")
+	end
+end
 
+Module.UpdateBubbleDisplay = function(self)
+	local _, instanceType = IsInInstance()
+	if (instanceType == "none") then
+		SetCVar("chatBubbles", 1)
+		self.Updater:SetScript("OnUpdate", self.Updater.OnUpdate)
+	else
+		self.Updater:SetScript("OnUpdate", nil)
+		SetCVar("chatBubbles", 0) 
+	end
 end
 
 Module.OnEnable = function(self, event, ...)
-	self.Updater:SetScript("OnUpdate", self.Updater.OnUpdate)
+	self:UpdateBubbleDisplay()
 	self.BubbleBox:Show()
 	for bubble in pairs(bubbles) do
 		self.Updater:HideBlizzard(bubble)
@@ -217,7 +262,7 @@ Module.OnEnable = function(self, event, ...)
 end
 
 Module.OnDisable = function(self)
-	self.Updater:SetScript("OnUpdate", nil)
+	self:UpdateBubbleDisplay()
 	self.BubbleBox:Hide()
 	for bubble in pairs(bubbles) do
 		self.Updater:ShowBlizzard(bubble)

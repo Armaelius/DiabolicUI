@@ -46,17 +46,16 @@ Module.UpdateAnchors = function(self)
 	
 	-- parse mirror timers	
 	for frame,timer in pairs(timers) do
+		frame:ClearAllPoints() -- clear points of hidden too
 		if frame:IsShown() then
 			table_insert(order, timer) -- only include visible timers
-			frame:ClearAllPoints()
 		end
 	end	
 	
 	-- sort and arrange visible timers
 	if #order > 0 then
 		table_sort(order, sort) -- sort by type -> id
-		order[1].frame:SetPoint(unpack(config.position))
-
+		order[1].frame:SetPoint(unpack(self.captureBarVisible and config.position or config.positionOffsetByOne))
 		if #order > 1 then
 			for i = 2, #order do
 				order[i].frame:SetPoint("CENTER", order[i-1].frame, "CENTER", 0, -config.padding)
@@ -79,7 +78,7 @@ Module.Skin = function(self, frame)
 	timer.bar:SetFrameLevel(timer.frame:GetFrameLevel() - 5)
 
 	if (not timer.backdrop) then
-		timer.backdrop = CreateFrame("Frame", nil, timer.frame)
+		timer.backdrop = CreateFrame("Frame", nil, timer.bar) -- connecting to the bar instead of the frame, since the frame remains visible
 		timer.backdrop:SetAllPoints()
 		timer.backdrop:SetFrameLevel(timer.frame:GetFrameLevel() - 10)
 		timer.backdrop.texture = timer.backdrop:CreateTexture()
@@ -91,7 +90,7 @@ Module.Skin = function(self, frame)
 
 	if (not timer.spark) then
 		timer.spark = timer.bar:CreateTexture()
-		timer.spark:SetDrawLayer("OVERLAY")
+		timer.spark:SetDrawLayer("ARTWORK") -- reduced from "OVERLAY" to get behind the border texture
 		timer.spark:SetPoint("CENTER", timer.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 		timer.spark:SetSize(config.spark_size[1], timer.bar:GetHeight() + 2)
 		timer.spark:SetTexture(config.spark_texture)
@@ -108,7 +107,7 @@ Module.MirrorTimer_Show = function(self, timer, value, maxvalue, scale, paused, 
 	local timers = self.timers
 	for i = 1, MIRRORTIMER_NUMTIMERS do
 		local frame = _G["MirrorTimer"..i]
-		if frame and not timers[frame] then
+		if frame and (not timers[frame]) then
 			timers[frame] = {}
 			timers[frame].frame = frame
 			timers[frame].bar = _G[frame:GetName().."StatusBar"]
@@ -132,7 +131,7 @@ Module.StartTimer_OnShow = function(self, frame)
 	local timers = self.timers
 	for i = 1, #TimerTracker.timerList do
 		local frame = TimerTracker.timerList[i]
-		if frame and not timers[frame] then
+		if frame and (not timers[frame]) then
 			timers[frame] = {}
 			timers[frame].frame = frame
 			timers[frame].bar = _G[frame:GetName().."StatusBar"] or frame.bar
@@ -146,6 +145,14 @@ Module.StartTimer_OnShow = function(self, frame)
 	self:UpdateAnchors()
 end
 
+Module.CaptureBarVisible = function(self)
+	self.captureBarVisible = true
+end
+
+Module.CaptureBarHidden = function(self)
+	self.captureBarVisible = nil
+end
+
 Module.OnInit = function(self)
 	self.config = self:GetStaticConfig("Blizzard").mirrortimers
 	self.timers = {}
@@ -157,5 +164,14 @@ Module.OnInit = function(self)
 	if StartTimer_OnShow then
 		hooksecurefunc("StartTimer_OnShow", function(...) self:StartTimer_OnShow(...) end)
 	end
+
+	self:RegisterMessage("ENGINE_CAPTUREBAR_VISIBLE", "CaptureBarVisible")
+	self:RegisterMessage("ENGINE_CAPTUREBAR_HIDDEN", "CaptureBarHidden")
+
+	-- Battleground start countdown timers aren't properly aligned,
+	-- so I'm trying to figure out the right event to hook into.
+	-- If these don't work, I'll have to dive into the Blizz code and see.
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateAnchors")
+	self:RegisterEvent("START_TIMER", "UpdateAnchors")
 end
 

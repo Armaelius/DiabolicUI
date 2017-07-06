@@ -4,15 +4,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [1.2.33] 2017-07-06
 ### Added
-- Added PvP Capture Bars.
-- Added WorldState info (Battleground scores, World PvP score, dungeon waves, etc) to the minimap. 
-- Added a new point based resource system for all classes using such. This also fixes the Rogue combo point bugs.  
-- Added timers to timed quests in the custom objectives tracker.
+- Added PvP Capture Bars. Tested in both outdoors PvP and all battlegrounds that have them.
+- Added a Legion Artifact bar that replaces the XP bar for level 110 players. 
+- Added new internal methods to allow modules to register themselves as incompatible with other addons, to simplify my process of automatically disabling a module based on whether or not the given addons are installed and marked as enabled in the addon listing. 
 
 ### Changed
-- Side actionbars have changed layout and position, and won't interfere with the quest tracker anymore.
+- The pet actionbar have been repositioned above the standard actionbars.
+- The pet actionbar has a temporary (but viable) placeholder backdrop that will be replaced by a custom one later on.
+- Side actionbars have changed layout and position, and are now located next to the angel- and demon statues. 
+- Side actionbars now hides the grid/backdrop of empty buttons, to look less cluttered on-screen.
+- The backdrops/grids of empty buttons on the side bar and the pet bar will now also become visible when holding the Alt+Ctrl+Shift modifier combination down. This is the same combination that allows you to drag/remove spells and abilities from your action buttons. 
+- The actionbars and actionbuttons now have their own handlers, available to all modules.
+- Actionbutton keybind locales have been moved away from the action button handler and into the global locale files. 
+- Created a unified system for "floating" actionbuttons like the ExtraActionButton, Draenor and Legion zone abilities, our StanceBar togglebutton, Vehicle and Taxi exit buttons, and probably several more to come in the future. The idea is to have all of these handled by a single template, and put into a single smart bar. Clean up the mess! I'm planning to add a Fishing Button like the one in Goldpaw's UI into this system. :)
+- Started the work separating secure actionbar drivers into a more hidden backend, and artwork callbacks into a more user oriented space.
+- Started the work rewriting the many artwork updates in the UI, with a more unified future artwork callback system in mind.
+- Changed how debuffs are tracked on enemy frames. Only debuffs actually cast by the player should be shown now, and not debuffs the player has the ability to cast as previously, which led to damage buffs from other people of the same class being shown also. Note that a fully custom filter list is planned, as neither of these solutions are optimal. An example would be when we wish to apply our own DoTs, but may not wish to apply damage modifiers already present on the target, as this would waste our own resources and lower the overall group DPS. TO BE CONTINUED!
+- Toned down the opacity of friendly NPC nameplates, to better focus players and hostiles. Planning to expand on this system later on to make it more intelligent and adjust itself based on the current situation, meaning if we're solo, in a PvP instance, a PvE instance, and so on.
+- The nameplate module now disables itself if TidyPlates is enabled. The new auto-disable system mentioned in this update's additions was used. 
+- The Blizzard TalkingHeadFrame has been moved farther up the screen, not overlapping the actionbars anymore. I chose to keep the talking head frame in the UI, even though it contradicts my design vision of less spam. In Legion the talking head can be really helpful when entering a world quest area. Plus, WoW-Freaks is using it for their own in-game announcements, so better keep it around for that. :) 
+
+### Fixed
+- Fixed a bug that would sometime cause Blizzard tooltips to be styled twice, and get multiple health values layered on top of each other.
+- Fixed an issue with vehicles that would sometimes result in an empty, hidden health orb.
+- Fixed an issue where the XP/Artifact bar would hover in mid-air while entering a vehicle, while the rest of the bars changed to vehicle layout. The XP/Artifact bar now instantly disappears upon starting the entering process, along with all the other unitframe and actionbar changes.
+- Fixed a bug that would cause a player ability from the main actionbar to picked up when trying to pick up a pet ability from the pet bar.
+- Fixed an issue in MoP clients and above that would leave the Blizzard background texture on the Group Finder Minimap button.
+- Fixed an issue in clients older than Legion where actionbuttons wouldn't be unsaturated while flying or using a taxi at login or reload.
+- Fixed the issue with the chat bubble module causing walls of errors when scanning the WorldFrame while being inside instances in Legion 7.2.0-7.2.5 (and beyond) by forcefully disabling turning off chat bubbles inside instances and stopping the chat bubble scanner. 
+
+### Removed
+- Completely disabled the Blizzard LevelUp display for all WoW client versions that had it. Enough with the on-screen spam. Too much is happening in WoW for all this arcade wannabe in-your-face explosive announcement shit to work. We will however add in our own BETTER system for this later on, and that system will function in all WoW client versions thus giving a more unified experience across expansions. 
+- Removed the DropDownList framelevel bug fix, as it was producing a "script ran too long" error.
 
 ## [1.1.32] 2017-03-06
 ### Changed

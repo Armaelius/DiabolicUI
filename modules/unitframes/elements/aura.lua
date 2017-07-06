@@ -163,9 +163,13 @@ local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster,
 -- It is however from a development point of view the easiest way to implement 
 -- identical behavior across the various expansions and patches.  
 
+-- Should be noted that the isCastByPlayer return value in Legion 
+-- returns true for all auras that the player CAN cast, even when cast by other players. 
+-- This makes it useless when trying to track our own damage debuffs on enemies. 
+
 local UnitAura = ENGINE_LEGION and function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
+	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end 
 
 or ENGINE_MOP and function(unit, i, filter)
@@ -176,19 +180,19 @@ end
 or ENGINE_CATA and function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitAura(unit, i, filter)
 	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((unit == "vehicle" and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
+		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end
 
 or function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitAura(unit, i, filter)
 	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
 		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((unit == "vehicle" and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
+		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end
 
 local UnitBuff = ENGINE_LEGION and function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
+	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end 
 
 or ENGINE_MOP and function(unit, i, filter)
@@ -199,19 +203,19 @@ end
 or ENGINE_CATA and function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitBuff(unit, i, filter)
 	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((unit == "vehicle" and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
+		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end
 
 or function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitBuff(unit, i, filter)
 	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
 		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((unit == "vehicle" and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
+		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end
 
 local UnitDebuff = ENGINE_LEGION and function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
+	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end 
 
 or ENGINE_MOP and function(unit, i, filter)
@@ -222,14 +226,14 @@ end
 or ENGINE_CATA and function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitDebuff(unit, i, filter)
 	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((unit == "vehicle" and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
+		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end
 
 or function(unit, i, filter)
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitDebuff(unit, i, filter)
 	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
 		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((unit == "vehicle" and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
+		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
 end
 
 

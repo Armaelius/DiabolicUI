@@ -1059,7 +1059,7 @@ Module.StyleTooltip = function(self, object)
 	
 	-- modify the health bar
 	local statusbar = _G[object:GetName().."StatusBar"]
-	if statusbar then
+	if statusbar and (not self.styled[object]) then
 		statusbar:ClearAllPoints()
 		statusbar:SetPoint("BOTTOMLEFT", object, "BOTTOMLEFT", -config.statusbar.offsets[1], -config.statusbar.offsets[4])
 		statusbar:SetPoint("BOTTOMRIGHT", object, "BOTTOMRIGHT", config.statusbar.offsets[2], -config.statusbar.offsets[4])
@@ -1079,8 +1079,15 @@ Module.StyleTooltip = function(self, object)
 	
 end
 
+Module.GetStyledCache = function(self)
+	if (not self.styled) then
+		self.styled = {}
+	end
+	return self.styled
+end
+
 Module.StyleDropDowns = function(self)
-	local styled = self.styled or {}
+	local styled = self:GetStyledCache()
 
 	local num = UIDROPDOWNMENU_MAXLEVELS
 	local num_styled = self.num_menus or 0
@@ -1105,7 +1112,7 @@ Module.StyleDropDowns = function(self)
 end
 
 Module.StyleMenus = function(self)
-	local styled = self.styled or {}
+	local styled = self:GetStyledCache()
 	
 	for i, name in ipairs(menus) do
 		local object = _G[name]
@@ -1117,7 +1124,7 @@ Module.StyleMenus = function(self)
 end
 
 Module.StyleTooltips = function(self)
-	local styled = self.styled or {}
+	local styled = self:GetStyledCache()
 	
 	for i, name in ipairs(tooltips) do
 		local object = _G[name]

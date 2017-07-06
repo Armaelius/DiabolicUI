@@ -346,6 +346,49 @@ local postUpdateAuraButton = function(self, button, ...)
 	end
 end
 
+local postUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavailable)
+
+	local r, g, b
+	if (not isUnavailable) then
+		if UnitIsPlayer(unit) then
+			local _, class = UnitClass(unit)
+			r, g, b = unpack(class and C.Class[class] or C.Class.UNKNOWN)
+		elseif UnitPlayerControlled(unit) then
+			if UnitIsFriend(unit, "player") then
+				r, g, b = unpack(C.Reaction[5])
+			elseif UnitIsEnemy(unit, "player") then
+				r, g, b = unpack(C.Reaction[1])
+			else
+				r, g, b = unpack(C.Reaction[4])
+			end
+		elseif (not UnitIsFriend(unit, "player")) and UnitIsTapDenied(unit) then
+			r, g, b = unpack(C.Status.Tapped)
+		elseif UnitReaction(unit, "player") then
+			r, g, b = unpack(C.Reaction[UnitReaction(unit, "player")])
+		else
+			r, g, b = unpack(C.Orb.HEALTH[1])
+		end
+	elseif (isUnavailable == "dead") or (isUnavailable == "ghost") then
+		r, g, b = unpack(C.Status.Dead)
+	elseif (isUnavailable == "offline") then
+		r, g, b = unpack(C.Status.Disconnected)
+	end
+
+	if r then
+		if not((r == health.r) and (g == health.g) and (b == health.b)) then
+			health:SetStatusBarColor(r, g, b)
+			health.r, health.g, health.b = r, g, b
+		end
+	end
+
+	if UnitAffectingCombat("player") then
+		health.Value:SetAlpha(1)
+	else
+		health.Value:SetAlpha(.7)
+	end
+
+end
+
 local Update = function(self, event, ...)
 	updateArtworkLayers(self)
 	classificationPostUpdate(self.Classification, self.unit)
@@ -441,17 +484,8 @@ local Style = function(self, unit)
 	health.Value.showPercent = true
 	health.Value.showDeficit = false
 	health.Value.showMaximum = false
+	health.PostUpdate = postUpdateHealth
 
-	health.PostUpdate = function(self)
-		local min, max = self:GetMinMaxValues()
-		local value = self:GetValue()
-		if UnitAffectingCombat("player") then
-			self.Value:SetAlpha(1)
-		else
-			self.Value:SetAlpha(.7)
-		end
-	end
-	
 	
 	-- Power
 	-------------------------------------------------------------------

@@ -7,6 +7,7 @@
 <Include file='maps\maps.xml'/>
 <Include file='nameplates\nameplates.xml'/>
 <Include file='objectives\objectives.xml'/>
+<Include file='tooltips\tooltips.xml'/>
 <Include file='unitframes\unitframes.xml'/>
 
 </Ui>

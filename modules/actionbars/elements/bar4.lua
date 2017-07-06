@@ -20,8 +20,29 @@ local NUM_ACTIONBAR_BUTTONS = NUM_ACTIONBAR_BUTTONS or 12
 BarWidget.OnEnable = function(self)
 	local config = Module.config
 	local db = Module.db
+	local bar_config = config.structure.bars.bar4
 
-	local Bar = Module:GetWidget("Template: Bar"):New(RIGHT_ACTIONBAR_PAGE, Module:GetWidget("Controller: Side"):GetFrame())
+	local Artwork = Module:GetWidget("Artwork")
+	local Bar = Module:GetHandler("ActionBar"):New(RIGHT_ACTIONBAR_PAGE, Module:GetWidget("Controller: Main"):GetFrame(), Artwork:GetBarTemplate())
+	Bar:SetFrameStrata("MEDIUM")
+	Bar:SetFrameLevel(20)
+	Bar:Place(unpack(bar_config.position))
+	Bar:SetAttribute("flyout_direction", bar_config.flyout_direction)
+	Bar:SetAttribute("growth_x", bar_config.growthX)
+	Bar:SetAttribute("growth_y", bar_config.growthY)
+	Bar:SetAttribute("growth", bar_config.growth)
+	Bar:SetAttribute("padding", bar_config.padding)
+	Bar.hideGrid = bar_config.hideGrid
+
+	for i = 0,2 do
+		local id = tostring(i)
+		Bar:SetAttribute("bar_width-"..id, bar_config.bar_size[id][1])
+		Bar:SetAttribute("bar_height-"..id, bar_config.bar_size[id][2])
+		if i > 0 then
+			Bar:SetAttribute("button_size-"..id, bar_config.buttonsize[id])
+		end
+	end
+	
 
 	--------------------------------------------------------------------
 	-- Buttons
@@ -29,11 +50,7 @@ BarWidget.OnEnable = function(self)
 
 	-- Spawn the action buttons
 	for i = 1,NUM_ACTIONBAR_BUTTONS do
-		-- Make sure the standard bars
-		-- get button IDs that reflect their actual actions
-		-- local button_id = (Bar.id - 1) * NUM_ACTIONBAR_BUTTONS + i
-		
-		local button = Bar:NewButton("action", i)
+		local button = Bar:NewButton("action", i, Artwork:GetButtonTemplate())
 		button:SetStateAction(0, "action", i)
 		for state = 1,14 do
 			button:SetStateAction(state, "action", (state - 1) * NUM_ACTIONBAR_BUTTONS + i)
@@ -100,13 +117,9 @@ BarWidget.OnEnable = function(self)
 	-- Register a proxy visibility driver
 	local visibility_driver = ENGINE_MOP and "[overridebar][possessbar][shapeshift]hide;[vehicleui]hide;show" or "[bonusbar:5]hide;[vehicleui]hide;show"
 	RegisterStateDriver(Bar, "vis", visibility_driver)
-	
-	-- Give the secure environment access to the current visibility macro, 
-	-- so it can check for the correct visibility when user enabling the bar!
-	Bar:SetAttribute("visibility-driver", visibility_driver)
 
 	local Visibility = Bar:GetParent()
-	Visibility:SetAttribute("_childupdate-set_numbars", [[
+	Visibility:SetAttribute("_childupdate-set_numsidebars", [[
 		local num = tonumber(message);
 		
 		-- update bar visibility
@@ -135,52 +148,72 @@ BarWidget.OnEnable = function(self)
 			
 			-- only change button size when bars are visible
 			if num > 0 then
-				-- update button size
 				local old_button_size = self:GetAttribute("old_button_size");
 				local button_size = self:GetAttribute("button_size-"..num);
-				local padding = self:GetAttribute("padding");
 
+				-- update button size
 				if old_button_size ~= button_size then
+					local padding = self:GetAttribute("padding"); 
+					local growth_x = self:GetAttribute("growth_x");
+					local growth_y = self:GetAttribute("growth_y");
+					local growth = self:GetAttribute("growth"); 
+
+					local columns = floor(bar_width / button_size); 
+					local rows = floor(bar_height / button_size);
+
 					for i = 1, self:GetAttribute("num_buttons") do
 						local Button = self:GetFrameRef("Button"..i);
 						Button:SetWidth(button_size);
 						Button:SetHeight(button_size);
 						Button:ClearAllPoints();
-						Button:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, -((i-1)*(button_size + padding)));
+
+						-- Just set some fallback values incase the attributes aren't defined
+						local anchor = "TOPRIGHT"; 
+						local x = 0;
+						local y = 0;
+						if growth_x == "RIGHT" then
+							x = 1; 
+							if growth_y == "UP" then
+								anchor = "BOTTOMLEFT"; 
+								y = 1;
+							elseif growth_y == "DOWN" then
+								anchor = "TOPLEFT"; 
+								y = -1;
+							end
+						elseif growth_x == "LEFT" then
+							x = -1;
+							if growth_y == "UP" then
+								anchor = "BOTTOMRIGHT";
+								y = 1;
+							elseif growth_y == "DOWN" then
+								anchor = "TOPRIGHT";
+								y = -1;
+							end
+						end
+
+						if i == 1 then
+							Button:SetPoint(anchor, self, anchor, 0, 0); 
+						else
+							if growth == "VERTICAL" then
+								local column = floor((i-1)/rows);
+								local row = mod(i-1, rows);
+								Button:SetPoint(anchor, self, anchor, x*(column)*(button_size + padding), y*(row)*(button_size + padding) );
+							elseif growth == "HORIZONTAL" then
+								local column = mod(i-1, columns);
+								local row = floor((i-1)/columns);
+								Button:SetPoint(anchor, self, anchor, x*(column)*(button_size + padding), y*(row)*(button_size + padding) );
+							end
+						end
 					end
 					self:SetAttribute("old_button_size", button_size);
 				end
+
 			end
 
 		]=], num);
 	]])
-
-
-	-- store bar settings
-	local bar_config = config.structure.bars.bar4
-	Bar:SetAttribute("flyout_direction", bar_config.flyout_direction)
-	Bar:SetAttribute("growth_x", bar_config.growthX)
-	Bar:SetAttribute("growth_y", bar_config.growthY)
-	Bar:SetAttribute("padding", bar_config.padding)
 	
-	local button_config = config.visuals.buttons
 
-	for i = 0,2 do
-		local id = tostring(i)
-		Bar:SetAttribute("bar_width-"..id, bar_config.bar_size[id][1])
-		Bar:SetAttribute("bar_height-"..id, bar_config.bar_size[id][2])
-		if i > 0 then
-			Bar:SetAttribute("button_size-"..id, bar_config.buttonsize[id])
-			Bar:SetStyleTableFor(bar_config.buttonsize[id], button_config[bar_config.buttonsize[id]])
-		end
-	end
-	
-	Bar:SetPoint("RIGHT", -bar_config.offset, 0)
-
-	-- for testing
-	--Bar:SetBackdrop({ bgFile = BLANK_TEXTURE })
-	--Bar:SetBackdropColor(1, 0, 0, .5)
-	
 	self.Bar = Bar
 	
 end

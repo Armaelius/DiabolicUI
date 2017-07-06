@@ -23,12 +23,20 @@ local Controller = Engine:CreateFrame("Frame")
 local Controller_MT = { __index = Controller }
 
 -- Saves settings when the number of bars are changed
-Controller.SaveSettings = function(self)
+Controller.SaveNumBars = function(self)
 	local db = self.db
 	if not db then
 		return
 	end
 	db.num_bars = tonumber(self:GetAttribute("numbars"))
+end
+
+Controller.SaveNumSideBars = function(self)
+	local db = self.db
+	if not db then
+		return
+	end
+	db.num_side_bars = tonumber(self:GetAttribute("numsidebars"))
 end
 
 Controller.InVehicle = function(self)
@@ -40,17 +48,10 @@ Controller.GetNumBars = function(self)
 	return tonumber(self:GetAttribute("numbars"))
 end
 
-
--- Proxy method called from the secure environment upon bar num changes and vehicles/possess
--- We could hook it to the custom message associated with it, but since it's within the same module
--- we do it by calling the correct method directly instead. 
-Controller.UpdateArtwork = function(self)
-	Module:UpdateArtwork()
+Controller.GetNumSideBars = function(self)
+	return tonumber(self:GetAttribute("numsidebars"))
 end
 
--- Send a message to other modules that the actionbar layout changed.
--- This is mainly meant for elements like the player auras which needs
--- to update their layout upon action bar changes. 
 Controller.UpdateLayout = function(self)
 	local state = tostring(self:GetAttribute("state-page"))
 	Module:SendMessage("ENGINE_ACTIONBAR_VEHICLE_CHANGED", (state == "possess") or (state == "vehicle")) -- arg1 == true means player has vehicleUI
@@ -61,8 +62,17 @@ end
 Controller.UpdateBarArtwork = function(self)
 	for i = 1,self:GetAttribute("numbars") do
 		local Bar = Module:GetWidget("Bar: "..i):GetFrame()
-		if Bar then
-			Bar:UpdateStyle()
+		if Bar and Bar.PostUpdate then
+			Bar:PostUpdate()
+		end
+	end
+end
+
+Controller.UpdateSideBarArtwork = function(self)
+	for i = 1,self:GetAttribute("numsidebars") do
+		local Bar = Module:GetWidget("Bar: "..(i+3)):GetFrame()
+		if Bar and Bar.PostUpdate then
+			Bar:PostUpdate()
 		end
 	end
 end
@@ -136,6 +146,7 @@ ControllerWidget.OnEnable = function(self)
 	
 	-- attribute driver to handle number of visible bars, layouts, sizes etc
 	self.Controller:SetAttribute("_onattributechanged", [[
+
 		-- In theory we could use this to create different artworks and layouts
 		-- for each stance, actionpage or macro conditional there is. 
 		-- For our current UI though, we're only using it to capture vehicles and possessions.
@@ -154,7 +165,7 @@ ControllerWidget.OnEnable = function(self)
 					self:SetHeight(height);
 
 					-- tell the addon to update artwork
-					control:CallMethod("UpdateArtwork");
+					--control:CallMethod("UpdateArtwork");
 					control:CallMethod("UpdateLayout");
 				end
 				value = 11;
@@ -171,7 +182,7 @@ ControllerWidget.OnEnable = function(self)
 					self:SetHeight(height);
 
 					-- tell the addon to update artwork
-					control:CallMethod("UpdateArtwork");
+					--control:CallMethod("UpdateArtwork");
 					control:CallMethod("UpdateLayout");
 				end
 			end
@@ -213,12 +224,32 @@ ControllerWidget.OnEnable = function(self)
 						self:SetHeight(height);
 
 						-- tell the addon to update artwork
-						control:CallMethod("UpdateArtwork");
+						--control:CallMethod("UpdateArtwork");
 						control:CallMethod("UpdateLayout");
 					end
 					
 					-- save the number of bars
-					control:CallMethod("SaveSettings");
+					control:CallMethod("SaveNumBars");
+				end
+			end
+		end
+
+		-- change the number of floating side bars
+		if name == "numsidebars" then
+			local num = tonumber(value);
+			if num then
+				local old_num = self:GetAttribute("old_numsidebars");
+				if old_num ~= num then 
+					
+					-- tell the secure children about the bar number update
+					control:ChildUpdate("set_numsidebars", num);
+					self:SetAttribute("old_numsidebars", num);
+					
+					-- update button artwork
+					control:CallMethod("UpdateSideBarArtwork");
+
+					-- save the number of bars
+					control:CallMethod("SaveNumSideBars");
 				end
 			end
 		end

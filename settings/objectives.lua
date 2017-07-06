@@ -3,10 +3,22 @@ local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
 local MINIMAP_SIZE = Engine:GetConstant("MINIMAP_SIZE") 
 
 Engine:NewStaticConfig("Objectives", {
-	-- This will contain both current pvp objectives (flags, timers, points, etc), 
-	-- waves of enemies in dungeons and raid instances, 
-	-- as well as class order hall information. 
-	zoneinfo = {
+	capturebar = {
+		position = { "TOP", "UICenter", "TOP", 0, -300 }, 
+		size = { 195, 13 + 2 }, -- bar size
+		padding = 50, 
+		
+		backdrop_texture = path .. [[textures\DiabolicUI_Target_227x15_Backdrop.tga]],
+		backdrop_size = { math.floor(512 * (195/227)) + 2, 64 }, -- crazy math to shrink a too wide backdrop to this
+
+		statusbar_texture = path .. [[statusbars\DiabolicUI_StatusBar_512x64_Dark_Warcraft.tga]],
+
+		texture = path .. [[textures\DiabolicUI_Target_195x13_Border.tga]],
+		texture_size = { 512, 64 },
+		texture_position = { "TOP", 0, 25 },
+
+		spark_size = { 128, 13 + 2 },
+		spark_texture = path .. [[statusbars\DiabolicUI_StatusBar_128x128_Spark_Warcraft.tga]]
 
 	},
 
@@ -128,5 +140,13 @@ Engine:NewStaticConfig("Objectives", {
 				}
 			}
 		}
+	}, 
+
+	-- This will contain both current pvp objectives (flags, timers, points, etc), 
+	-- waves of enemies in dungeons and raid instances, 
+	-- as well as class order hall information. 
+	zoneinfo = {
+
 	}
+	
 })

@@ -1,6 +1,6 @@
 local _, Engine = ...
 local Module = Engine:GetModule("ActionBars")
-local BarWidget = Module:SetWidget("Bar: 5")
+local BarWidget = Module:SetWidget("Bar: Vehicle")
 
 -- Lua API
 local select = select
@@ -9,41 +9,55 @@ local tinsert, tconcat, twipe = table.insert, table.concat, table.wipe
 
 -- WoW API
 local CreateFrame = CreateFrame
+local GetNumShapeshiftForms = GetNumShapeshiftForms
 local RegisterStateDriver = RegisterStateDriver
+local UnitClass = UnitClass
 
 -- Client version constants
+local ENGINE_WOD = Engine:IsBuild("WoD")
 local ENGINE_MOP = Engine:IsBuild("MoP")
 
 local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]]
-local NUM_ACTIONBAR_BUTTONS = NUM_ACTIONBAR_BUTTONS or 12
+local NUM_BUTTONS = VEHICLE_MAX_ACTIONBUTTONS or 6
 
 BarWidget.OnEnable = function(self)
 	local config = Module.config
 	local db = Module.db
 
-	local Bar = Module:GetWidget("Template: Bar"):New(LEFT_ACTIONBAR_PAGE, Module:GetWidget("Controller: Side"):GetFrame())
+	local Artwork = Module:GetWidget("Artwork")
+	local Bar = Module:GetHandler("ActionBar"):New("vehicle", Module:GetWidget("Controller: Main"):GetFrame(), Artwork:GetBarTemplate())
 
 	--------------------------------------------------------------------
 	-- Buttons
 	--------------------------------------------------------------------
 
 	-- Spawn the action buttons
-	for i = 1,NUM_ACTIONBAR_BUTTONS do
+	for i = 1,NUM_BUTTONS do
 		-- Make sure the standard bars
 		-- get button IDs that reflect their actual actions
 		-- local button_id = (Bar.id - 1) * NUM_ACTIONBAR_BUTTONS + i
 		
-		local button = Bar:NewButton("action", i)
+		local button = Bar:NewButton("action", i, Artwork:GetButtonTemplate())
 		button:SetStateAction(0, "action", i)
 		for state = 1,14 do
 			button:SetStateAction(state, "action", (state - 1) * NUM_ACTIONBAR_BUTTONS + i)
 		end
-		button:SetAttribute("flyoutDirection", "LEFT")
-
+		
 		-- button:SetStateAction(0, "action", button_id)
 		-- tinsert(Bar.buttons, button)
 	end
+	
+	--------------------------------------------------------------------
+	-- Page Driver
+	--------------------------------------------------------------------
 
+	-- This driver updates the bar state attribute to follow its current page,
+	-- and also moves the vehicle, override, possess and temp shapeshift
+	-- bars into the main bar as state/page changes.
+	--
+	-- After a state change the state-page childupdate is called 
+	-- on all the bar's children, which in turn updates button actions 
+	-- and initiate a texture update!
 	
 	if ENGINE_MOP then
 		-- The whole bar system changed in MoP, adding a lot of macro conditionals
@@ -65,20 +79,24 @@ BarWidget.OnEnable = function(self)
 				end
 			end
 			self:SetAttribute("state", newstate);
+
 			for i = 1, self:GetAttribute("num_buttons") do
 				local Button = self:GetFrameRef("Button"..i);
 				Button:SetAttribute("actionpage", tonumber(newstate)); 
 			end
+
 			control:CallMethod("UpdateAction");
 		]])	
 		
 	else
 		Bar:SetAttribute("_onstate-page", [[ 
 			self:SetAttribute("state", newstate);
+
 			for i = 1, self:GetAttribute("num_buttons") do
 				local Button = self:GetFrameRef("Button"..i);
 				Button:SetAttribute("actionpage", tonumber(newstate)); 
 			end
+
 			control:CallMethod("UpdateAction");
 		]])	
 	end
@@ -86,8 +104,24 @@ BarWidget.OnEnable = function(self)
 	-- reset the page before applying a new page driver
 	Bar:SetAttribute("state-page", "0") 
 	
+	-- Main actionbar paging based on class/stance
+	-- also supports user changed paging
+	local driver = {}
+	local _, player_class = UnitClass("player")
+
+
+	if ENGINE_MOP then 
+		tinsert(driver, "[overridebar][possessbar][shapeshift]possess")
+	else -- also applies to Cata
+		tinsert(driver, "[bonusbar:5]11")
+	end
+	
+	tinsert(driver, "11")
+	local page_driver = tconcat(driver, "; ")
+	
 	-- enable the new page driver
-	RegisterStateDriver(Bar, "page", tostring(LEFT_ACTIONBAR_PAGE)) 
+	RegisterStateDriver(Bar, "page", page_driver) 
+
 	
 	--------------------------------------------------------------------
 	-- Visibility Drivers
@@ -100,93 +134,57 @@ BarWidget.OnEnable = function(self)
 		end
 	]])
 
+	twipe(driver)
+	tinsert(driver, ENGINE_MOP and "[overridebar][possessbar][shapeshift]show" or "[bonusbar:5]show")
+	tinsert(driver, "[vehicleui]show")
+	tinsert(driver, "hide")
+
 	-- Register a proxy visibility driver
-	local visibility_driver = ENGINE_MOP and "[overridebar][possessbar][shapeshift]hide;[vehicleui]hide;show" or "[bonusbar:5]hide;[vehicleui]hide;show"
+	local visibility_driver = tconcat(driver, "; ")
 	RegisterStateDriver(Bar, "vis", visibility_driver)
 	
-	-- Give the secure environment access to the current visibility macro, 
-	-- so it can check for the correct visibility when user enabling the bar!
-	Bar:SetAttribute("visibility-driver", visibility_driver)
-
-	local Visibility = Bar:GetParent()
-	Visibility:SetAttribute("_childupdate-set_numbars", [[
-		local num = tonumber(message);
-		
-		-- update bar visibility
-		if num == 1 then
-			self:Hide();
-		elseif num == 2 then
-			self:Show();
-		else
-			self:Hide();
-		end
-		
-		local Bar = self:GetFrameRef("Bar");
-		control:RunFor(Bar, [=[
-			local num = ...
-			
-			-- update bar size
-			local old_bar_width = self:GetAttribute("bar_width");
-			local old_bar_height = self:GetAttribute("bar_height");
-			local bar_width = self:GetAttribute("bar_width-"..num);
-			local bar_height = self:GetAttribute("bar_height-"..num);
-			
-			if old_bar_width ~= bar_width or old_bar_height ~= bar_height then
-				self:SetWidth(bar_width);
-				self:SetHeight(bar_height);
-			end
-			
-			-- only change button size when bars are visible
-			if num > 0 then
-				-- update button size
-				local old_button_size = self:GetAttribute("old_button_size");
-				local button_size = self:GetAttribute("button_size-"..num);
-				local padding = self:GetAttribute("padding");
-
-				if old_button_size ~= button_size then
-					for i = 1, self:GetAttribute("num_buttons") do
-						local Button = self:GetFrameRef("Button"..i);
-						Button:SetWidth(button_size);
-						Button:SetHeight(button_size);
-						Button:ClearAllPoints();
-						Button:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, -((i-1)*(button_size + padding)));
-					end
-					self:SetAttribute("old_button_size", button_size);
-				end
-			end
-
-		]=], num);
-	]])
-
-
 	-- store bar settings
-	local bar_config = config.structure.bars.bar5
+	local bar_config = config.structure.bars.vehicle
 	Bar:SetAttribute("flyout_direction", bar_config.flyout_direction)
 	Bar:SetAttribute("growth_x", bar_config.growthX)
 	Bar:SetAttribute("growth_y", bar_config.growthY)
 	Bar:SetAttribute("padding", bar_config.padding)
-	
-	local button_config = config.visuals.buttons
+	Bar:SetAttribute("bar_width", bar_config.bar_size[1])
+	Bar:SetAttribute("bar_height", bar_config.bar_size[2])
+	Bar:SetAttribute("button_size", bar_config.buttonsize)
 
-	for i = 0,2 do
-		local id = tostring(i)
-		Bar:SetAttribute("bar_width-"..id, bar_config.bar_size[id][1])
-		Bar:SetAttribute("bar_height-"..id, bar_config.bar_size[id][2])
-		if i > 0 then
-			Bar:SetAttribute("button_size-"..id, bar_config.buttonsize[id])
-			Bar:SetStyleTableFor(bar_config.buttonsize[id], button_config[bar_config.buttonsize[id]])
+	-- The vehicle bar always has the same size,
+	-- so a one time setup execution will do.
+	-- Note: We could easily do this from Lua...
+	Bar:Execute([[
+		-- update bar size
+		local bar_width = self:GetAttribute("bar_width");
+		local bar_height = self:GetAttribute("bar_height");
+		
+		self:SetWidth(bar_width);
+		self:SetHeight(bar_height);
+		
+		-- update button size
+		local old_button_size = self:GetAttribute("old_button_size");
+		local button_size = self:GetAttribute("button_size");
+		local padding = self:GetAttribute("padding");
+		
+		if button_size ~= old_button_size then
+			for i = 1, self:GetAttribute("num_buttons") do
+				local Button = self:GetFrameRef("Button"..i);
+				Button:SetWidth(button_size);
+				Button:SetHeight(button_size);
+				Button:ClearAllPoints();
+				Button:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", (i-1)*(button_size + padding), 0);
+			end
+			self:SetAttribute("old_button_size", button_size); -- need to set this for the artwork updates
 		end
-	end
+	]])
 	
-	local previous = Module:GetWidget("Bar: 4"):GetFrame()
-	Bar:SetPoint("TOPRIGHT", previous, "TOPLEFT", -config.structure.controllers.side.padding, 0)
-
-	-- for testing
-	--Bar:SetBackdrop({ bgFile = BLANK_TEXTURE })
-	--Bar:SetBackdropColor(1, 0, 0, .5)
+	Bar:SetPoint("BOTTOM")
+	Bar:PostUpdate()
 	
 	self.Bar = Bar
-	
 end
 
 BarWidget.GetFrame = function(self)

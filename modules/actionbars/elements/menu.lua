@@ -245,12 +245,32 @@ MenuWidget.NewMenuButton = function(self, parent, config, label)
 	return button
 end
 
+MenuWidget.HookBagnon = function(self, menuButton, menuWindow)
+	local inventory = _G.BagnonFrameinventory
+	if (not inventory) then
+		local bagnon = _G.Bagnon
+		if bagnon then
+			hooksecurefunc(bagnon, "OnEnable", function() 
+				self:HookBagnon(menuButton, menuWindow)
+			end)
+		end
+		return
+	end
+	inventory:HookScript("OnShow", function(self) 
+		menuButton:SetButtonState("PUSHED", 1)
+	end)
+	inventory:HookScript("OnHide", function(self) 
+		if (not menuWindow:IsShown()) then
+			menuButton:SetButtonState("NORMAL")
+		end
+	end)
+end
+
 MenuWidget.OnEnable = function(self)
 	local config = Module.config
 	local db = Module.db
 
 	local Main = Module:GetWidget("Controller: Main"):GetFrame()
-	local Side = Module:GetWidget("Controller: Side"):GetFrame()
 	local Menu = Module:GetWidget("Controller: Menu"):GetFrame()
 	local MenuButton = Module:GetWidget("Template: MenuButton")
 	local FlyoutBar = Module:GetWidget("Template: FlyoutBar")
@@ -638,26 +658,26 @@ MenuWidget.OnEnable = function(self)
 			------------------------------------------------------------------
 			new.button4 = self:NewMenuButton(new.body2, style_table_button, L["No Bars"])
 			new.button4:SetPoint("TOP", 0, -16 )
-			new.button4:SetFrameRef("controller", Side)
+			new.button4:SetFrameRef("controller", Main)
 			new.button4:SetAttribute("_onclick", [[
 				local controller = self:GetFrameRef("controller");
-				controller:SetAttribute("numbars", 0);
+				controller:SetAttribute("numsidebars", 0);
 			]])
 
 			new.button5 = self:NewMenuButton(new.body2, style_table_button, L["One"])
 			new.button5:SetPoint("TOP", new.button4, "BOTTOM", 0, -4 )
-			new.button5:SetFrameRef("controller", Side)
+			new.button5:SetFrameRef("controller", Main)
 			new.button5:SetAttribute("_onclick", [[
 				local controller = self:GetFrameRef("controller");
-				controller:SetAttribute("numbars", 1);
+				controller:SetAttribute("numsidebars", 1);
 			]])
 
 			new.button6 = self:NewMenuButton(new.body2, style_table_button, L["Two"])
 			new.button6:SetPoint("TOP", new.button5, "BOTTOM", 0, -4 )
-			new.button6:SetFrameRef("controller", Side)
+			new.button6:SetFrameRef("controller", Main)
 			new.button6:SetAttribute("_onclick", [[
 				local controller = self:GetFrameRef("controller");
-				controller:SetAttribute("numbars", 2);
+				controller:SetAttribute("numsidebars", 2);
 			]])
 
 
@@ -852,6 +872,23 @@ MenuWidget.OnEnable = function(self)
 			BagBarMenuButton:SetButtonState("NORMAL")
 		end
 	end)
+
+	if Engine:IsAddOnEnabled("Bagnon") then
+		if IsAddOnLoaded("Bagnon") then
+			self:HookBagnon(BagBarMenuButton, BagBarMenuWindow)
+		else
+			local proxy 
+			proxy = function(_, event, addon) 
+				if (addon ~= "Bagnon") then
+					return
+				end
+				self:HookBagnon(BagBarMenuButton, BagBarMenuWindow)
+				self:UnregisterEvent("ADDON_LOADED", proxy)
+			end
+			self:RegisterEvent("ADDON_LOADED", proxy)
+		end
+	end
+
 	
 	BagBarMenuButton:SetFrameRef("bags", BagWindow)
 	BagBarMenuButton:SetFrameRef("window", BagBarMenuWindow)

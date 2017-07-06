@@ -1,17 +1,59 @@
 local Addon, Engine = ...
-local Module = Engine:GetModule("UnitFrames")
-local UnitFrameWidget = Module:SetWidget("Unit: ToT")
 
+local Module = Engine:GetModule("UnitFrames")
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
+local C = Engine:GetStaticConfig("Data: Colors")
+
+local UnitFrameWidget = Module:SetWidget("Unit: ToT")
 
 -- Lua API
 local unpack, pairs = unpack, pairs
 
--- WoW API
-local CreateFrame = CreateFrame
+local postUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavailable)
 
-local UpdateLayers = function(self)
+	local r, g, b
+	if (not isUnavailable) then
+		if UnitIsPlayer(unit) then
+			local _, class = UnitClass(unit)
+			r, g, b = unpack(class and C.Class[class] or C.Class.UNKNOWN)
+		elseif UnitPlayerControlled(unit) then
+			if UnitIsFriend(unit, "player") then
+				r, g, b = unpack(C.Reaction[5])
+			elseif UnitIsEnemy(unit, "player") then
+				r, g, b = unpack(C.Reaction[1])
+			else
+				r, g, b = unpack(C.Reaction[4])
+			end
+		elseif (not UnitIsFriend(unit, "player")) and UnitIsTapDenied(unit) then
+			r, g, b = unpack(C.Status.Tapped)
+		elseif UnitReaction(unit, "player") then
+			r, g, b = unpack(C.Reaction[UnitReaction(unit, "player")])
+		else
+			r, g, b = unpack(C.Orb.HEALTH[1])
+		end
+	elseif (isUnavailable == "dead") or (isUnavailable == "ghost") then
+		r, g, b = unpack(C.Status.Dead)
+	elseif (isUnavailable == "offline") then
+		r, g, b = unpack(C.Status.Disconnected)
+	end
+
+	if r then
+		if not((r == health.r) and (g == health.g) and (b == health.b)) then
+			health:SetStatusBarColor(r, g, b)
+			health.r, health.g, health.b = r, g, b
+		end
+	end
+
+	if UnitAffectingCombat("player") then
+		health.Value:SetAlpha(1)
+	else
+		health.Value:SetAlpha(.7)
+	end
+
+end
+
+local updateLayers = function(self)
 	if self:IsMouseOver() then
 		self.BorderNormalHighlight:Show()
 		self.BorderNormal:Hide()
@@ -45,7 +87,7 @@ local Style = function(self, unit)
 	Backdrop:SetTexture(config.backdrop.texture)
 
 	-- border overlay frame
-	local Border = CreateFrame("Frame", nil, self)
+	local Border = self:CreateFrame("Frame")
 	Border:SetFrameLevel(self:GetFrameLevel() + 4)
 	Border:SetAllPoints()
 	
@@ -78,7 +120,7 @@ local Style = function(self, unit)
 	Health:SetStatusBarTexture(config.health.texture)
 	Health.frequent = 1/120
 
-	local HealthValueHolder = CreateFrame("Frame", nil, Health)
+	local HealthValueHolder = Health:CreateFrame("Frame")
 	HealthValueHolder:SetAllPoints()
 	HealthValueHolder:SetFrameLevel(Border:GetFrameLevel() + 1)
 	
@@ -90,15 +132,7 @@ local Style = function(self, unit)
 	Health.Value.showMaximum = false
 	Health.Value.hideMinimum = true
 
-	Health.PostUpdate = function(self)
-		local min, max = self:GetMinMaxValues()
-		local value = self:GetValue()
-		if UnitAffectingCombat("player") then
-			self.Value:SetAlpha(1)
-		else
-			self.Value:SetAlpha(.7)
-		end
-	end
+	Health.PostUpdate = postUpdateHealth
 
 
 	-- CastBar
@@ -135,11 +169,9 @@ local Style = function(self, unit)
 	self.BorderNormal = BorderNormal
 	self.BorderNormalHighlight = BorderNormalHighlight
 
-	self:HookScript("OnEnter", UpdateLayers)
-	self:HookScript("OnLeave", UpdateLayers)
+	self:HookScript("OnEnter", updateLayers)
+	self:HookScript("OnLeave", updateLayers)
 	
-	--self:SetAttribute("toggleForVehicle", true)
-
 end
 
 UnitFrameWidget.OnEnable = function(self)

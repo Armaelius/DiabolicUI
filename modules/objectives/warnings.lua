@@ -145,22 +145,22 @@ end
 
 Module.OnEvent = function(self, event, ...)
 	if event == "UI_ERROR_MESSAGE" then
-		local msg_type, msg
+		local messageType, msg
 		if Engine:IsBuild("Legion") then
-			msg_type, msg = ...
-			if not self:ShouldDisplayMessageType(msg_type, msg) then
-				return 
+			messageType, msg = ...
+			if self.blackListedMessageTypes[messageType] then
+				return
 			end
 		else
 			msg = ...
 		end
 		self:AddMessage(msg, "error")
 	elseif event == "UI_INFO_MESSAGE" then
-		local msg_type, msg
+		local messageType, msg
 		if Engine:IsBuild("Legion") then
-			msg_type, msg = ...
-			if not self:ShouldDisplayMessageType(msg_type, msg) then
-				return 
+			messageType, msg = ...
+			if self.blackListedMessageTypes[messageType] then
+				return
 			end
 		else
 			msg = ...
@@ -240,7 +240,7 @@ Module.OnEnable = function(self)
 	
 	if Engine:IsBuild("Legion") then
 		-- copied from the Blizzard FrameXML file UIErrorsFrame.lua
-		local BLACK_LISTED_MESSAGE_TYPES = {
+		self.blackListedMessageTypes = {
 			[LE_GAME_ERR_ABILITY_COOLDOWN] = true,
 			[LE_GAME_ERR_SPELL_COOLDOWN] = true,
 			[LE_GAME_ERR_SPELL_FAILED_ANOTHER_IN_PROGRESS] = true,
@@ -262,15 +262,8 @@ Module.OnEnable = function(self)
 			[LE_GAME_ERR_OUT_OF_INSANITY] = true,
 			[LE_GAME_ERR_OUT_OF_RUNES] = true,
 			[LE_GAME_ERR_OUT_OF_FURY] = true,
-			[LE_GAME_ERR_OUT_OF_MAELSTROM] = true,
+			[LE_GAME_ERR_OUT_OF_MAELSTROM] = true
 		}
-		
-		self.ShouldDisplayMessageType = function(self, messageType, msg)
-			if BLACK_LISTED_MESSAGE_TYPES[messageType] then
-				return false
-			end
-			return true
-		end
 	end
 
 	self.player:SetScript("OnUpdate", OnUpdate)

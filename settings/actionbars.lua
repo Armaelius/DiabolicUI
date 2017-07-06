@@ -17,7 +17,7 @@ local NUM_VEHICLE_SLOTS = Engine:GetConstant("NUM_VEHICLE_SLOTS") -- number of v
 local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
 
 -- padding between bars and buttons
-local padding, padding_small = 4, 2
+local padding, padding_small, padding_pet = 4, 2, 2
 local bar_inset, sidebar_inset = 10, 20 
 local artwork_offscreen = 20 -- how many pixels to move the bottom artwork below the screen edge
 
@@ -27,6 +27,12 @@ local xpoffset_before, xpsize, xpoffset_after = 2, 7, 2
 -- skull stuff
 local skulloffset = 78
 
+-- offset for the petbar
+--local petoffset = 46 + 38 + 4 + 38 + 6
+--local petskulloffset = petoffset + BUTTON_SIZE_TRIPLE - 3
+local petoffset = 10
+local petskulloffset = petoffset + BUTTON_SIZE_TRIPLE - 3
+
 -- artwork offsets (angel + demon)
 local angel_offset = 128 + 64
 local demon_offset = 128 + 64 + 4 -- turns out I didn't align them perfectly in the graphic file
@@ -35,10 +41,7 @@ local demon_offset = 128 + 64 + 4 -- turns out I didn't align them perfectly in 
 Engine:NewStaticConfig("ActionBars", {
 	structure = {
 		controllers = {
-			master = {
-				
-			},
-			
+
 			-- holder for bottom bars
 			-- intended for other modules to position by as well
 			main = {
@@ -58,84 +61,47 @@ Engine:NewStaticConfig("ActionBars", {
 				}
 			},
 			
-			-- holder for side bars
-			-- intended for other modules to position by as well
-			-- *side holder is always hidden while in a vehicle
-			side = {
-				padding = padding_small,
-				offset = sidebar_inset,
-				position = {
-					-- If the position table contains more tables, 
-					-- the module will position the frame by all of them. 
-					-- This allows us to hook the Side frame to the right side 
-					-- of the screen, and the top of the bottom bar frame at the same time.
-					{
-						point = "RIGHT",
-						anchor = "UICenter", 
-						anchor_point = "RIGHT",
-						xoffset = 0,
-						yoffset = 0
-					},
-					{
-						point = "TOP",
-						anchor = "UICenter", 
-						anchor_point = "TOP",
-						xoffset = 0,
-						yoffset = -(50 + MINIMAP_SIZE + 16 + 10) -- 326 -- matches the watchframe
-					}
-					--{
-					--	point = "RIGHT",
-					--	anchor = "UIParent", 
-					--	anchor_point = "RIGHT",
-					--	xoffset = -sidebar_inset,
-					--	yoffset = 0
-					--},
-					--{
-					--	point = "BOTTOM",
-					--	anchor = "Main", 
-					--	anchor_point = "TOP",
-					--	xoffset = 0,
-					--	yoffset = sidebar_inset
-					--}
-				},
+			-- xp / rep bar holders
+			xp = {
+				position = { "TOP", 0, 10 + 6 },
 				size = {
-					["0"] = { 1/1e3, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) },
-					["1"] = { sidebar_inset + BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) },
-					["2"] = { sidebar_inset + BUTTON_SIZE_TRIPLE*2 + padding_small, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) }
+					["1"] = { 2 + BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1) + 2, 10 },
+					["2"] = { 2 + BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1) + 2, 10 },
+					["3"] = { 2 + BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1) + 2, 10 }
 				}
 			},
-			
+
 			-- holder for pet bar
 			pet = {
-				padding = padding_small,
+				padding = padding_pet,
 				position = {
-					point = "RIGHT",
-					anchor = "Side", 
-					anchor_point = "LEFT",
-					xoffset = 0,
-					yoffset = 0
-				},
-				size = { sidebar_inset + BUTTON_SIZE_TRIPLE + padding_small, BUTTON_SIZE_TRIPLE*NUM_PET_SLOTS + padding_small*(NUM_PET_SLOTS-1) },
-				-- we’re using a different size for vehicles since the quest tracker might be anchored to this
-				size_vehicle = { sidebar_inset, BUTTON_SIZE_TRIPLE*NUM_PET_SLOTS + padding_small*(NUM_PET_SLOTS-1) }
-			},
-			
-			-- holder for stance bar
-			stance = {
-				position = {
-					point = "BOTTOMRIGHT",
+					point = "BOTTOM",
 					anchor = "Main", 
-					anchor_point = "BOTTOMRIGHT",
-					xoffset = 200,
-					yoffset = 155
-					--anchor_point = "TOP",
-					--xoffset = 0,
-					--yoffset = 91
+					anchor_point = "TOP",
+					xoffset = 0,
+					yoffset = petoffset 
 				},
-				size = { 51, 51 }
+				size = { BUTTON_SIZE_TRIPLE*NUM_PET_SLOTS + padding_pet*(NUM_PET_SLOTS-1), BUTTON_SIZE_TRIPLE },
+				size_vehicle = { BUTTON_SIZE_TRIPLE*NUM_PET_SLOTS + padding_pet*(NUM_PET_SLOTS-1), BUTTON_SIZE_TRIPLE }
 			},
+
+			-- holder for stance bar
+			--stance = {
+			--	padding = padding_pet,
+			--	position = {
+			--		point = "BOTTOMRIGHT",
+			--		anchor = "Main", 
+			--		anchor_point = "BOTTOMRIGHT",
+			--		xoffset = 200,
+			--		yoffset = 155
+			--		--anchor_point = "TOP",
+			--		--xoffset = 0,
+			--		--yoffset = 91
+			--	},
+			--	size = { 38, 38 }
+			--},
 			
-			-- holder for menu buttons
+			-- holders for menu buttons
 			mainmenu = {
 				padding = 3,
 				position = {
@@ -147,7 +113,6 @@ Engine:NewStaticConfig("ActionBars", {
 				},
 				size = { 61*3 + 10*2, 55 }
 			},
-			
 			chatmenu = {
 				padding = 3,
 				position = {
@@ -158,17 +123,8 @@ Engine:NewStaticConfig("ActionBars", {
 					yoffset = 20 + 10
 				},
 				size = { 61*2 + 10*2, 55 }
-			},
-			
-			-- xp / rep bar holders
-			xp = {
-				position = { "TOP", 0, 10 + 6 },
-				size = {
-					["1"] = { 2 + BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1) + 2, 10 },
-					["2"] = { 2 + BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1) + 2, 10 },
-					["3"] = { 2 + BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1) + 2, 10 }
-				}
 			}
+	
 			
 		},
 		bars = {
@@ -225,12 +181,14 @@ Engine:NewStaticConfig("ActionBars", {
 				flyout_direction = "UP",
 				growthX = "RIGHT", 
 				growthY = "UP",
+				growth = "VERTICAL",
+				hideGrid = true,
 				padding = padding_small,
-				offset = sidebar_inset,
+				position = { "BOTTOMLEFT", "Main", "BOTTOMRIGHT", 252, 0 },
 				bar_size = {
-					["0"] = { 0.0001, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) },
-					["1"] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) },
-					["2"] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) }
+					["0"] = { 0.0001, BUTTON_SIZE_TRIPLE*3 + padding_small*(3-1) },
+					["1"] = { BUTTON_SIZE_TRIPLE*4 + padding_small*(4-1), BUTTON_SIZE_TRIPLE*3 + padding_small*(3-1) },
+					["2"] = { BUTTON_SIZE_TRIPLE*4 + padding_small*(4-1), BUTTON_SIZE_TRIPLE*3 + padding_small*(3-1) }
 				},
 				buttonsize = {
 					["1"] = BUTTON_SIZE_TRIPLE,
@@ -241,11 +199,14 @@ Engine:NewStaticConfig("ActionBars", {
 				flyout_direction = "UP",
 				growthX = "RIGHT", 
 				growthY = "UP",
+				growth = "VERTICAL",
+				hideGrid = true,
 				padding = padding_small,
+				position = { "BOTTOMRIGHT", "Main", "BOTTOMLEFT", -252, 0 },
 				bar_size = {
-					["0"] = { 0.0001, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) },
-					["1"] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) },
-					["2"] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding_small*(NUM_ACTIONBAR_SLOTS-1) }
+					["0"] = { 0.0001, BUTTON_SIZE_TRIPLE*3 + padding_small*(3-1) },
+					["1"] = { BUTTON_SIZE_TRIPLE*4 + padding_small*(4-1), BUTTON_SIZE_TRIPLE*3 + padding_small*(3-1) },
+					["2"] = { BUTTON_SIZE_TRIPLE*4 + padding_small*(4-1), BUTTON_SIZE_TRIPLE*3 + padding_small*(3-1) }
 				},
 				buttonsize = {
 					["1"] = BUTTON_SIZE_TRIPLE,
@@ -261,154 +222,118 @@ Engine:NewStaticConfig("ActionBars", {
 				bar_size = { BUTTON_SIZE_VEHICLE*NUM_VEHICLE_SLOTS + padding*(NUM_VEHICLE_SLOTS-1), BUTTON_SIZE_VEHICLE }
 			},
 			stance = {
-				position = { "BOTTOM", 0, 0 }, -- where the bar is anchored to its controller
-				growth = "RIGHT", 
+				position = { "BOTTOMRIGHT", "Main", "BOTTOMRIGHT", 200, 203 }, 
+				growth = "UP", 
 				padding = padding_small,
 				buttonsize = BUTTON_SIZE_TRIPLE,
 				bar_size = {
 					[0] = { .0001, .0001 },
 					[1] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE },
-					[2] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-8) + padding_small*(NUM_STANCE_SLOTS-9), BUTTON_SIZE_TRIPLE },
-					[3] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-7) + padding_small*(NUM_STANCE_SLOTS-8), BUTTON_SIZE_TRIPLE },
-					[4] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-6) + padding_small*(NUM_STANCE_SLOTS-7), BUTTON_SIZE_TRIPLE },
-					[5] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-5) + padding_small*(NUM_STANCE_SLOTS-6), BUTTON_SIZE_TRIPLE },
-					[6] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-4) + padding_small*(NUM_STANCE_SLOTS-5), BUTTON_SIZE_TRIPLE },
-					[7] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-3) + padding_small*(NUM_STANCE_SLOTS-4), BUTTON_SIZE_TRIPLE },
-					[8] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-2) + padding_small*(NUM_STANCE_SLOTS-3), BUTTON_SIZE_TRIPLE },
-					[9] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-1) + padding_small*(NUM_STANCE_SLOTS-2), BUTTON_SIZE_TRIPLE },
-					[10] = { BUTTON_SIZE_TRIPLE*NUM_STANCE_SLOTS + padding_small*(NUM_STANCE_SLOTS-1), BUTTON_SIZE_TRIPLE }
+					[2] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-8) + padding_small*(NUM_STANCE_SLOTS-9) },
+					[3] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-7) + padding_small*(NUM_STANCE_SLOTS-8) },
+					[4] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-6) + padding_small*(NUM_STANCE_SLOTS-7) },
+					[5] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-5) + padding_small*(NUM_STANCE_SLOTS-6) },
+					[6] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-4) + padding_small*(NUM_STANCE_SLOTS-5) },
+					[7] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-3) + padding_small*(NUM_STANCE_SLOTS-4) },
+					[8] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-2) + padding_small*(NUM_STANCE_SLOTS-3) },
+					[9] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-1) + padding_small*(NUM_STANCE_SLOTS-2) },
+					[10] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_STANCE_SLOTS + padding_small*(NUM_STANCE_SLOTS-1) }
+
+					--[1] = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE },
+					--[2] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-8) + padding_small*(NUM_STANCE_SLOTS-9), BUTTON_SIZE_TRIPLE },
+					--[3] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-7) + padding_small*(NUM_STANCE_SLOTS-8), BUTTON_SIZE_TRIPLE },
+					--[4] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-6) + padding_small*(NUM_STANCE_SLOTS-7), BUTTON_SIZE_TRIPLE },
+					--[5] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-5) + padding_small*(NUM_STANCE_SLOTS-6), BUTTON_SIZE_TRIPLE },
+					--[6] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-4) + padding_small*(NUM_STANCE_SLOTS-5), BUTTON_SIZE_TRIPLE },
+					--[7] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-3) + padding_small*(NUM_STANCE_SLOTS-4), BUTTON_SIZE_TRIPLE },
+					--[8] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-2) + padding_small*(NUM_STANCE_SLOTS-3), BUTTON_SIZE_TRIPLE },
+					--[9] = { BUTTON_SIZE_TRIPLE*(NUM_STANCE_SLOTS-1) + padding_small*(NUM_STANCE_SLOTS-2), BUTTON_SIZE_TRIPLE },
+					--[10] = { BUTTON_SIZE_TRIPLE*NUM_STANCE_SLOTS + padding_small*(NUM_STANCE_SLOTS-1), BUTTON_SIZE_TRIPLE }
 				}
 			},
 			pet = {
-				position = { "RIGHT", -padding_small, 0 }, -- where the bar is anchored to its controller
-				flyout_direction = "LEFT",
-				growth = "DOWN",
-				padding = padding_small,
+				--position = { "BOTTOM", 0, xpoffset_before + xpsize + xpoffset_after },
+				position = { "BOTTOM", 0, 0 }, -- where the bar is anchored to its controller
+				positionXP = { "BOTTOM", 0, xpoffset_before + xpsize + xpoffset_after },
+				flyout_direction = "UP",
+				growth = "RIGHT",
+				padding = padding_pet,
+				hideGrid = false,
 				buttonsize = BUTTON_SIZE_TRIPLE,
-				bar_size = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE*NUM_PET_SLOTS + padding_small*(NUM_PET_SLOTS-1) }
+				bar_size = { BUTTON_SIZE_TRIPLE*NUM_PET_SLOTS + padding_pet*(NUM_PET_SLOTS-1), BUTTON_SIZE_TRIPLE }
+			},
+
+			floaters = {
+				position = { "BOTTOMRIGHT", 200, 155 },
+				size = { 38*2 + 6, 38 } -- currently only 2 button positions in this one
 			}
+
 		}
 	},
 	visuals = {
 		artwork = {
-			["1"] = {
-				left = {
-					size = { 256, 256 },
-					position = { "BOTTOM", -( (BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Demon.tga]]
-				},
-				right = {
-					size = { 256, 256 },
-					position = { "BOTTOM", ( (BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Angel.tga]]
-				},
-				center = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArt1Bar.tga]]
-				},
-				centerxp = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArt1BarXP.tga]]
-				}, 
-				skull = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_SINGLE + bar_inset - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
-				},
-				skullxp = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_SINGLE + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
+			backdrop = {
+				callback = "texture",
+				layer = "BACKGROUND",
+				size = { 1024, 256 }, 
+				position = { "BOTTOM", 0, -artwork_offscreen },
+				texture = {
+					["1"] = path .. [[textures\DiabolicUI_ActionBarArt1Bar.tga]],
+					["1xp"] = path .. [[textures\DiabolicUI_ActionBarArt1BarXP.tga]],
+					["2"] = path .. [[textures\DiabolicUI_ActionBarArt2Bars.tga]],
+					["2xp"] = path .. [[textures\DiabolicUI_ActionBarArt2BarsXP.tga]],
+					["3"] = path .. [[textures\DiabolicUI_ActionBarArt3Bars.tga]],
+					["3xp"] = path .. [[textures\DiabolicUI_ActionBarArt3BarsXP.tga]],
+					["vehicle"] = path .. [[textures\DiabolicUI_ActionBarArtVehicle.tga]],
+					["vehiclexp"] = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
 				}
 			},
-			["2"] = {
-				left = {
-					size = { 256, 256 },
-					position = { "BOTTOM", -( (BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Demon.tga]]
-				},
-				right = {
-					size = { 256, 256 },
-					position = { "BOTTOM", ( (BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Angel.tga]]
-				},
-				center = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArt2Bars.tga]]
-				},
-				centerxp = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArt2BarsXP.tga]]
-				},
-				skull = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_DOUBLE*2 + padding + bar_inset - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
-				},
-				skullxp = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_DOUBLE*2 + padding + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
+			angel = {
+				callback = "position",
+				layer = "OVERLAY",
+				size = { 256, 256 },
+				texture = path .. [[textures\DiabolicUI_Artwork_Angel.tga]],
+				position = {
+					["1"] = { "BOTTOM", ( (BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
+					["2"] = { "BOTTOM", ( (BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
+					["3"] = { "BOTTOM", ( (BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
+					["vehicle"] = { "BOTTOM", ( (BUTTON_SIZE_VEHICLE*NUM_VEHICLE_SLOTS + padding*(NUM_VEHICLE_SLOTS-1))/2 + demon_offset ), -artwork_offscreen }
 				}
 			},
-			["3"] = {
-				left = {
-					size = { 256, 256 },
-					position = { "BOTTOM", -( (BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Demon.tga]]
-				},
-				right = {
-					size = { 256, 256 },
-					position = { "BOTTOM", ( (BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Angel.tga]]
-				},
-				center = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArt3Bars.tga]]
-				},
-				centerxp = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArt3BarsXP.tga]]
-				},
-				skull = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
-				},
-				skullxp = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
+			demon = {
+				callback = "position",
+				layer = "OVERLAY",
+				size = { 256, 256 },
+				texture = path .. [[textures\DiabolicUI_Artwork_Demon.tga]],
+				position = {
+					["1"] = { "BOTTOM", -( (BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
+					["2"] = { "BOTTOM", -( (BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
+					["3"] = { "BOTTOM", -( (BUTTON_SIZE_TRIPLE*NUM_ACTIONBAR_SLOTS + padding*(NUM_ACTIONBAR_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
+					["vehicle"] = { "BOTTOM", -( (BUTTON_SIZE_VEHICLE*NUM_VEHICLE_SLOTS + padding*(NUM_VEHICLE_SLOTS-1))/2 + angel_offset ), -artwork_offscreen }
 				}
 			},
-			["vehicle"] = {
-				left = {
-					size = { 256, 256 },
-					position = { "BOTTOM", -( (BUTTON_SIZE_VEHICLE*NUM_VEHICLE_SLOTS + padding*(NUM_VEHICLE_SLOTS-1))/2 + angel_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Demon.tga]]
+			skull = {
+				callback = "position",
+				layer = "OVERLAY",
+				size = { 512, 128 },
+				texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]],
+				position = {
+					["1"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_SINGLE + bar_inset - skulloffset },
+					["1pet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_SINGLE + bar_inset - skulloffset + petskulloffset },
+					["1xp"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_SINGLE + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
+					["1xppet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_SINGLE + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset + petskulloffset },
+					["2"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_DOUBLE*2 + padding + bar_inset - skulloffset },
+					["2pet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_DOUBLE*2 + padding + bar_inset - skulloffset + petskulloffset },
+					["2xp"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_DOUBLE*2 + padding + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
+					["2xppet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_DOUBLE*2 + padding + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset + petskulloffset },
+					["3"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset - skulloffset },
+					["3pet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset - skulloffset + petskulloffset },
+					["3xp"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
+					["3xppet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset + petskulloffset },
+					["vehicle"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_VEHICLE + bar_inset - skulloffset }
 				},
-				right = {
-					size = { 256, 256 },
-					position = { "BOTTOM", ( (BUTTON_SIZE_VEHICLE*NUM_VEHICLE_SLOTS + padding*(NUM_VEHICLE_SLOTS-1))/2 + demon_offset ), -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_Artwork_Angel.tga]]
-				},
-				center = {
-					size = { 1024, 256 },
-					position = { "BOTTOM", 0, -artwork_offscreen },
-					texture = path .. [[textures\DiabolicUI_ActionBarArtVehicle.tga]]
-				},
-				skull = {
-					size = { 512, 128 },
-					position = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_VEHICLE + bar_inset - skulloffset },
-					texture = path .. [[textures\DiabolicUI_Artwork_Skull.tga]]
-				}
 			}
+
 		},
 		buttons = {
 			-- three main bars, or any side-, pet- or stance bar
@@ -824,11 +749,35 @@ Engine:NewStaticConfig("ActionBars", {
 				}
 			}
 		},
-		custom = {
+		floaters = {
+			style = {
+
+			},
+			-- Stance bar toggle button
+			stance = {
+				size = { 38, 38 },
+				position = { "BOTTOMRIGHT", 0, 0 },
+				icon = {
+					texture = [[Interface\Icons\Spell_Nature_WispSplode]], 
+					texcoords = { 5/64, 59/64, 5/64, 59/64 },
+					size = { 36, 36 },
+					position = { "CENTER", 0, 0 },
+					position_pushed = { "CENTER", 0, -2 }
+				},
+				border = {
+					size = { 64, 64 },
+					position = { "CENTER", 0, 0 },
+					textures = {
+						normal = path .. [[textures\DiabolicUI_Button_37x37_Normal.tga]],
+						highlight = path .. [[textures\DiabolicUI_Button_37x37_Highlight.tga]]
+					}
+				}
+			},
+			-- Vehicle Exit button, and Taxi cancel flight button
+			-- *This one has slightly different sizing, since it has the icon embedded in the artwork.
 			exit = {
 				size = { 36, 36 },
-				position = { "BOTTOMRIGHT", 200, 156 },
-				--position = { "TOPRIGHT", 164 + 36, 87 + 36 },
+				position = { "BOTTOMRIGHT", 0, 0 },
 				texture_size = { 64, 64 },
 				texture_position = { "CENTER", 0, 0 },
 				textures = {
@@ -840,8 +789,26 @@ Engine:NewStaticConfig("ActionBars", {
 			},
 			extra = {
 				size = { 38, 38 },
-				position = { "BOTTOMRIGHT", 250, 155 },
-				position_vehicle = { "BOTTOMRIGHT", 200, 155 },
+				position = { "BOTTOMRIGHT", 54, 0 },
+				icon = {
+					texcoords = { 5/64, 59/64, 5/64, 59/64 },
+					size = { 38, 38 },
+					position = { "CENTER", 0, 0 },
+					position_pushed = { "CENTER", 0, -2 }
+				},
+				border = {
+					size = { 64, 64 },
+					position = { "CENTER", 0, 0 },
+					textures = {
+						normal = path .. [[textures\DiabolicUI_Button_37x37_Normal.tga]],
+						highlight = path .. [[textures\DiabolicUI_Button_37x37_Highlight.tga]]
+					}
+				}
+			},
+			-- Zone abilities (WoD, Legion)
+			zone = {
+				size = { 38, 38 },
+				position = { "BOTTOMRIGHT", 54, 0 },
 				icon = {
 					texcoords = { 5/64, 59/64, 5/64, 59/64 },
 					size = { 38, 38 },
@@ -1173,23 +1140,6 @@ Engine:NewStaticConfig("ActionBars", {
 				}
 			}
 
-		},
-		stance = {
-			button = {
-				size = { 51, 51 },
-				position = { "BOTTOMRIGHT", .5 + 7, 0 - 7 },
-				--position = { "BOTTOM", .5, 0 },
-				texture_size = { 128, 128 },
-				texture_position = { "TOPLEFT", -(64 - 25), (64 - 26) },
-				textures = {
-					normal = path .. [[textures\DiabolicUI_Button_51x51_Normal.tga]],
-					pushed = path .. [[textures\DiabolicUI_Button_51x51_Normal.tga]]
-				}
-			},
-			window = {
-				size = { BUTTON_SIZE_TRIPLE, BUTTON_SIZE_TRIPLE * NUM_STANCE_SLOTS + padding*(NUM_STANCE_SLOTS-1) },
-				position = { "BOTTOM", -.5, 51 + 4 }
-			}
 		},
 		xp = {
 			normalFont = DiabolicFont_SansBold12White,

@@ -17,7 +17,7 @@ local NUM_STANCE_SLOTS = Engine:GetConstant("NUM_STANCE_SLOTS") -- number of sta
 local NUM_VEHICLE_SLOTS = Engine:GetConstant("NUM_VEHICLE_SLOTS") -- number of vehicle buttons
 
 local padding, bar_padding = 2, 4 -- for the auras
-
+local petOffset = 10 + BUTTON_SIZE_TRIPLE - 3 -- copied from 'petskulloffset' in the actionbar settings
 
 Engine:NewStaticConfig("UnitFrames", {
 	structure = {
@@ -59,8 +59,8 @@ Engine:NewStaticConfig("UnitFrames", {
 			player = {
 				castbar = {
 					size = { 227, 15 },
-					--position = { "CENTER", "UICenter", "CENTER", 0, -200 },
-					position = { "BOTTOM", "Main", "TOP", 0, 210 }, -- { "BOTTOM", "Main", "TOP", 0, 160 },
+					position = { "BOTTOM", "Main", "TOP", 0, 210 + 20 }, -- 0, 210
+					positionPet = { "BOTTOM", "Main", "TOP", 0, 210 + 20 + petOffset }, 
 					texture = path .. [[statusbars\DiabolicUI_StatusBar_512x64_Dark_Warcraft.tga]],
 					color = { .4, .4, .9 }, 
 					safezone = {
@@ -151,6 +151,7 @@ Engine:NewStaticConfig("UnitFrames", {
 				},
 				buffs = {
 					position = { "BOTTOMLEFT", "Main", "TOPLEFT", 26, 46 },
+					positionPet = { "BOTTOMLEFT", "Main", "TOPLEFT", 26, 46 + petOffset },
 					size = { 
 						["1"] = { math_floor((BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + bar_padding*(NUM_ACTIONBAR_SLOTS-1))/2) -(16 + 10), 38*2 + 8 + 3 + 2 },
 						["2"] = { math_floor((BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + bar_padding*(NUM_ACTIONBAR_SLOTS-1))/2) -(16 + 10), 38*2 + 8 + 3 + 2 },
@@ -203,6 +204,7 @@ Engine:NewStaticConfig("UnitFrames", {
 				},
 				debuffs = {
 					position = { "BOTTOMRIGHT", "Main", "TOPRIGHT", -26, 46 },
+					positionPet = { "BOTTOMRIGHT", "Main", "TOPRIGHT", 26, 46 + petOffset },
 					size = { 
 						["1"] = { math_floor((BUTTON_SIZE_SINGLE*NUM_ACTIONBAR_SLOTS + bar_padding*(NUM_ACTIONBAR_SLOTS-1))/2) -(16 + 10), 38*2 + 8 + 3 + 2 },
 						["2"] = { math_floor((BUTTON_SIZE_DOUBLE*NUM_ACTIONBAR_SLOTS + bar_padding*(NUM_ACTIONBAR_SLOTS-1))/2) -(16 + 10), 38*2 + 8 + 3 + 2 },

@@ -22,7 +22,8 @@ BarWidget.OnEnable = function(self)
 	local config = Module.config
 	local db = Module.db
 
-	local Bar = Module:GetWidget("Template: Bar"):New(BOTTOMRIGHT_ACTIONBAR_PAGE, Module:GetWidget("Controller: Main"):GetFrame())
+	local Artwork = Module:GetWidget("Artwork")
+	local Bar = Module:GetHandler("ActionBar"):New(BOTTOMRIGHT_ACTIONBAR_PAGE, Module:GetWidget("Controller: Main"):GetFrame(), Artwork:GetBarTemplate())
 
 	--------------------------------------------------------------------
 	-- Buttons
@@ -34,7 +35,7 @@ BarWidget.OnEnable = function(self)
 		-- get button IDs that reflect their actual actions
 		-- local button_id = (Bar.id - 1) * NUM_ACTIONBAR_BUTTONS + i
 		
-		local button = Bar:NewButton("action", i)
+		local button = Bar:NewButton("action", i, Artwork:GetButtonTemplate())
 		button:SetStateAction(0, "action", i)
 		for state = 1,14 do
 			button:SetStateAction(state, "action", (state - 1) * NUM_ACTIONBAR_BUTTONS + i)
@@ -101,10 +102,6 @@ BarWidget.OnEnable = function(self)
 	local visibility_driver = ENGINE_MOP and "[overridebar][possessbar][shapeshift]hide;[vehicleui]hide;show" or "[bonusbar:5]hide;[vehicleui]hide;show"
 	RegisterStateDriver(Bar, "vis", visibility_driver)
 
-	-- Give the secure environment access to the current visibility macro, 
-	-- so it can check for the correct visibility when user enabling the bar!
-	Bar:SetAttribute("visibility-driver", visibility_driver)
-
 	local Visibility = Bar:GetParent()
 	Visibility:SetAttribute("_childupdate-set_numbars", [[
 		local num = tonumber(message);
@@ -162,26 +159,17 @@ BarWidget.OnEnable = function(self)
 	Bar:SetAttribute("growth_y", bar_config.growthY)
 	Bar:SetAttribute("padding", bar_config.padding)
 	
-	local button_config = config.visuals.buttons
-
 	for i = 1,3 do
 		local id = tostring(i)
 		Bar:SetAttribute("bar_width-"..id, bar_config.bar_size[id][1])
 		Bar:SetAttribute("bar_height-"..id, bar_config.bar_size[id][2])
 		Bar:SetAttribute("button_size-"..id, bar_config.buttonsize[id])
-		Bar:SetStyleTableFor(bar_config.buttonsize[id], button_config[bar_config.buttonsize[id]])
 	end
 	
 	local previous = Module:GetWidget("Bar: 2"):GetFrame()
 	Bar:SetPoint("BOTTOMLEFT", previous, "TOPLEFT", 0, config.structure.bars.padding)
 
-
-	-- for testing
-	--Bar:SetBackdrop({ bgFile = BLANK_TEXTURE })
-	--Bar:SetBackdropColor(1, 0, 0, .5)
-	
 	self.Bar = Bar
-	
 end
 
 BarWidget.GetFrame = function(self)

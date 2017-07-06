@@ -23,7 +23,7 @@ MenuButtonWidget.New = function(self, parent)
 	button:SetFrameStrata("DIALOG")
 	button:RegisterForClicks("AnyUp")
 	button:SetScript("OnEnter", MenuButton.OnEnter)
-	button:SetScript("OnEnter", MenuButton.OnLeave)
+	button:SetScript("OnLeave", MenuButton.OnLeave)
 	
 	return button
 end

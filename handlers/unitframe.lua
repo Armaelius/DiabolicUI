@@ -303,7 +303,7 @@ UnitFrame.OnLeave = function(self)
 end
 
 UnitFrame.OnAttributeChanged = function(self, name, value)
-	if name == "unit" then
+	if (name == "unit") then
 		self.unit = value
 		self:UpdateAllElements()
 	end
@@ -418,33 +418,60 @@ Handler.New = function(self, unit, parent, styleFunc, nonSecure, ...)
 	object:SetScript("OnAttributeChanged", UnitFrame.OnAttributeChanged)
 	object:HookScript("OnShow", object.UpdateAllElements) 
 
-	RegisterStateDriver(object, "visibility", string_format("[@%s,exists]show;hide", object.unit))
-
 	-- When we have a vehicleUI, we switch the player frame to vehicle, and pet frame to player. 
-	if unit == "player" or unit == "playerpet" or unit == "pet" then
+	if (unit == "player") or (unit == "playerpet") or (unit == "pet") then
 		local VehicleUpdater = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
 		VehicleUpdater:SetFrameRef("unitframe", object)
 		VehicleUpdater:SetAttribute("real-unit", unit)
-		VehicleUpdater:SetAttribute("_onstate-vehicleupdate", [[
-			local real_unit = self:GetAttribute("real-unit");
-			if real_unit == "player" then
-				local new_unit = (newstate == "invehicle") and "vehicle" or real_unit;
-				local unitframe = self:GetFrameRef("unitframe");
-				control:CallMethod("UpdateUnit", new_unit);
-				unitframe:SetAttribute("unit", new_unit);
-				--RegisterStateDriver(unitframe, "visibility", format("[@%s,exists]show;hide",new_unit))
-			elseif real_unit == "pet" or real_unit == "playerpet" then
-				local new_unit = (newstate == "invehicle") and "player" or real_unit;
-				local unitframe = self:GetFrameRef("unitframe");
-				control:CallMethod("UpdateUnit", new_unit);
-				unitframe:SetAttribute("unit", new_unit);
-				--RegisterStateDriver(unitframe, "visibility", format("[@%s,exists]show;hide",new_unit))
-			end
-		]])
-
+		VehicleUpdater:SetAttribute("unit", unit)
 		VehicleUpdater.UpdateUnit = function(self, unit) object.unit = unit end
 
-		RegisterStateDriver(VehicleUpdater, "vehicleupdate", "[vehicleui] invehicle; notinvehicle")
+		-- Something not working as intended here
+		-- 
+		-- Legion 7.1.5: 
+		-- When leaving vehicles, health and power and other elements 
+		-- are stuck at 0, not updating. This only affects unitframes. 
+
+		if (unit == "player") then
+			VehicleUpdater:SetAttribute("_onstate-vehicleupdate", [[
+
+				-- figure out if we have a new unit, and which
+				local unit = self:GetAttribute("unit"); 
+				local newUnit = (newstate == "invehicle") and "vehicle" or "player"; 
+
+				-- update lua unit
+				control:CallMethod("UpdateUnit", newUnit); 
+
+				-- update secure unit
+				self:GetFrameRef("unitframe"):SetAttribute("unit", newUnit); 
+
+			]])
+
+			-- We never hide the player unitframe. Ever. 
+			RegisterStateDriver(object, "visibility", "show")
+		else
+			VehicleUpdater:SetAttribute("_onstate-vehicleupdate", [[
+
+				-- figure out if we have a new unit, and which
+				local unit = self:GetAttribute("unit"); 
+				local newUnit = (newstate == "invehicle") and "player" or self:GetAttribute("real-unit"); 
+
+				-- update lua unit
+				control:CallMethod("UpdateUnit", newUnit); 
+
+				-- update secure unit
+				self:GetFrameRef("unitframe"):SetAttribute("unit", newUnit); 
+			]])
+
+			-- Pet frames are used as player frames when we have a vehicleui
+			RegisterStateDriver(object, "visibility", "[@pet,exists][vehicleui]show;hide")
+		end
+
+		-- Register our vehicleswitcher
+		RegisterStateDriver(VehicleUpdater, "vehicleupdate", (ENGINE_MOP and "[overridebar][possessbar][shapeshift]" or "[bonusbar:5]") .. "[vehicleui] invehicle; notinvehicle")
+	else
+		-- Other units only need their own existence checks. 
+		RegisterStateDriver(object, "visibility", string_format("[@%s,exists]show;hide", object.unit))
 	end
 
 	-- Store the unitframe in the registry

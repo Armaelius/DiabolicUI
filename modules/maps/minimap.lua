@@ -8,6 +8,14 @@ local C = Engine:GetStaticConfig("Data: Colors")
 local F = Engine:GetStaticConfig("Data: Functions")
 local L = Engine:GetLocale()
 
+-- If carbonite is loaded, 
+-- and the setting to move the minimap into the carbonite map is enabled, 
+-- we leave the whole minimap to carbonite and just exit our module completely.
+Module:SetIncompatible("Carbonite", function(self)
+	if NxData and NxData.NXGOpts.MapMMOwn then
+		return true
+	end
+end)
 
 -- Lua API
 local _G = _G
@@ -76,6 +84,7 @@ local TIMEMANAGER_TOOLTIP_REALMTIME = _G.TIMEMANAGER_TOOLTIP_REALMTIME
 local SOLO = SOLO
 local GROUP = GROUP
 
+
 -- Speed constants, because we can never get enough
 ------------------------------------------------------------------
 local WOD 	= Engine:IsBuild("WoD")
@@ -83,30 +92,31 @@ local MOP 	= Engine:IsBuild("MoP")
 local CATA 	= Engine:IsBuild("Cata")
 
 
-
 -- Map functions
 ------------------------------------------------------------------
 local onMouseWheel = function(self, delta)
-	if delta > 0 then
+	if (delta > 0) then
 		MinimapZoomIn:Click()
-		-- self:SetZoom(min(self:GetZoomLevels(), self:GetZoom() + 1))
-	elseif delta < 0 then
+	elseif (delta < 0) then
 		MinimapZoomOut:Click()
-		-- self:SetZoom(max(0, self:GetZoom() - 1))
 	end
 end
 	
 local onMouseUp = function(self, button)
-	if button == "RightButton" then
+	if (button == "RightButton") then
 		ToggleDropDownMenu(1, nil,  _G.MiniMapTrackingDropDown, self)
 	else
+		local effectiveScale = self:GetEffectiveScale()
+
 		local x, y = GetCursorPosition()
-		x = x / self:GetEffectiveScale()
-		y = y / self:GetEffectiveScale()
+		x = x / effectiveScale
+		y = y / effectiveScale
+
 		local cx, cy = self:GetCenter()
 		x = x - cx
 		y = y - cy
-		if math_sqrt(x * x + y * y) < (self:GetWidth() / 2) then
+
+		if (math_sqrt(x * x + y * y) < (self:GetWidth() / 2)) then
 			self:PingLocation(x, y)
 		end
 	end
@@ -167,70 +177,6 @@ local onUpdate = function(self, elapsed)
 		self.elapsedCoords = 0
 	end
 end
-
-
-
--- Garrison functions
-------------------------------------------------------------------
-local Garrison_OnEnter = function(self)
-	if not self.highlight:IsShown() then
-		self.highlight:SetAlpha(0)
-		self.highlight:Show()
-	end
-	self.highlight:StartFadeIn(self.highlight.fadeInDuration)
-	GameTooltip:SetOwner(self, "ANCHOR_PRESERVE")
-	GameTooltip:ClearAllPoints()
-	GameTooltip:SetPoint("TOPRIGHT", self, "BOTTOMLEFT", -1, -1)
-	GameTooltip:SetText(GARRISON_LANDING_PAGE_TITLE, 1, 1, 1)
-	GameTooltip:AddLine(MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP, nil, nil, nil, true)
-	GameTooltip:Show()
-end
-
-local Garrison_OnLeave = function(self)
-	if self.highlight:IsShown() then
-		self.highlight:StartFadeOut()
-	end
-	GameTooltip:Hide()
-end
-
-local Garrison_OnClick = function(self, ...)
-	if GarrisonLandingPageMinimapButton then
-		-- A simple hack to let blizzard handle the click functionality of this one. 
-		GarrisonLandingPageMinimapButton:GetScript("OnClick")(GarrisonLandingPageMinimapButton, "LeftButton")
-	end
-end
-
-local Garrison_ShowPulse = function(self, redAlert)
-	if redAlert then
-		if self.garrison.icon.glow:IsShown() then
-			self.garrison.icon.glow:Hide()
-		end
-		if not self.garrison.icon.redglow:IsShown() then
-			self.garrison.icon.redglow:Show()
-		end
-	else
-		if self.garrison.icon.redglow:IsShown() then
-			self.garrison.icon.redglow:Hide()
-		end
-		if not self.garrison.icon.glow:IsShown() then
-			self.garrison.icon.glow:Show()
-		end
-	end
-	if not self.garrison.glow:IsShown() then
-		self.garrison.glow:SetAlpha(0)
-		self.garrison.glow:Show()
-	end
-	-- self.garrison.glow:StartFadeIn(.5)
-	self.garrison.glow:StartFlash(2.5, 1.5, 0, 1, false)
-end
-
-local Garrison_HidePulse = function(self, ...)
-	if self.garrison.glow:IsShown() then
-		self.garrison.glow:StopFlash()
-		self.garrison.glow:StartFadeOut()
-	end
-end
-
 
 
 Module.UpdateZoneData = function(self)
@@ -374,11 +320,11 @@ Module.UpdateZoneData = function(self)
 		elseif instanceType == "arena" then
 		elseif instanceType == "pvp" then
 			instanceDescription = PVP
-		else -- "none" -- This shouldn't happen, ever.
+		else 
+			-- "none" -- This shouldn't happen, ever.
 		end
-		if IsInRaid() or IsInGroup() then
+		if (IsInRaid() or IsInGroup()) then
 			self.data.difficulty = instanceDescription or difficultyName
-			--self.data.difficulty = (instanceDescription or difficultyName) .. " - " .. (IsInGroup() and GetNumGroupMembers() or 1) .. "/" .. ((maxPlayers and maxPlayers > 0) and maxPlayers or maxMembers) 
 		else
 			local where = instanceDescription or difficultyName
 			if where and where ~= "" then
@@ -391,7 +337,7 @@ Module.UpdateZoneData = function(self)
 		self.data.instanceName = name or minimapZoneName or ""
 	else
 		-- make sure it doesn't bug out at login from unavailable data 
-		if territory and territory ~= "" then
+		if (territory and territory ~= "") then
 			if IsInRaid() then
 				self.data.difficulty = RAID .. " " .. territory 
 			elseif IsInGroup() then
@@ -425,25 +371,14 @@ Module.UpdateZoneText = function(self)
 	local config = self.config 
 	self.frame.widgets.zone:SetText(self.data.minimapZoneName)
 	self.frame.widgets.zone:SetTextColor(unpack(C.General.Highlight))
-
-	--self.frame.widgets.difficulty:SetFormattedText("%s (%s)", self.data.difficulty, self.data.difficultyValue)
 	self.frame.widgets.difficulty:SetText(self.data.difficulty .. " ")
 end
 
+-- This should only be used for square maps. 
+-- When we add the new large round one, this will need to check for the current map type. 
 Module.EnforceRotation = Engine:Wrap(function(self)
 	SetCVar("rotateMinimap", 0)
 end)
-
-Module.InCompatible = function(self)
-	-- If carbonite is loaded, 
-	-- and the setting to move the minimap into the carbonite map is enabled, 
-	-- we leave the whole minimap to carbonite and just exit our module completely.
-	if Engine:IsAddOnEnabled("Carbonite") then
-		if NxData.NXGOpts.MapMMOwn then
-			return true
-		end
-	end
-end
 
 Module.GetFrame = function(self)
 	return self.frame
@@ -452,6 +387,7 @@ end
 Module.OnEvent = function(self, event, ...)
 	if event == "PLAYER_ENTERING_WORLD" then
 		self:EnforceRotation()
+		self:AlignMinimap()
 		self:UpdateZoneData()
 	elseif event == "ZONE_CHANGED" 
 	or event == "ZONE_CHANGED_INDOORS" 
@@ -459,41 +395,49 @@ Module.OnEvent = function(self, event, ...)
 		self:UpdateZoneData()
 	elseif event == "VARIABLES_LOADED" then 
 		self:EnforceRotation()
-	elseif event == "GARRISON_HIDE_LANDING_PAGE" then
-		if self.garrison:IsShown() then
-			self.garrison:Hide()
-		end
-	elseif event == "GARRISON_SHOW_LANDING_PAGE" then
-		if not self.garrison:IsShown() then
-			self.garrison:Show()
-		end
-		-- kill the pulsing when we open the report, we don't really need to be reminded any longer
-		if _G.GarrisonLandingPage and _G.GarrisonLandingPage:IsShown() then
-			Garrison_HidePulse(self) 
-		end
-	elseif event == "GARRISON_BUILDING_ACTIVATABLE" then
-		Garrison_ShowPulse(self)
-	elseif event == "GARRISON_BUILDING_ACTIVATED" or event == "GARRISON_ARCHITECT_OPENED" then
-		Garrison_HidePulse(self, GARRISON_ALERT_CONTEXT_BUILDING)
-	elseif event == "GARRISON_MISSION_FINISHED" then
-		Garrison_ShowPulse(self)
-	elseif  event == "GARRISON_MISSION_NPC_OPENED" then
-		Garrison_HidePulse(self, GARRISON_ALERT_CONTEXT_MISSION)
-	elseif event == "GARRISON_INVASION_AVAILABLE" then
-		Garrison_ShowPulse(self, true)
-	elseif event == "GARRISON_INVASION_UNAVAILABLE" then
-		Garrison_HidePulse(self, GARRISON_ALERT_CONTEXT_INVASION)
-	elseif event == "SHIPMENT_UPDATE" then
-		-- local shipmentStarted = ...
-		-- if shipmentStarted then
-			-- Garrison_ShowPulse(self) -- we don't need to pulse when a work order starts, because WE just started it!!!
-		-- end
+		self:AlignMinimap()
 	end
 end
 
-Module.OnInit = function(self)
-	if self:InCompatible() then return end
+Module.AlignMinimap = function(self)
+	local config = self:GetStaticConfig("Minimap")
 
+	local map = self.frame.custom.map
+	local mapContent = self.frame.custom.map.content
+
+	mapContent:SetParent(self.frame) 
+	mapContent:SetFrameLevel(2) 
+	mapContent:SetResizable(true)
+	mapContent:SetMovable(true)
+	mapContent:SetUserPlaced(true)
+	mapContent:ClearAllPoints()
+	mapContent:SetPoint("CENTER", map, "CENTER", 0, 0)
+	mapContent:SetSize(map:GetWidth(), map:GetHeight())
+	mapContent:SetScale(1)
+	mapContent:SetFrameStrata("LOW") 
+	mapContent:SetFrameLevel(2)
+	mapContent:SetMaskTexture(config.map.mask)
+	mapContent:EnableMouseWheel(true)
+	mapContent:SetScript("OnMouseWheel", onMouseWheel)
+	mapContent:SetScript("OnMouseUp", onMouseUp)
+
+	-- Getting dead tired of the random resizes.
+	--
+	-- 2017-06-28-1936: 
+	-- Still happening. No idea why.
+	-- It might be that the map isn't fully loaded 
+	-- or not properly reacting to sizing events too early
+	-- in the loading process. So we have to delay all of this. (?) 
+	mapContent.SetSize = function() end
+	mapContent.SetWidth = function() end
+	mapContent.SetHeight = function() end
+	mapContent.SetParent = function() end
+	mapContent.SetPoint = function() end
+	mapContent.SetAllPoints = function() end
+	mapContent.ClearAllPoints = function() end
+end
+
+Module.OnInit = function(self)
 	local config = self:GetStaticConfig("Minimap")
 	local db = self:GetConfig("Minimap")
 	local data = {
@@ -511,7 +455,6 @@ Module.OnInit = function(self)
 	local scaffold = {}
 	local custom = {}
 	local widgets = {}
-
 
 	local oldBackdrop = MinimapBackdrop
 	oldBackdrop:SetMovable(true)
@@ -736,6 +679,9 @@ Module.OnInit = function(self)
 	zoneDifficulty:SetPoint("BOTTOMRIGHT", time, "BOTTOMLEFT", 0, 0)
 	zoneDifficulty:SetJustifyV("BOTTOM")
 
+	local finderMessagePvE = _G.CHANNEL_CATEGORY_GROUP -- _G.LOOKING
+	local finderMessagePvP = _G.PVP
+
 	if MOP then
 		-- MoP Dungeon Finder Eye
 		if _G.QueueStatusMinimapButton then
@@ -753,7 +699,7 @@ Module.OnInit = function(self)
 			groupText:Place(unpack(groupConfig.fontAnchor))
 			groupText:SetFontObject(groupConfig.normalFont)
 			groupText:SetTextColor(groupConfig.fontColor[1], groupConfig.fontColor[2], groupConfig.fontColor[3])
-			groupText:SetText(LOOKING) 
+			groupText:SetText(finderMessagePvE) 
 			groupText:SetJustifyV("BOTTOM")
 
 			-- Need a separate frame for the updater, 
@@ -769,13 +715,13 @@ Module.OnInit = function(self)
 						dots = 0
 					end
 					if dots == 0 then
-						groupText:SetText(LOOKING) 
+						groupText:SetText(finderMessagePvE) 
 					elseif dots == 1 then
-						groupText:SetFormattedText("%s.", LOOKING) 
+						groupText:SetFormattedText("%s.", finderMessagePvE) 
 					elseif dots == 2 then
-						groupText:SetFormattedText("%s..", LOOKING) 
+						groupText:SetFormattedText("%s..", finderMessagePvE) 
 					elseif dots == 3 then
-						groupText:SetFormattedText("%s...", LOOKING) 
+						groupText:SetFormattedText("%s...", finderMessagePvE) 
 					end
 					total = 0
 				end 
@@ -783,7 +729,7 @@ Module.OnInit = function(self)
 		end
 	end
 
-	if not MOP then
+	if (not MOP) then
 		-- WotLK and Cata Dungeon Finder Eye
 		if _G.MiniMapLFGFrame then
 			local groupConfig = config.widgets.group
@@ -800,7 +746,7 @@ Module.OnInit = function(self)
 			groupText:Place(unpack(groupConfig.fontAnchor))
 			groupText:SetFontObject(groupConfig.normalFont)
 			groupText:SetTextColor(groupConfig.fontColor[1], groupConfig.fontColor[2], groupConfig.fontColor[3])
-			groupText:SetText(LOOKING) 
+			groupText:SetText(finderMessagePvE) 
 			groupText:SetJustifyV("BOTTOM")
 
 			-- Need a separate frame for the updater, 
@@ -816,13 +762,13 @@ Module.OnInit = function(self)
 						dots = 0
 					end
 					if dots == 0 then
-						groupText:SetText(LOOKING) 
+						groupText:SetText(finderMessagePvE) 
 					elseif dots == 1 then
-						groupText:SetFormattedText("%s.", LOOKING) 
+						groupText:SetFormattedText("%s.", finderMessagePvE) 
 					elseif dots == 2 then
-						groupText:SetFormattedText("%s..", LOOKING) 
+						groupText:SetFormattedText("%s..", finderMessagePvE) 
 					elseif dots == 3 then
-						groupText:SetFormattedText("%s...", LOOKING) 
+						groupText:SetFormattedText("%s...", finderMessagePvE) 
 					end
 					total = 0
 				end 
@@ -845,7 +791,7 @@ Module.OnInit = function(self)
 			pvpText:Place(unpack(groupConfig.fontAnchor))
 			pvpText:SetFontObject(groupConfig.normalFont)
 			pvpText:SetTextColor(groupConfig.fontColor[1], groupConfig.fontColor[2], groupConfig.fontColor[3])
-			pvpText:SetText(LOOKING) 
+			pvpText:SetText(finderMessagePvP) 
 			pvpText:SetJustifyV("BOTTOM")
 			
 			-- Need a separate frame for the updater, 
@@ -866,13 +812,13 @@ Module.OnInit = function(self)
 							dots = 0
 						end
 						if dots == 0 then
-							pvpText:SetText(LOOKING) 
+							pvpText:SetText(finderMessagePvP) 
 						elseif dots == 1 then
-							pvpText:SetFormattedText("%s.", LOOKING) 
+							pvpText:SetFormattedText("%s.", finderMessagePvP) 
 						elseif dots == 2 then
-							pvpText:SetFormattedText("%s..", LOOKING) 
+							pvpText:SetFormattedText("%s..", finderMessagePvP) 
 						elseif dots == 3 then
-							pvpText:SetFormattedText("%s...", LOOKING) 
+							pvpText:SetFormattedText("%s...", finderMessagePvP) 
 						end
 						total = 0
 					end
@@ -913,25 +859,9 @@ Module.OnInit = function(self)
 	self.frame.old.backdrop = oldBackdrop
 	self.frame.old.cluster = oldCluster
 
-
-	-- Will move these up when the new garrison button graphics are done
-	do return end
-
-	if WOD then 
-		self.frame.widgets.garrison = CreateFrame("Frame", nil, self.frame.scaffold.border) 
-		self.frame.widgets.garrison:EnableMouse(true) 
-		self.frame.widgets.garrison:SetScript("OnEnter", Garrison_OnEnter) 
-		self.frame.widgets.garrison:SetScript("OnLeave", Garrison_OnLeave) 
-		self.frame.widgets.garrison:SetScript("OnMouseDown", Garrison_OnClick)
-
-		self.garrison = self.frame.widgets.garrison
-	end
-
 end
 
 Module.OnEnable = function(self)
-	if self:InCompatible() then return end
-
 	BlizzardUI:GetElement("Minimap"):Disable()
 	BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsDisplayPanelShowClock")
 	BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsDisplayPanelRotateMinimap")
@@ -943,6 +873,13 @@ Module.OnEnable = function(self)
 	self:RegisterEvent("VARIABLES_LOADED", "OnEvent")
 	self:UpdateZoneData()
 
+	-- Don't do thiw! 
+	-- We don't want to overwrite the minimap methods too early in the loading process,
+	-- or the map will lock itself to the tiny wrong size instead. 
+	-- Have to add a failsafe for this that'll make sure it isn't locked 
+	-- before it's fully loaded and correctly sized.
+	--self:AlignMinimap() 
+
 	-- Initiate updates for time, coordinates, etc
 	self.frame:SetScript("OnUpdate", onUpdate)
 
@@ -950,21 +887,5 @@ Module.OnEnable = function(self)
 	-- *Note that I plan to make minimap visibility save between sessions, so strictly speaking this is not redundant, 
 	--  event though the minimap technically always is visible at /reload. 
 	self:SendMessage("ENGINE_MINIMAP_VISIBLE_CHANGED", not not(self.frame.visibility:IsShown()))
-	
-	-- since we haven't implemented this fully, we exit now
-	do return end
-	
-	if WOD then 
-		self:RegisterEvent("GARRISON_SHOW_LANDING_PAGE", "OnEvent")
-		self:RegisterEvent("GARRISON_HIDE_LANDING_PAGE", "OnEvent")
-		self:RegisterEvent("GARRISON_BUILDING_ACTIVATABLE", "OnEvent")
-		self:RegisterEvent("GARRISON_BUILDING_ACTIVATED", "OnEvent")
-		self:RegisterEvent("GARRISON_ARCHITECT_OPENED", "OnEvent")
-		self:RegisterEvent("GARRISON_MISSION_FINISHED", "OnEvent")
-		self:RegisterEvent("GARRISON_MISSION_NPC_OPENED", "OnEvent")
-		self:RegisterEvent("GARRISON_INVASION_AVAILABLE", "OnEvent")
-		self:RegisterEvent("GARRISON_INVASION_UNAVAILABLE", "OnEvent")
-		self:RegisterEvent("SHIPMENT_UPDATE", "OnEvent")
-	end
 	
 end

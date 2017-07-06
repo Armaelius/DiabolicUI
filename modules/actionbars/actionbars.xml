@@ -4,7 +4,6 @@
 
 <Include file='templates\templates.xml'/>
 <Include file='controllers\controllers.xml'/>
-<Include file='bars\bars.xml'/>
-<Include file='menus\menus.xml'/>
+<Include file='elements\elements.xml'/>
 
 </Ui>

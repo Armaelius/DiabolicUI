@@ -2,86 +2,125 @@ local _, Engine = ...
 local Module = Engine:NewModule("ObjectiveTracker")
 local L = Engine:GetLocale()
 local C = Engine:GetStaticConfig("Data: Colors")
+--local QuestZones = Engine:GetStaticConfig("Data: QuestZones") -- not currently in use
 local UICenter = Engine:GetFrame()
 
 -- Lua API
 local _G = _G
+local bit_band = bit.band
 local ipairs = ipairs
-local math_ceil = math.ceil
+local math_abs = math.abs
 local math_floor = math.floor
 local math_huge = math.huge
-local math_min = math.min
+local math_sqrt = math.sqrt
 local pairs = pairs
+local rawget = rawget
 local select = select
 local setmetatable = setmetatable
 local string_match = string.match
-local string_format = string.format
 local string_gmatch = string.gmatch
 local string_gsub = string.gsub
 local string_lower = string.lower
-local string_split = string.split
 local string_upper = string.upper
+local table_insert = table.insert
 local table_remove = table.remove
+local table_sort = table.sort
 local table_wipe = table.wipe
 local tonumber = tonumber
 local unpack = unpack
 
 -- WoW API
-local AddAutoQuestPopUp = _G.AddAutoQuestPopUp
 local AddQuestWatch = _G.AddQuestWatch
+local AddWorldQuestWatch = _G.AddWorldQuestWatch
 local C_TaskQuest = _G.C_TaskQuest
 local ChatEdit_GetActiveWindow = _G.ChatEdit_GetActiveWindow
 local ChatEdit_InsertLink = _G.ChatEdit_InsertLink
 local CloseDropDownMenus = _G.CloseDropDownMenus
 local GetAuctionItemClasses = _G.GetAuctionItemClasses
 local GetAuctionItemSubClasses = _G.GetAuctionItemSubClasses
-local GetContainerItemID = _G.GetContainerItemID
-local GetContainerItemLink = _G.GetContainerItemLink
-local GetContainerNumSlots = _G.GetContainerNumSlots
-local GetContainerNumFreeSlots = _G.GetContainerNumFreeSlots
+local GetAutoQuestPopUp = _G.GetAutoQuestPopUp
 local GetCurrentMapAreaID = _G.GetCurrentMapAreaID
 local GetCVarBool = _G.GetCVarBool
 local GetDistanceSqToQuest = _G.GetDistanceSqToQuest
+local GetFactionInfoByID = _G.GetFactionInfoByID
 local GetItemSubClassInfo = _G.GetItemSubClassInfo
+local GetMapNameByID = _G.GetMapNameByID
+local GetMoney = _G.GetMoney
 local GetNumAutoQuestPopUps = _G.GetNumAutoQuestPopUps
-local GetAutoQuestPopUp = _G.GetAutoQuestPopUp
+local GetNumQuestLeaderBoards = _G.GetNumQuestLeaderBoards
 local GetNumQuestLogEntries = _G.GetNumQuestLogEntries
 local GetNumQuestWatches = _G.GetNumQuestWatches
 local GetNumWorldQuestWatches = _G.GetNumWorldQuestWatches
+local GetPlayerMapPosition = _G.GetPlayerMapPosition
+local GetProfessions = _G.GetProfessions
 local GetQuestDifficultyColor = _G.GetQuestDifficultyColor
+local GetQuestID = _G.GetQuestID
+local GetQuestLogCompletionText = _G.GetQuestLogCompletionText
 local GetQuestLogIndexByID = _G.GetQuestLogIndexByID
-local GetQuestLogIsAutoComplete = _G.GetQuestLogIsAutoComplete
+local GetQuestLogQuestText = _G.GetQuestLogQuestText
+local GetQuestLogRequiredMoney = _G.GetQuestLogRequiredMoney
+local GetQuestLogSelection = _G.GetQuestLogSelection
 local GetQuestLogSpecialItemInfo = _G.GetQuestLogSpecialItemInfo
 local GetQuestLogTitle = _G.GetQuestLogTitle
+local GetQuestObjectiveInfo = _G.GetQuestObjectiveInfo
+local GetQuestProgressBarPercent = _G.GetQuestProgressBarPercent
+local GetQuestTagInfo = _G.GetQuestTagInfo
 local GetQuestWatchInfo = _G.GetQuestWatchInfo
 local GetQuestWorldMapAreaID = _G.GetQuestWorldMapAreaID
-local GetRealZoneText = _G.GetRealZoneText
 local GetSuperTrackedQuestID = _G.GetSuperTrackedQuestID
+local GetTaskInfo = _G.GetTaskInfo
 local GetWorldQuestWatchInfo = _G.GetWorldQuestWatchInfo
+local HaveQuestData = _G.HaveQuestData
 local IsModifiedClick = _G.IsModifiedClick
-local IsPlayerInMicroDungeon = _G.IsPlayerInMicroDungeon
+local IsQuestBounty = _G.IsQuestBounty
+local IsQuestTask = _G.IsQuestTask
+local IsQuestWatched = _G.IsQuestWatched
 local IsWorldQuestWatched = _G.IsWorldQuestWatched
 local PlaySound = _G.PlaySound
+local QuestGetAutoAccept = _G.QuestGetAutoAccept
 local QuestHasPOIInfo = _G.QuestHasPOIInfo
 local QuestLog_OpenToQuest = _G.QuestLog_OpenToQuest
 local QuestLogPopupDetailFrame_Show = _G.QuestLogPopupDetailFrame_Show
 local QuestMapFrame_IsQuestWorldQuest = _G.QuestMapFrame_IsQuestWorldQuest
+local QuestUtils_IsQuestWorldQuest = _G.QuestUtils_IsQuestWorldQuest
 local RemoveQuestWatch = _G.RemoveQuestWatch
+local RemoveWorldQuestWatch = _G.RemoveWorldQuestWatch
+local SelectQuestLogEntry = _G.SelectQuestLogEntry
 local SetMapToCurrentZone = _G.SetMapToCurrentZone
 local SetSuperTrackedQuestID = _G.SetSuperTrackedQuestID
 local ShowQuestComplete = _G.ShowQuestComplete
 local ShowQuestOffer = _G.ShowQuestOffer
-local SortQuestWatches = _G.SortQuestWatches
 local UnitAffectingCombat = _G.UnitAffectingCombat
+local WorldMap_GetWorldQuestRewardType = _G.WorldMap_GetWorldQuestRewardType
 
 -- WoW Frames
 local QuestFrame = _G.QuestFrame
 local QuestFrameAcceptButton = _G.QuestFrameAcceptButton
+local QuestFrameRewardPanel = _G.QuestFrameRewardPanel
 local WorldMapFrame = _G.WorldMapFrame
 
--- WoW Constants
-local BACKPACK_CONTAINER = _G.BACKPACK_CONTAINER
-local NUM_BAG_SLOTS = _G.NUM_BAG_SLOTS
+-- Copied from WorldMapFrame.lua in Legion
+local WQ = {
+	WORLD_QUEST_REWARD_TYPE_FLAG_GOLD = _G.WORLD_QUEST_REWARD_TYPE_FLAG_GOLD, -- 0x0001
+	WORLD_QUEST_REWARD_TYPE_FLAG_ORDER_RESOURCES = _G.WORLD_QUEST_REWARD_TYPE_FLAG_ORDER_RESOURCES, -- 0x0002
+	WORLD_QUEST_REWARD_TYPE_FLAG_ARTIFACT_POWER = _G.WORLD_QUEST_REWARD_TYPE_FLAG_ARTIFACT_POWER, -- 0x0004
+	WORLD_QUEST_REWARD_TYPE_FLAG_MATERIALS = _G.WORLD_QUEST_REWARD_TYPE_FLAG_MATERIALS, -- 0x0008
+	WORLD_QUEST_REWARD_TYPE_FLAG_EQUIPMENT = _G.WORLD_QUEST_REWARD_TYPE_FLAG_EQUIPMENT -- 0x0010
+
+}
+	
+-- Lua enums used to identify various types of Legion world quests
+local LE = {
+	LE_QUEST_TAG_TYPE_INVASION = _G.LE_QUEST_TAG_TYPE_INVASION,
+	LE_QUEST_TAG_TYPE_DUNGEON = _G.LE_QUEST_TAG_TYPE_DUNGEON,
+	LE_QUEST_TAG_TYPE_RAID = _G.LE_QUEST_TAG_TYPE_RAID,
+	LE_WORLD_QUEST_QUALITY_RARE = _G.LE_WORLD_QUEST_QUALITY_RARE,
+	LE_WORLD_QUEST_QUALITY_EPIC = _G.LE_WORLD_QUEST_QUALITY_EPIC,
+	LE_QUEST_TAG_TYPE_PVP = _G.LE_QUEST_TAG_TYPE_PVP,
+	LE_QUEST_TAG_TYPE_PET_BATTLE = _G.LE_QUEST_TAG_TYPE_PET_BATTLE,
+	LE_QUEST_TAG_TYPE_PROFESSION = _G.LE_QUEST_TAG_TYPE_PROFESSION,
+	LE_ITEM_QUALITY_COMMON = _G.LE_ITEM_QUALITY_COMMON
+}
 
 -- Client Constants
 local ENGINE_LEGION 	= Engine:IsBuild("Legion")
@@ -89,139 +128,148 @@ local ENGINE_WOD 		= Engine:IsBuild("WoD")
 local ENGINE_MOP 		= Engine:IsBuild("MoP")
 local ENGINE_CATA 		= Engine:IsBuild("Cata")
 
--- Localized strings
-local L_ACCEPT = _G.ACCEPT
-local L_CONTINUE = _G.CONTINUE
-local L_FAILED = _G.FAILED
-local L_OBJECTIVES = _G.OBJECTIVES_TRACKER_LABEL
-local L_QUEST_COMPLETE = _G.QUEST_WATCH_QUEST_READY or _G.QUEST_WATCH_QUEST_COMPLETE or _G.QUEST_COMPLETE
-local L_QUEST_FAILED = _G.QUEST_FAILED
-local L_QUEST = ENGINE_LEGION and GetItemSubClassInfo(_G.LE_ITEM_CLASS_QUESTITEM, (select(1, GetAuctionItemSubClasses(_G.LE_ITEM_CLASS_QUESTITEM)))) or ENGINE_CATA and 	(select(10, GetAuctionItemClasses())) or (select(12, GetAuctionItemClasses())) or "Quest" -- the fallback isn't actually needed
-
--- Create search patterns from these later on, 
--- to better parse quest objectives and figure out what we need, 
--- what has changed, what events to look out for and so on. 
-
---QUEST_SUGGESTED_GROUP_NUM = "Suggested Players [%d]";
---QUEST_SUGGESTED_GROUP_NUM_TAG = "Group: %d";
---QUEST_FACTION_NEEDED = "%s:  %s / %s";
---QUEST_ITEMS_NEEDED = "%s: %d/%d";
---QUEST_MONSTERS_KILLED = "%s slain: %d/%d";
---QUEST_OBJECTS_FOUND = "%s: %d/%d";
---QUEST_PLAYERS_KILLED = "Players slain: %d/%d";
---QUEST_FACTION_NEEDED_NOPROGRESS = "%s:  %s";
---QUEST_INTERMEDIATE_ITEMS_NEEDED = "%s: (%d)";
---QUEST_ITEMS_NEEDED_NOPROGRESS = "%s x %d";
---QUEST_MONSTERS_KILLED_NOPROGRESS = "%s x %d";
---QUEST_OBJECTS_FOUND_NOPROGRESS = "%s x %d";
---QUEST_PLAYERS_KILLED_NOPROGRESS = "Players x %d";
-
--- Blank texture used as a fallback for borders and bars
-local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]] 
-
--- these exist (or are used) in WoD and beyond
-local BLING_TEXTURE = [[Interface\Cooldown\star4]]
-local EDGE_LOC_TEXTURE = [[Interface\Cooldown\edge-LoC]]
-local EDGE_NORMAL_TEXTURE = [[Interface\Cooldown\edge]]
-
-local BUTTON_SIZE = 40 
-local BUTTON_BACKDROP = {
-	bgFile = BLANK_TEXTURE,
-	edgeFile = BLANK_TEXTURE,
-	edgeSize = 1,
-	insets = {
-		left = -1,
-		right = -1,
-		top = -1,
-		bottom = -1
-	}
-}
-
--- Constant indicating the tracker needs an additional update.
-local NEED_UPDATE
-
--- Constant to avoid auto tracking new quests
-local IGNORE_QUEST
+-- 	Tracking quest zones is a tricky thing, since the map needs to be changed  
+-- 	to the current zone in order to retrieve that information about regular quests. 
+-- 	However, doing this while the worldmap is open will lock it to the current zone, 
+--  preventing the user from changing the visible zone. 
+-- 	
+-- 	So in order to minimize the impact on the game experience, avoid overriding player choices related to the visible map zone, 
+-- 	and also allow us to view quests from other zones in the tracker depending on what zone the visible map is set to, 
+-- 	we track both the actual player zone and the current map zone individually.
+local CURRENT_PLAYER_ZONE -- The zone the player is in, updated upon entering the world, and zone changes
+local CURRENT_MAP_ZONE -- The zone the world map is set to, updated on map display and map zone changes
+local CURRENT_PLAYER_X, CURRENT_PLAYER_Y -- Tracking player position when the map isn't set to the current zone
+local PIXEL_SIZE -- Constant to attempt to track the virtual size of an on-screen pixel
 
 local questData = {} -- quest status and objectives by questID 
 
 local allTrackedQuests = {} -- all tracked quests
 local zoneTrackedQuests = {} -- quests auto tracked by zone
 local userTrackedQuests = {} -- quests manually tracked by the user
-local worldQuests = {} -- Legion world quests
+
+local sortedTrackedQuests = {} -- indexed table with the currently tracked quests sorted
+local trackedQuestsByQuestID = {} -- a fast lookup table to decide if a quest is visible
+local questWatchQueue = {} -- temporary cache for quests to be tracked
+local worldQuestWatchQueue = {} -- temporary cache for world quests to be tracked
+
+local questLogCache = {} -- cache of the current questlog
+local worldQuestCache = {} -- cache of the current world quests
 
 local itemButtons = {} -- item button cache, mostly for easier naming
 local activeItemButtons = {} -- cache of active and visible item buttons
+local backdropCache = {} -- Cachce of pixel perfect backdrops we need to keep updated on scale changes
 
-local scheduledForRemoval = {} -- temporary cache for quests no longer tracked 
-local scheduledForTracking = {} -- temporary cache for quests to be tracked
-
--- A little magic to at least attempt 
--- to keep the pixel borders locked to actual pixels. 
--- This will fail if the user has manually resized the window 
--- to a size not matching the chosen resolution, 
--- or if the window is maximized when the chosen resolution
--- does not match the actual screen resolution. 
--- There's no workaround for those cases, as WoW simply 
--- does't provide any API to retrieve the actual sizes with.
-local PIXEL_SIZE
-local backdropCache = {}
-local GetBackdrop = function()
-	local pixelSize = UICenter:GetSizeOfPixel()
-	return {
-		bgFile = BLANK_TEXTURE,
-		edgeFile = BLANK_TEXTURE,
-		edgeSize = pixelSize,
-		insets = {
-			left = -pixelSize,
-			right = -pixelSize,
-			top = -pixelSize,
-			bottom = -pixelSize
-		}
-	}
-end
-local UpdateScale = function(self, event, ...)
-	local arg = ...
-	if (event == "CVAR_UPDATE") and (arg ~= "WINDOWED_MAXIMIZED") then
-		return
-	end
-	local pixelSize = UICenter:GetSizeOfPixel()
-	if (PIXEL_SIZE ~= pixelSize) then
-		local newBackdrop = GetBackdrop()
-		for frame, backdrop in pairs(backdropCache) do
-			local r, g, b, a = frame:GetBackdropColor()
-			local r2, g2, b2, a2 = frame:GetBackdropBorderColor()
-			frame:SetBackdrop(nil)
-			frame:SetBackdrop(newBackdrop)
-			frame:SetBackdropColor(r, g, b, a)
-			frame:SetBackdropBorderColor(r2, g2, b2, a2)
-		end
-		PIXEL_SIZE = pixelSize
-	end
-end
-
-
--- Here we correct incorrect mapIDs for various quests. 
--- Will move this to the settings file later on, 
--- keeping it here for now.
--- 
--- MapIDs retrieved from: http://wow.gamepedia.com/MapID
-local questMapIDOverrides = {
-	-- Icecrown dailies (WotLK)
-	[13789] = 492, 		-- Taking The Battle To The Enemy
-	[14096] = 492, 		-- You've Really Done It This Time, Kul
-
-	-- Death Knight starter zone (WotLK)
-	[12679] = 502,		-- Tonight We Dine In Havenshire
-	[12687] = 502, 		-- Into The Realm Of Shadows
-	[12697] = 502, 		-- Gothik The Harvester
-	[12698] = 502, 		-- The Gift That Keeps On Giving
-	[12701] = 502, 		-- Massacre At Light's Point
-	[12707] = 502, 		-- Victory At Death's Breach
-	[12714] = 502, 		-- The Will Of The Lich King
-	[12715] = 502, 		-- The Crypt Of Remembrance
-	[12733] = 502		-- Death's Challenge
+-- Broken Isles zones 
+-- used to parse for available world quests.
+local brokenIslesContinent = 1007 -- Broken Isles (The whole continent)
+local brokenIslesZones = {
+	1015,	-- Aszuna
+	1021,	-- Broken Shore
+	1014,	-- Dalaran
+	1098,	-- Eye of Azshara
+	1024,	-- Highmountain
+	1017,	-- Stormheim
+	1033,	-- Suramar
+	1018	-- Val'sharah
 }
+
+-- Create a faster lookup table to figure out if we're in a Legion outdoors zone
+-- We're including the main continent map in this lookup table too, 
+-- since we're using this table to decide whether or not to scan world quests. 
+local isLegionZone = { [brokenIslesContinent] = true }
+for _,zoneID in pairs(brokenIslesZones) do
+	isLegionZone[zoneID] = true
+end
+
+-- Order Hall zones
+-- *Note that Death Knights, Paladins, Rogues and Warlocks 
+--  have order halls that either are inside existing cities 
+--  or instanced zones not part of the broken isles, 
+--  and therefore aren't needed in this list. 
+local orderHallZones = {
+	1052,	-- Mardum, the Shattered Abyss		Demon Hunter
+	1077,	-- The Dreamgrove					Druid
+	1072,	-- Trueshot Lodge					Hunter
+	1068,	-- Hall of the Guardian				Mage
+	1044,	-- The Wandering Isle				Monk
+	1040,	-- Netherlight Temple				Priest
+	1057,	-- The Heart of Azeroth				Shaman
+	1035	-- Skyhold							Warrior
+}
+
+-- Legion Raids 
+local legionRaids = {
+	1094,	-- The Emerald Nightmare
+	1114,	-- Trial of Valor
+	1088,	-- The Nighthold
+	1147	-- Tomb of Sargeras
+}
+
+-- Legion Dungeons
+local legionDungeons = {
+	1081,	-- Black Rook Hold
+	1146,	-- Cathedral of Eternal Night
+	1087,	-- Court of Stars
+	1067,	-- Darkheart Thicket
+	1046,	-- Eye of Azshara
+	1041,	-- Halls of Valor
+	1042,	-- Maw of Souls
+	1065,	-- Neltharion's Lair
+	1115,	-- Return to Karazhan
+	1079,	-- The Arcway
+	1045,	-- Vault of the Wardens
+	1066	-- Violet Hold
+}
+
+-- Localized Blizzard strings
+local BLIZZ_LOCALE = {
+	ACCEPT = _G.ACCEPT,
+	COMPLETE = _G.COMPLETE,
+	COMPLETE_QUEST = _G.COMPLETE_QUEST,
+	CONTINUE = _G.CONTINUE,
+	FAILED = _G.FAILED,
+	NEW = _G.NEW,
+	OBJECTIVES = _G.OBJECTIVES_TRACKER_LABEL,
+	QUEST_COMPLETE = _G.QUEST_WATCH_QUEST_READY or _G.QUEST_WATCH_QUEST_COMPLETE or _G.QUEST_COMPLETE,
+	QUEST_FAILED = _G.QUEST_FAILED,
+	QUEST = ENGINE_LEGION and GetItemSubClassInfo(_G.LE_ITEM_CLASS_QUESTITEM, (select(1, GetAuctionItemSubClasses(_G.LE_ITEM_CLASS_QUESTITEM)))) or ENGINE_CATA and (select(10, GetAuctionItemClasses())) or (select(12, GetAuctionItemClasses())) or "Quest", -- the fallback isn't actually needed
+	UPDATE = _G.UPDATE
+}
+
+-- Blizzard textures 
+local TEXTURE = {
+	BLANK = [[Interface\ChatFrame\ChatFrameBackground]],
+	BLING = [[Interface\Cooldown\star4]],
+	EDGE_LOC = [[Interface\Cooldown\edge-LoC]],
+	EDGE_NORMAL = [[Interface\Cooldown\edge]]
+}
+
+-- We'll create search patterns from these later on, 
+-- to better parse quest objectives and figure out what we need, 
+-- what has changed, what events to look out for and so on. 
+-- 
+--	QUEST_SUGGESTED_GROUP_NUM = "Suggested Players [%d]";
+--	QUEST_SUGGESTED_GROUP_NUM_TAG = "Group: %d";
+--	QUEST_FACTION_NEEDED = "%s:  %s / %s";
+--	QUEST_ITEMS_NEEDED = "%s: %d/%d";
+--	QUEST_MONSTERS_KILLED = "%s slain: %d/%d";
+--	QUEST_OBJECTS_FOUND = "%s: %d/%d";
+--	QUEST_PLAYERS_KILLED = "Players slain: %d/%d";
+--	QUEST_FACTION_NEEDED_NOPROGRESS = "%s:  %s";
+--	QUEST_INTERMEDIATE_ITEMS_NEEDED = "%s: (%d)";
+--	QUEST_ITEMS_NEEDED_NOPROGRESS = "%s x %d";
+--	QUEST_MONSTERS_KILLED_NOPROGRESS = "%s x %d";
+--	QUEST_OBJECTS_FOUND_NOPROGRESS = "%s x %d";
+--	QUEST_PLAYERS_KILLED_NOPROGRESS = "Players x %d";
+-- 
+local questCaptures = setmetatable({
+	item 		= string_gsub(string_gsub("^" .. _G.QUEST_ITEMS_NEEDED, 	"%%[0-9%$]-s", "(.-)"), "%%[0-9%$]-d", "(%%d+)"),
+	monster 	= string_gsub(string_gsub("^" .. _G.QUEST_MONSTERS_KILLED, 	"%%[0-9%$]-s", "(.-)"), "%%[0-9%$]-d", "(%%d+)"),
+	faction 	= string_gsub(string_gsub("^" .. _G.QUEST_FACTION_NEEDED, 	"%%[0-9%$]-s", "(.-)"), "%%[0-9%$]-d", "(%%d+)"),
+	reputation 	= string_gsub(string_gsub("^" .. _G.QUEST_FACTION_NEEDED, 	"%%[0-9%$]-s", "(.-)"), "%%[0-9%$]-d", "(%%d+)"),
+	unknown 	= string_gsub(string_gsub("^" .. _G.QUEST_OBJECTS_FOUND, 	"%%[0-9%$]-s", "(.-)"), "%%[0-9%$]-d", "(%%d+)")
+}, { __index = function(self) return rawget(self, "unknown") end})
+
 
 
 -- Utility functions and stuff
@@ -275,6 +323,33 @@ local parseString = function(msg, fontString, words, wordWidths)
 	return fullWidth, spaceWidth, wordWidths, words
 end
 
+-- A little magic to at least attempt 
+-- to keep the pixel borders locked to actual pixels. 
+--
+-- This will fail if the user has manually resized the window 
+-- to a size not matching the chosen resolution, 
+-- or if the window is maximized when the chosen resolution
+-- does not match the actual screen resolution. 
+-- 
+-- There's no workaround for those cases, as WoW simply 
+-- does't provide any API to retrieve the actual sizes with.
+--
+-- Eventually I'll make a nice border texture that scales well, 
+-- but for now we're doing it this way. 
+local getPixelPerfectBackdrop = function()
+	local pixelSize = UICenter:GetSizeOfPixel()
+	return {
+		bgFile = TEXTURE.BLANK,
+		edgeFile = TEXTURE.BLANK,
+		edgeSize = pixelSize,
+		insets = {
+			left = -pixelSize,
+			right = -pixelSize,
+			top = -pixelSize,
+			bottom = -pixelSize
+		}
+	}
+end
 
 -- Set a message and calculate it's best size for display.
 -- *The excessive amount of comments here is because my brain 
@@ -282,7 +357,7 @@ end
 -- and without them I just keep messing things up. 
 -- I guess my near photographic memory from my teenage years is truly dead. :'(
 local dummy = Engine:CreateFrame("Frame", nil, "UICenter")
-dummy:Place("TOP", "UICenter", "BOTTOM", 0, -100)
+dummy:Place("TOP", "UICenter", "BOTTOM", 0, -1000)
 dummy:SetSize(2,2)
 
 local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
@@ -297,18 +372,19 @@ local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
 	local dummyString = fontString.dummyString 
 	if (not dummyString) then
 		dummyString = dummy:CreateFontString()
+		dummyString:Hide()
 		dummyString:SetFontObject(fontString:GetFontObject())
 		dummyString:SetPoint("TOP", 0, 0)
 		fontString.dummyString = dummyString
 	end
 	dummyString:SetSize(minWidth*10, minHeight*10 + lineSpacing*9)
-	dummyString:Show()
+	--dummyString:Show() -- need to show it to properly calculate sizes, even though it is offscreen
 
 	-- Parse the string, split into words and calculate all sizes 
 	fontString.fullWidth, fontString.spaceWidth, fontString.wordWidths, 
 	fontString.words = parseString(msg, fontString, fontString.words, fontString.wordWidths)
 
-	dummyString:Hide()
+	--dummyString:Hide()
 
 	-- Because Blizzard keeps changing 20 to 19.9999995
 	-- We also need an extra space's width to avoid the strings
@@ -437,7 +513,6 @@ local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
 
 	-- Set our new sizes
 	fontString:SetHeight(newHeight or minHeight) 
-
 	fontString:SetText(newMsg or msg)
 
 	-- Show the fontstring again
@@ -449,7 +524,7 @@ end
 
 -- Create a square/dot used for unfinished objectives (and the completion texts)
 local createDot = function(parent)
-	local backdrop = GetBackdrop()
+	local backdrop = getPixelPerfectBackdrop()
 	local dot = parent:CreateFrame("Frame")
 	dot:SetSize(10, 10)
 	dot:SetBackdrop(backdrop)
@@ -459,6 +534,71 @@ local createDot = function(parent)
 	backdropCache[dot] = backdrop
 
 	return dot
+end
+
+-- Sort function for our tracker display
+-- 	world quests > normal quests
+-- 	world quest proximity > level > name
+local sortFunction = function(a,b)
+	-- No idea why this is happening, didn't think it was possible. 
+	if (not a) or (not b) then
+		return
+	end
+
+	-- Put completed quests at the bottom
+	if (a.isComplete or b.isComplete) then
+		return (not a.isComplete)
+	end 
+
+	-- Put elite quests 2nd to last
+	if (a.isElite or b.isElite) then
+		if (a.isElite) and (b.isElite) then
+			if (a.rarity) and (b.rarity) then
+				return a.rarity < b.rarity
+			end
+		else
+			return (not a.isElite)
+		end
+	end
+
+	-- If both objectives are world quests, 
+	-- we will determine which is closest to the player if possible. 
+	if (a.isWorldQuest and b.isWorldQuest) then
+
+		-- Get current player coordinates
+		local posX, posY = GetPlayerMapPosition("player")
+
+		-- Store them for later if they exist
+		if (posX and posY) and (posX > 0) and (posY > 0) then
+			CURRENT_PLAYER_X, CURRENT_PLAYER_Y = posX, posY
+		else 
+			posX, posY = CURRENT_PLAYER_X, CURRENT_PLAYER_Y
+		end
+
+		-- Figure out which is closest, if we have current or stored player coordinates available
+		if (posX and posY) and (a.x and a.y and b.x and b.y) then
+			return math_sqrt( math_abs(a.x - posX)^2 + math_abs(a.y - posY)^2 ) < math_sqrt( math_abs(b.x - posX)^2 + math_abs(b.y - posY)^2 )
+		end
+
+		-- Revert to standard sorting of coordinates aren't available yet
+		if a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel) then
+			return a.questLevel < b.questLevel
+		elseif a.questTitle and b.questTitle then
+			return a.questTitle < b.questTitle
+		end
+	end
+
+	-- If only one of them is a world quest, we prioritize that one. 
+	if (a.isWorldQuest or b.isWorldQuest) then
+		return a.isWorldQuest
+	end
+
+	-- If none of them are world quests, we revert to the old sorting.
+	if a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel) then
+		return a.questLevel < b.questLevel
+	elseif a.questTitle and b.questTitle then
+		return a.questTitle < b.questTitle
+	end
 end
 
 
@@ -655,7 +795,7 @@ Entry.AddQuestItem = function(self)
 	scaffold:SetFrameLevel(item:GetFrameLevel() + 1)
 	scaffold:SetPoint("CENTER", 0, 0)
 	scaffold:SetSize(config.body.entry.item.border.size[1], config.body.entry.item.border.size[2])
-	scaffold:SetBackdrop(GetBackdrop())
+	scaffold:SetBackdrop(getPixelPerfectBackdrop())
 	scaffold:SetBackdropColor(0, 0, 0, 1)
 	scaffold:SetBackdropBorderColor(C.General.UIBorder[1], C.General.UIBorder[2], C.General.UIBorder[3], 1)
 
@@ -671,8 +811,8 @@ Entry.AddQuestItem = function(self)
 
 	if ENGINE_WOD then
 		newCooldown:SetSwipeColor(0, 0, 0, .75)
-		newCooldown:SetBlingTexture(BLING_TEXTURE, .3, .6, 1, .75) -- what wow uses, only with slightly lower alpha
-		newCooldown:SetEdgeTexture(EDGE_NORMAL_TEXTURE)
+		newCooldown:SetBlingTexture(TEXTURE.BLING, .3, .6, 1, .75) -- what wow uses, only with slightly lower alpha
+		newCooldown:SetEdgeTexture(TEXTURE.EDGE_NORMAL)
 		newCooldown:SetDrawSwipe(true)
 		newCooldown:SetDrawBling(true)
 		newCooldown:SetDrawEdge(false)
@@ -736,7 +876,27 @@ Entry.SetObjective = function(self, objectiveID)
 	local currentQuestData = questData[self.questID] 
 	local currentQuestObjectives = currentQuestData.questObjectives[objectiveID]
 
-	objective:SetHeight(setTextAndGetSize(objective.msg, currentQuestObjectives.description, objectives.standardWidth, objectives.standardHeight))
+	-- We're not currently using progress bars, 
+	-- so objectives that are bars are displayed as a percentage only. 
+	-- Also note that item count and percentages are displayed in forced green after the text, 
+	-- and hidden from view when their value is at 0 and the player hasn't started progressing yet.
+	local description
+	if currentQuestObjectives.item then
+		local current = tonumber(currentQuestObjectives.numCurrent) or 0
+		if (current == 0) then
+			description = currentQuestObjectives.item
+		else
+			if currentQuestObjectives.objectiveType == "progressbar" then
+				description = currentQuestObjectives.item .. " |cff66aa22" .. currentQuestObjectives.numCurrent .. "%|r"
+			else
+				description = currentQuestObjectives.item .. " |cff66aa22" .. currentQuestObjectives.numCurrent .. "/" .. currentQuestObjectives.numNeeded .. "|r"
+			end
+		end
+	else
+		description = currentQuestObjectives.description
+	end
+
+	objective:SetHeight(setTextAndGetSize(objective.msg, description, objectives.standardWidth, objectives.standardHeight))
 	objective:Show()
 
 	-- Update the pointer in case it's a new objective, 
@@ -783,10 +943,21 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 	local completionText = self.completionText
 
 	-- Set and size the title
-	local titleHeight = setTextAndGetSize(titleText, currentQuestData.questTitle, title:GetWidth(), title.standardHeight)
+	-- We add a blue or purple plus sign for elite world quests, 
+	-- to indicate their difficulty in a non-intrusive manner.
+	local titleMessage 
+	if currentQuestData.isElite and currentQuestData.rarity then
+		titleMessage = currentQuestData.questTitle .. " " .. C.Quality[currentQuestData.rarity].colorCode .. "+" .. "|r"
+	else
+		titleMessage = currentQuestData.questTitle
+	end
+	local titleHeight = setTextAndGetSize(titleText, titleMessage, title:GetWidth(), title.standardHeight)
 	title:SetHeight(titleHeight) 
 
 	entryHeight = entryHeight + titleHeight
+
+	-- Tone down completed entries
+	self:SetAlpha(currentQuestData.isComplete and .75 or 1)
 
 	-- Update objective descriptions and completion text
 	if currentQuestData.isComplete then
@@ -799,7 +970,7 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		end
 
 		-- Change quest description to the completion text
-		local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or L_QUEST_COMPLETE
+		local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or BLIZZ_LOCALE.QUEST_COMPLETE
 		local height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
 		completionText:SetHeight(height)
 		completionText.dot:Show()
@@ -860,7 +1031,7 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		if visibleObjectives == 0 then
 
 			-- Change quest description to the completion text
-			local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or L_QUEST_COMPLETE
+			local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or BLIZZ_LOCALE.QUEST_COMPLETE
 			local height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
 			completionText:SetHeight(height)
 			completionText.dot:Show()
@@ -872,6 +1043,12 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		for objectiveID = numObjectives + 1, #self.objectives do
 			self:ClearObjective(objectiveID)
 		end
+	end
+
+	if (currentQuestData.isWorldQuest) then
+		title:SetScript("OnClick", nil)
+	else
+		title:SetScript("OnClick", Title.OnClick)
 	end
 
 	self:SetHeight(entryHeight)
@@ -960,7 +1137,7 @@ Tracker.AddEntry = function(self)
 	title:EnableMouse(true)
 	title:SetHitRectInsets(-10, -10, -10, -10)
 	title:RegisterForClicks("LeftButtonUp")
-	title:SetScript("OnClick", Title.OnClick)
+	--title:SetScript("OnClick", Title.OnClick)
 
 	-- Quest title
 	local titleText = title:CreateFontString()
@@ -1054,10 +1231,75 @@ end
 Tracker.Update = function(self)
 	local entries = self.entries
 	local numEntries = #entries
-	local numZoneQuests = #zoneTrackedQuests
 
 	local maxTrackerHeight = self:GetHeight()
 	local currentTrackerHeight = self.header:GetHeight() + 4
+
+	for i = 1, numEntries do
+		local entry = entries[i]
+		entry:Hide()
+		entry:Clear()
+		entry:ClearAllPoints() 
+	end
+
+	-- Clear everything and return if nothing is tracked in the zone
+	local numZoneQuests = #sortedTrackedQuests
+	if (numZoneQuests == 0) then
+		return
+	end 
+
+	--[[
+
+
+	-- Do a sweep to remove untracked questIDs
+	for questID, entryID in pairs(trackedQuestsByQuestID) do
+		local entryID
+		for i = 1, numZoneQuests do
+			local zoneQuest = sortedTrackedQuests[i]
+			if zoneQuest.questID == questID then
+				entryID = i
+				break
+			end
+		end
+		-- As the questID is no longer tracked, 
+		-- we clear it from our database.
+		-- 
+		-- Update 2017-07-06:
+		-- Either this isn't working, or this isn't called properly or at the correct time, 
+		-- because completed world quests remain in the log, though become unresponsive 
+		-- and refuses to be removed no matter how many times I change the zone. 
+		-- Only a /reload will remove it, which is clearly NOT the intended behavior! 
+		-- 
+		if (not entryID) or (questData[questID] and questData[questID].isComplete) then
+			trackedQuestsByQuestID[questID] = nil
+		end
+	end
+	]]
+
+	-- Do a first pass to find already tracked quests, 
+	-- and reorder database as needed.
+	-- ...something feels a bit wonky here...
+	for i = 1, numZoneQuests do
+		local zoneQuest = sortedTrackedQuests[i]
+		local oldID = trackedQuestsByQuestID[zoneQuest.questID]
+		if oldID then
+			-- Grab the existing entry, if any
+			local currentEntry = entries[i]
+
+			-- Grab the existing entryID of the quest
+			local oldEntry = entries[oldID]
+
+			-- Put the entry in the current place
+			entries[i] = oldEntry
+
+			-- Put the current entry where the old one was?
+			entries[oldID] = currentEntry
+
+			-- Update the pointer of tracked questIDs 
+			-- to reflect the new entryID
+			trackedQuestsByQuestID[zoneQuest.questID] = i
+		end
+	end
 
 	-- Update existing and create new entries
 	local anchor = self.header
@@ -1065,7 +1307,7 @@ Tracker.Update = function(self)
 	for i = 1, numZoneQuests do
 
 		-- Get the zone quest data
-		local zoneQuest = zoneTrackedQuests[i]
+		local zoneQuest = sortedTrackedQuests[i]
 
 		-- Sometimes the events collide or something, 
 		-- and we end up calling this right after the questData
@@ -1075,11 +1317,14 @@ Tracker.Update = function(self)
 		if questData[zoneQuest.questID] then
 			local currentQuestData = questData[zoneQuest.questID]
 
-			-- Get the entry or create on
+			-- Get the entry or create one
 			local entry = entries[i] or self:AddEntry()
 
 			-- Set the entry's quest
 			entry:SetQuest(zoneQuest.questLogIndex, zoneQuest.questID)
+
+			-- Store the current entryID of the quest 
+			trackedQuestsByQuestID[zoneQuest.questID] = i
 			
 			-- Set the entry's usable item, if any
 			if currentQuestData.hasQuestItem and ((not currentQuestData.isComplete) or currentQuestData.showItemWhenComplete) then
@@ -1126,22 +1371,25 @@ Tracker.Update = function(self)
 	-- Hide unused entries
 	for i = numZoneQuests + 1, numEntries do
 		local entry = entries[i]
-		entry:Hide()
-		entry:Clear()
-		entry:ClearAllPoints() 
-	end
+		if entry then
+			entry:Hide()
+			entry:Clear()
+			entry:ClearAllPoints() 
+		end
+	end	
 
 end
 
 Module.UpdateItemCooldowns = function(self)
 	for item,entry in pairs(activeItemButtons) do
 		local start, duration, enable = GetQuestLogSpecialItemCooldown(item:GetID())
-		item:SetItemCooldown(start, duration, enable)
+		if (start and duration) then
+			item:SetItemCooldown(start, duration, enable)
+		else
+			item:SetItemCooldown(0, 0, false)
+		end
 	end
 end
-
---local timers = { GetQuestTimers() }
---local questLogIndex = GetQuestIndexForTimer(timerId)
 
 local allQuestTimers = {}
 local activeQuestTimers = {}
@@ -1165,423 +1413,63 @@ Module.ParseTimers = function(self, ...)
 	end
 end
 
-Module.GetQuestLogLeaderBoard = function(self, i, questLogIndex)
-	local min, max
-	local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(i, questLogIndex)
-	
-	return description, objectiveType, isCompleted, min, max
-end
-
-
--- Parse the quest log for quests and items valid in the current zone, 
--- track the quests in the current zone, and untrack others. 
--- Tracking mostly relates to map POI functionality, 
--- and won't affect what our own tracker actually shows. 
-Module.ParseQuests = function(self, event)
-	local tracker = self.tracker
-
-	-- GetQuestWorldMapAreaID() sets the map to the current zone, 
-	-- so to avoid the WorldMap being "locked", we have to queue 
-	-- updates to when it's hidden again. 
-	-- This will pause our tracker when it's visible, 
-	-- but hopefully it won't be a problem. 
-	-- Will write additional code to simply update existing quests 
-	-- in the future, thus keeping the tracker updated if the user 
-	-- chooses to have the map visible while questing. 
-	if WorldMapFrame:IsShown() then
-		NEED_UPDATE = true
-		return
-	end
-	
-	-- Set the map to the current zone
-	if ENGINE_WOD then
-		local inMicroDungeon = IsPlayerInMicroDungeon()
-		if inMicroDungeon ~= self.inMicroDungeon then
-			self.inMicroDungeon = inMicroDungeon
-			if (not WorldMapFrame:IsShown()) and GetCVarBool("questPOI") then
-				SetMapToCurrentZone()
-			end
-			SortQuestWatches()
-		end
-	else 
-		if (not WorldMapFrame:IsShown()) and GetCVarBool("questPOI") then
-			SetMapToCurrentZone()
-		end
-		SortQuestWatches()
-	end
-
-	-- figure out the current mapID
-	local mapID, isContinent = GetCurrentMapAreaID() 
-	if (not ENGINE_CATA) then
-		mapID = mapID - 1 -- WotLK bug
-	end
-
-	-- Retrieve number of entries in the game quest log
-	local numEntries, numQuests = GetNumQuestLogEntries()
-
-	-- Manually tracking it the number of quests, 
-	-- since our zoneTrackedQuests table sometimes 
-	-- ends up with an empty entry for some reason.
-	local numZoneQuests = 0 
-
-	-- This is a bug that's been around since 3.3.0 
-	-- when Blizzard added quests that were automatically 
-	-- accepted once you simply talked to the NPC.
-	-- The button text says "Accept", which is misleading.
-	if QuestFrame:IsShown() and QuestGetAutoAccept() then
-		local button = QuestFrameAcceptButton
-		local msg = button:GetText()
-		if (msg == L_ACCEPT) then
-			button:SetText(L_CONTINUE)
-		end
-	end
-
-	self:ParseTimers(GetQuestTimers())
-
-	-- Parse the quest log
-	for questLogIndex = 1, numEntries do
-
-		-- The questTag return value (could be stuff like "PVP") got removed in WoD
-		local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID
-		if ENGINE_WOD then
-			questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID = GetQuestLogTitle(questLogIndex)
-		else
-			questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questID = GetQuestLogTitle(questLogIndex)
-		end
-
-		-- This was previously a 0/1 return, but now is true/nil
-		if ((isHeader == 0) or (not isHeader)) then
-			
-			-- Trying to fix a problem with QuestFrameAcceptButton 
-			-- when auto-accepting quests and the window remains open 
-			-- with the button saying "accept", even though it's already accepted!
-			-- Probably the same bug as the WotLK one above, but since we didn't get
-			-- the API call GetQuestID() until CATA, we're doing a double check here to be sure.
-			if ENGINE_CATA and (QuestFrame:IsShown() and (GetQuestID() == questID)) then
-				local button = QuestFrameAcceptButton
-				local msg = button:GetText()
-				if (msg == L_ACCEPT) then
-					button:SetText(L_CONTINUE)
-				end
-			end
-
-			-- Figure out if the quest is in our current zone or not
-			-- @return mapId should only be 0 if the player isn't on the quest, 
-			-- but for some reason it also returns this for instanced starter zone quests (like the Death Knight quests).
-			-- Son in that case we simply assume we're in the correct zone and the quest should be tracked.
-			local mapId, floorNumber = GetQuestWorldMapAreaID(questID)
-			if (((mapID == mapId) or questMapIDOverrides[questID] or (mapId == 0)) and (not (questID == IGNORE_QUEST))) then
-				local currentQuestData = questData[questID] or {}
-				
-				numZoneQuests = numZoneQuests + 1
-
-				if (isComplete == 1) then
-					local completionText = GetQuestLogCompletionText(questLogIndex)
-
-					currentQuestData.isComplete = true
-					currentQuestData.isFailed = false
-					currentQuestData.questObjectives = nil -- just remove the whole objectives table
-					currentQuestData.completionText = completionText 
-
-				else
-
-					local difficultyColor = GetQuestDifficultyColor(level)
-					local questObjectives = currentQuestData.questObjectives or {}
-
-					-- Parse objectives for our tracker entries
-					local numQuestLogLeaderBoards = GetNumQuestLeaderBoards(questLogIndex)
-					for i = 1, numQuestLogLeaderBoards do
-						--local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(i, questLogIndex)
-						local description, objectiveType, isCompleted, min, max = self:GetQuestLogLeaderBoard(i, questLogIndex)
-
-						-- Should parse the description and objectiveType here 
-						-- to figure out items, rep, money needed and so on,
-						-- so we more easily can track changes to objectives. 
-						questObjectives[i] = {
-							description = description,
-							objectiveType = objectiveType,
-							isCompleted = isCompleted
-						}
-					end
-
-					-- Can't really imagine why a quest's number of objectives should 
-					-- change after creation, but just in case we wipe away any unneeded entries.
-					-- Point is that we're using #questObjectives to determine number of objectives.
-					for i = #questObjectives, numQuestLogLeaderBoards + 1, -1 do
-						questObjectives[i] = nil
-					end
-
-					-- put the data into our cache
-					currentQuestData.isComplete = nil
-					currentQuestData.isFailed = (isComplete == -1)
-					currentQuestData.completionText = (isComplete == -1) and L_QUEST_FAILED or nil
-					currentQuestData.questObjectives = questObjectives 
-
-					-- Figure out if there's an item connected to the quest
-					local link, icon, charges, showItemWhenComplete = GetQuestLogSpecialItemInfo(questLogIndex) -- only an iconID in Legion, not a texture link
-					if icon and ((not isComplete) or showItemWhenComplete) then
-		
-						-- Parse the bags for the item if one exists
-						local itemID, bag, slot
-						local itemString = string_match(link, "item[%-?%d:]+")
-						if itemString then
-							itemID = tonumber((select(2, string_split(":", itemString))))
-						end
-
-						for bagID = BACKPACK_CONTAINER, NUM_BAG_SLOTS do
-							local numberOfFreeSlots, bagType = GetContainerNumFreeSlots(bagID)
-							local numberOfSlots = GetContainerNumSlots(bagID)
-
-							if bagType == 0 then -- assuming only "normal" bags have quest items
-								for slotID = 1, numberOfSlots do
-
-									if itemID then
-										local itemId = GetContainerItemID(bagID, slotID)
-										if itemId == itemID then
-											bag, slot = bagID, slotID
-											break
-										end
-									end
-
-									-- In case the itemID was missing, or for some reason don't match
-									-- I doubt this will ever be true
-									local itemLink = GetContainerItemLink(bagID, slotID)
-									if itemLink == link then
-										bag, slot = bagID, slotID
-										break
-									end
-
-								end
-							end
-							if bag and slot then
-								break
-							end
-						end
-						
-						-- An item was found in the bags.
-						if bag and slot then
-							currentQuestData.hasQuestItem = true
-							currentQuestData.showItemWhenComplete = showItemWhenComplete
-							currentQuestData.bagID = bag
-							currentQuestData.slotID = slot
-							currentQuestData.icon = icon
-						else
-							-- Check quipped items with /use effects 
-							-- if nothing was found in the bags.
-						end
-					end
-				end
-
-				-- put the rest of the data into the cache
-				currentQuestData.questTitle = questTitle
-				currentQuestData.level = level
-				currentQuestData.questTag = questTag
-				currentQuestData.suggestedGroup = suggestedGroup
-				currentQuestData.isDaily = isDaily or frequency
-
-				-- update pointer in case it was a newly added quest
-				questData[questID] = currentQuestData
-				
-				-- Queue it up to be added later
-				scheduledForTracking[#scheduledForTracking + 1] = { 
-					questLogIndex = questLogIndex, 
-					questID = questID 
-				}
-			else
-				-- Debugging of quests not showing up
-				-- I'm using this to update my mapID override table as needed.
-				--print("not tracking (quest mapID, current mapID, questID, title):")
-				--print(mapId, mapID, questID, questTitle)
-				--print(" ")
-
-				-- Queue it up to be removed later
-				scheduledForRemoval[#scheduledForRemoval + 1] = { 
-					questLogIndex = questLogIndex, 
-					questID = questID 
-				}
-			end
-		end
-	end
-
-	-- Delete the cache of quests not currently active, 
-	-- to avoid the cache growing too much in long leveling sessions.
-	for questID in pairs(questData) do
-		local found
-		for i in ipairs(scheduledForTracking) do
-			if scheduledForTracking[i].questID == questID then
-				found = true
-				break
-			end
-		end
-		if (not found) then
-			questData[questID] = nil
-		end
-	end
-
-	-- Remove quests from other zones
-	for i = #scheduledForRemoval,1,-1 do
-		local questLogIndex = scheduledForRemoval[i].questLogIndex
-		local questID = scheduledForRemoval[i].questID
-
-		-- Remove our own tracking
-		for i = #zoneTrackedQuests,1,-1 do
-			local zoneQuest = zoneTrackedQuests[i]
-			if (zoneQuest.questID == questID) then
-				table_remove(zoneTrackedQuests, i)
-				break
-			end
-		end
-		
-		-- Remove the blizzard quest watch
-		RemoveQuestWatch(questLogIndex)
-		
-		-- Clear the entry to avoid chaos and mixups
-		scheduledForRemoval[i] = nil
-	end
-
-	-- Add quests in the current zone
-	for i = #scheduledForTracking,1,-1 do
-		local questLogIndex = scheduledForTracking[i].questLogIndex
-		local questID = scheduledForTracking[i].questID
-
-		local zoneQuestID
-		for i = 1,#zoneTrackedQuests do
-			local zoneQuest = zoneTrackedQuests[i]
-			if (zoneQuest.questID == questID) then
-				zoneQuestID = i
-				break
-			end
-		end
-		if (not zoneQuestID) then
-			zoneTrackedQuests[#zoneTrackedQuests + 1] = {
-				questLogIndex = questLogIndex,
-				questID = questID
-			}
-		end
-
-		-- Add blizzard tracking for map and POI systems
-		AddQuestWatch(questLogIndex)
-
-		-- Clear the entry to avoid facepalms
-		scheduledForTracking[i] = nil
-	end
-
-	-- Update the tracker entries
-	self:UpdateTracker()
-
-	-- Hide it if we have no quests in the current zone
-	self:UpdateTrackerVisibility(numZoneQuests)
-
-	-- Supertracking!
-	-- Our own current version just supertracks whatever is closest,
-	-- but we will improve this in the future to allow better control.
-	--
-	-- *The supertracking is actually unrelated to the tracker currently, 
-	-- but since we block the blizzard code for this, we need to add something back.
-	if ENGINE_CATA then
-		self:UpdateSuperTracking()
-	end
-
-	-- Reset the forced update flag
-	NEED_UPDATE = nil
-end
-
-Module.UpdateTracker = function(self)
-	self.tracker:Update()
-end
 
 -- Should only be done out of combat. 
 -- To have more control we user our own combat tracking system here, 
 -- instead of relying on the Engine's secure wrapper handler.  
+-- 
+-- Note that we can theoretically experience situations where
+-- the tracker is hidden before combat, a quest is accepted during combat, 
+-- and the tracker isn't displayed until combat ends. 
+-- This is acceptable, though, as we strictly speaking aren't constantly 
+-- in combat, and if there is a BIG fight going on, it is ok to wait. 
+--
+-- Update 2017-07-05:
+-- The tracker isn't a secure frame... only its parent is. Doh.
 Module.UpdateTrackerVisibility = function(self, numZoneQuests)
-	if UnitAffectingCombat("player") then
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
+	local isInInstance, instanceType = IsInInstance()
+	if isInInstance and (instanceType == "pvp" or instanceType == "arena") then
+		return self.tracker:Hide()
+	end
+	if ((numZoneQuests and (numZoneQuests > 0)) or (#sortedTrackedQuests > 0)) then
+		return self.tracker:Show()
 	else
-		local tracker = self.tracker
-		if numZoneQuests then
-			if numZoneQuests > 0 then
-				if (not tracker:IsShown()) then
-					tracker:Show()
-				end
-			else
-				if tracker:IsShown() then
-					tracker:Hide()
-				end
-			end
-		else
-			if #zoneTrackedQuests > 0 then
-				if (not tracker:IsShown()) then
-					tracker:Show()
-				end
-			else
-				if tracker:IsShown() then
-					tracker:Hide()
-				end
-			end
-		end
-	end	
-end
-
-
-
--- Super tracking. Blizzard copies, mostly.
--- *Some of these are currently unused, but I copied them 
--- for future reference, as I plan to expand and improve 
--- this system a lot in the future.  
-----------------------------------------------------------------
-local PENDING_QUEST_ID
-
-Module.QuestSuperTracking_OnQuestTracked = function(self, questID)
-	-- We should supertrack quest if it got added to the top of the tracker
-	-- First check if we have POI info. Could be missing if 1) we didn't know about this quest before, 2) just doesn't have POIs
-	if QuestHasPOIInfo(questID) then
-		SetSuperTrackedQuestID(questID)
-		PENDING_QUEST_ID = nil
-	else
-		-- no POI info, could be arriving later
-		PENDING_QUEST_ID = questID
+		return self.tracker:Hide()
 	end
 end
 
-Module.QuestSuperTracking_OnQuestCompleted = function(self)
-	self:QuestSuperTracking_ChooseClosestQuest()
-end
-
-Module.QuestSuperTracking_OnQuestUntracked = function(self)
-	self:QuestSuperTracking_ChooseClosestQuest()
-end
-
-Module.QuestSuperTracking_OnPOIUpdate = function(self)
-	-- if we were waiting on data for an added quest, we should supertrack it if it has POI data and it's at the top of the tracker
-	if (PENDING_QUEST_ID and QuestHasPOIInfo(PENDING_QUEST_ID)) then
-		SetSuperTrackedQuestID(PENDING_QUEST_ID)
-	elseif (GetSuperTrackedQuestID() == 0) then
-		-- otherwise pick something if we're not supertrack anything
-		self:QuestSuperTracking_ChooseClosestQuest()
-	end
-	PENDING_QUEST_ID = nil
-end
-
-Module.QuestSuperTracking_ChooseClosestQuest = function(self)
+-- Fairly big copout here, and we need to expand 
+-- on it later to avoid overriding user choices. 
+-- Based on self:QuestSuperTracking_ChooseClosestQuest()
+Module.UpdateSuperTracking = function(self)
 	local closestQuestID
 	local minDistSqr = math_huge
 
 	-- World quest watches got introduced in Legion
+	-- 
+	-- Update 2017-07-06:
+	-- This appears to be tracking "hidden" bonus objectives too, not just world quests. 
+	-- This leads to the wrong objective getting its arrow on the Minimap, 
+	-- pointing the player to a different objective than what the tracker shows. 
+	-- 
 	if ENGINE_LEGION then
 		for i = 1, GetNumWorldQuestWatches() do
 			local watchedWorldQuestID = GetWorldQuestWatchInfo(i)
 			if watchedWorldQuestID then
-				local distanceSq = C_TaskQuest.GetDistanceSqToQuest(watchedWorldQuestID)
-				if distanceSq and distanceSq <= minDistSqr then
-					minDistSqr = distanceSq
-					closestQuestID = watchedWorldQuestID
+				local currentQuestData = questData[watchedWorldQuestID]
+				if currentQuestData and (not currentQuestData.isComplete) then
+					local distanceSq = C_TaskQuest.GetDistanceSqToQuest(watchedWorldQuestID)
+					if distanceSq and distanceSq <= minDistSqr then
+						minDistSqr = distanceSq
+						closestQuestID = watchedWorldQuestID
+					end
 				end
 			end
 		end
 	end
-	
+
 	if ENGINE_WOD then
-		if ( not closestQuestID ) then
+		if (not closestQuestID) then
 			for i = 1, GetNumQuestWatches() do
 				local questID, title, questLogIndex = GetQuestWatchInfo(i)
 				if ( questID and QuestHasPOIInfo(questID) ) then
@@ -1596,7 +1484,7 @@ Module.QuestSuperTracking_ChooseClosestQuest = function(self)
 	end
 
 	-- If nothing with POI data is being tracked expand search to quest log
-	if ( not closestQuestID ) then
+	if (not closestQuestID) then
 		for questLogIndex = 1, GetNumQuestLogEntries() do
 			local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID = GetQuestLogTitle(questLogIndex)
 			if (not isHeader and QuestHasPOIInfo(questID)) then
@@ -1617,125 +1505,928 @@ Module.QuestSuperTracking_ChooseClosestQuest = function(self)
 	end
 end
 
-Module.QuestSuperTracking_IsSuperTrackedQuestValid = function(self)
-	local trackedQuestID = GetSuperTrackedQuestID()
-	if trackedQuestID == 0 then
-		return false
-	end
-
-	if (GetQuestLogIndexByID(trackedQuestID) == 0) then
-		-- Might be a tracked world quest that isn't in our log yet
-		if QuestMapFrame_IsQuestWorldQuest(trackedQuestID) and IsWorldQuestWatched(trackedQuestID) then
-			return C_TaskQuest.IsActive(trackedQuestID)
-		end
-		return false
-	end
-
-	return true
-end
-
-Module.QuestSuperTracking_CheckSelection = function(self)
-	if (not self:QuestSuperTracking_IsSuperTrackedQuestValid()) then
-		self:QuestSuperTracking_ChooseClosestQuest()
-	end
-end
-
--- Fairly big copout here, and we need to expand 
--- on it later to avoid overriding user choices. 
-Module.UpdateSuperTracking = function(self)
-	self:QuestSuperTracking_ChooseClosestQuest()
-end
-
 Module.ParseAutoQuests = function(self)
+	local needUpdate
 	for i = 1, GetNumAutoQuestPopUps() do
 		local questID, popUpType = GetAutoQuestPopUp(i)
 		if (questId == questID) then
 			if (popUpType == "OFFER") then
 				ShowQuestOffer(questLogIndex)
 
-			elseif (popUpType == "COMPLETE") then
+			else
 				PlaySound("UI_AutoQuestComplete")
 				ShowQuestComplete(questLogIndex)
 			end
+			needUpdate = true
 		end
+	end
+	return needUpdate
+end
+
+-- Just a proxy method to update the tracker(s).
+-- Eventually this will include the different trackers I plan to implement, 
+-- but for now it merely contains the standard quest / world quest tracker.
+Module.UpdateTracker = function(self)
+	self.tracker:Update()
+	self:UpdateTrackerVisibility()
+end
+
+-- Workaround for some annoying Blizzard display bugs, 
+-- that leaves the quest window open for completed or 
+-- automatically accepted quests.
+-- 
+-- Update 2017-06-23-1527: 
+-- The Complete Quest button and the frame remains visible,
+-- for quests in Pandaria and above, so I need to figure out 
+-- where exactly it fails in these expansions, and why. 
+--
+-- Update 2017-06-24-1236:
+-- The isComplete argument is actually isFinished, but doesn't 
+-- really say whether or not the quest has been completed yet. 
+-- This leads to the questframe being auto-closed by this script
+-- before we actually get the chance to turn in the quest... /doh. 
+-- We need to somehow hook this to the click functionality of the button, 
+-- do this before the button is shown in the first place, 
+-- and further make sure that the script remains on the button later on.
+-- WOOOOOORK!
+Module.UpdateQuestFrameVisibility = function(self, icComplete)
+	if isComplete then
+		--if (QuestFrameCompleteButton:GetText() == BLIZZ_LOCALE.COMPLETE) then
+		--	QuestFrame:Hide()
+		--end
+	else
+		-- (QuestFrameCompleteQuestButton:GetText() == BLIZZ_LOCALE.COMPLETE_QUEST)
+		--if (QuestFrameAcceptButton:GetText() == BLIZZ_LOCALE.ACCEPT) then
+		--	QuestFrame:Hide()
+		--end
+	end
+end
+
+-- All the isSomething entries will return strict true/false values here
+-- @return questID, questTitle, questLevel, suggestedGroup, isHeader, isComplete, isFailed, isRepeatable
+Module.GetQuestLogTitle = ENGINE_WOD and function(self, questLogIndex)
+	local questTitle, questLevel, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID = GetQuestLogTitle(questLogIndex)
+	return questID, questTitle, questLevel, suggestedGroup, isHeader, (isComplete == 1), (isComplete == -1), (frequency > 1)
+
+end or function(self, questLogIndex)
+	local questTitle, questLevel, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questID = GetQuestLogTitle(questLogIndex)
+	return questID, questTitle, questLevel, suggestedGroup, (isHeader == 1), (isComplete == 1), (isComplete == -1), (isDaily == 1)
+end
+
+Module.GetQuestLogLeaderBoard = function(self, objectiveIndex, questLogIndex)
+	local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(objectiveIndex, questLogIndex)
+	local item, numCurrent, numNeeded = string_match(description, questCaptures[objectiveType]) 
+
+	if (objectiveType == "progressbar") then
+		item = description
+		numCurrent = GetQuestProgressBarPercent((self:GetQuestLogTitle(questLogIndex)))
+		numNeeded = 100
+	end
+
+	-- Some quests have objective type 'monster' yet are displayed using the ITEMS formatting.
+	-- Thank you Zygor for figuring this one out. 
+	if (objectiveType == "monster") and (not item) then
+		item, numCurrent, numNeeded = string_match(description, questCaptures.item)
+	end
+
+	if tonumber(item) then
+		local newItem = string_gsub(description, questCaptures.item, "")
+		local newCurrent, newNeeded = item, numCurrent
+		item, numCurrent, numNeeded = newItem, newCurrent, newNeeded
+	end
+
+	if item then
+		if (objectiveType == "reputation") or (objectiveType == "faction") then
+			-- We're keeping these as strings, as they most often are. (e.g. Friendly/Revered)
+			return description, objectiveType, isCompleted, item, numCurrent, numNeeded 
+		else
+			return description, objectiveType, isCompleted, item, tonumber(numCurrent), tonumber(numNeeded)
+		end
+	else
+		return description, objectiveType, isCompleted
+	end
+
+end
+
+Module.GetQuestObjectiveInfo = function(self, questID, objectiveIndex)
+	local description, objectiveType, isCompleted = GetQuestObjectiveInfo(questID, objectiveIndex, false)
+	local item, numCurrent, numNeeded = string_match(description, questCaptures[objectiveType])
+
+	if (objectiveType == "progressbar") then
+		item = description
+		numCurrent = GetQuestProgressBarPercent(questID)
+		numNeeded = 100
+	else
+		if (objectiveType == "monster") and (not item) then
+			item, numCurrent, numNeeded = string_match(description, questCaptures.item)
+		end
+	end
+
+	if tonumber(item) then
+		local newItem = string_gsub(description, questCaptures.item, "")
+		local newCurrent, newNeeded = item, numCurrent
+		item, numCurrent, numNeeded = newItem, newCurrent, newNeeded
+	end
+	
+	if item then
+		if (objectiveType == "reputation") or (objectiveType == "faction") then
+			-- We're keeping these as strings, as they most often are. (e.g. Friendly/Revered)
+			return string_gsub(description, "[.]$", ""), objectiveType, isCompleted, string_gsub(item, "[.]$", ""), numCurrent, numNeeded 
+		else
+			return string_gsub(description, "[.]$", ""), objectiveType, isCompleted, string_gsub(item, "[.]$", ""), tonumber(numCurrent), tonumber(numNeeded)
+		end
+	else
+		return string_gsub(description, "[.]$", ""), objectiveType, isCompleted
+	end
+end
+
+Module.GetCurrentMapAreaID = function(self)
+	local questMapID, isContinent = GetCurrentMapAreaID()
+	if (not ENGINE_CATA) then
+		if questMapID > 0 then
+			questMapID = questMapID - 1 -- WotLK bug
+		end
+	end
+	return questMapID, isContinent
+end
+
+-- This updates both the Blizzard POI map tracking 
+-- as well as what our own tracker should show.
+Module.UpdateTrackerWatches = function(self)
+	local needUpdate
+
+	-- This step is crucial to make sure completed or removed quests
+	-- are also removed from our own tracker(s). 
+	-- This was what was causing the world quest update to fail. 
+	for questID in pairs(allTrackedQuests) do
+		if (not questLogCache[questID]) or (not worldQuestCache[questID]) then
+			allTrackedQuests[questID] = nil
+			zoneTrackedQuests[questID] = true
+		end
+	end
+
+	for questID, questLogIndex in pairs(questLogCache) do
+		if questWatchQueue[questID] then
+
+			-- Tell our own systems about the tracking
+			zoneTrackedQuests[questID] = true
+			allTrackedQuests[questID] = true
+
+			-- Tell the Blizzard POI system about it
+			-- TODO: I should figure out some way to decide what quests to track 
+			-- when the amount of quests we wish to track excede the blizzard limit.
+			if (not IsQuestWatched(questLogIndex)) then
+				AddQuestWatch(questLogIndex)
+			end
+		else
+			-- Remove the Blizzard quest watch 
+			if IsQuestWatched(questLogIndex) then
+				RemoveQuestWatch(questLogIndex)
+			end
+		end
+	end
+
+	-- Clear this table out, to avoid weird bugs 
+	-- with autocompleted entries and whatnot.
+	table_wipe(questWatchQueue)
+
+	if ENGINE_LEGION then
+		for questID in pairs(worldQuestCache) do
+			if worldQuestWatchQueue[questID] then
+
+				-- Add our own tracking
+				local currentQuestData = questData[questID]
+				allTrackedQuests[questID] = 
+					(currentQuestData.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and 
+					(currentQuestData.isWorldQuest) and 
+					(not currentQuestData.isComplete) and 
+					--(currentQuestData.timeLeft and (currentQuestData.timeLeft > 0)) and
+					(self:DoesWorldQuestPassFilters(questID)) or nil
+
+				-- Add blizzard tracking
+				if (not IsWorldQuestWatched(questID)) then
+					AddWorldQuestWatch(questID)
+				end
+			else
+				--- Remove blizzard tracking
+				if IsWorldQuestWatched(questID) then
+					RemoveWorldQuestWatch(questID)
+				end
+			end
+		end
+
+		-- Clear this table out, to avoid weird bugs 
+		-- with autocompleted entries and whatnot.
+		table_wipe(worldQuestWatchQueue)
+	end
+
+	-- Supertracking!
+	-- Our own current version just supertracks whatever is closest,
+	-- but we will improve this in the future to allow better control.
+	--
+	-- *The supertracking is actually unrelated to the tracker currently, 
+	-- but since we block the blizzard code for this, we need to add something back.
+	if ENGINE_CATA then
+		self:UpdateSuperTracking()
+	end
+
+	return needUpdate
+end
+
+-- Update what entries the tracker should show.
+-- This should eventually choose user tracked objectives first, 
+-- then add in world quests, and then normal quests.
+-- For now though it's not possible to manually track anything,
+-- so it pretty much just iterates through already created lists, 
+-- as does the actual tracker update method, though that is limited by size.
+Module.UpdateTrackerEntries = function(self)
+	-- Wipe the table, it's only a bunch of references anyway
+	table_wipe(sortedTrackedQuests)
+
+	-- Insert all the tracked quests
+	for questID in pairs(allTrackedQuests) do
+		sortedTrackedQuests[#sortedTrackedQuests + 1] = questData[questID]
+	end
+
+	-- Sort it to something more readable
+	table_sort(sortedTrackedQuests, sortFunction)
+
+	-- Update the tracker display
+	self:UpdateTracker()
+end
+
+-- This will forcefully set the map zone to the current, 
+-- to retrieve zone information about existing quest log entries.
+-- This should only be called upon entering the world, or changing zones,
+-- or we run the risk of "locking" the world map to the current zone.
+Module.UpdateQuestZoneData = function(self)
+	local questData = questData
+	
+	-- Enforcing this, regardless of whether or not the 
+	-- world map is currently visible. 
+	-- This is only called when changing zones or entering the world, 
+	-- so it's a compromise we can live with. It doesn't affect gameplay much,
+	-- and the blizzard map and tracker actually does the same. 
+	SetMapToCurrentZone()
+
+	-- Update the current player zone
+	local questMapID = self:GetCurrentMapAreaID()
+
+	-- Update what zone the player is actually in
+	CURRENT_PLAYER_ZONE = questMapID 
+
+	-- Parse the quest cache for quests with missing zone data, 
+	-- which at the first time this is called should be all of them.
+	-- Note that the API call GetQuestWorldMapAreaID also calls SetMapToCurrentZone,
+	-- thus also forcing the map to the current zone. 
+	for questID, data in pairs(questData) do
+		if (not data.questMapID) then
+			data.questMapID = GetQuestWorldMapAreaID(questID)
+		end
+	end
+end
+
+-- Figure out what quests to display for the current zone. 
+-- The "current" zone is the zone the worldmap is set to if open, 
+-- or the actual zone the player is in if the worldmap is closed. 
+Module.UpdateZoneTracking = function(self)
+	local needUpdate
+
+	-- Update the current player zone
+	local questMapID = self:GetCurrentMapAreaID()
+
+	-- Store the current map zone
+	CURRENT_MAP_ZONE = questMapID
+
+	-- Parse the current questlog cache for quests in the active map zone
+	for questID, questLogIndex in pairs(questLogCache) do
+
+		-- Get the quest data for the current questlog entry
+		local data = questData[questID]
+
+		-- Figure out if it should be tracked or not
+		local shouldBeTracked = data and (data.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (not data.isWorldQuest)
+
+		-- Add it to the questwatch update queue
+		if shouldBeTracked then
+			questWatchQueue[questID] = questLogIndex
+			needUpdate = true -- something was changed, an update is needed
+		end
+	end
+
+	-- Parse for world quests in the current zone
+	if ENGINE_LEGION then
+		for questID in pairs(worldQuestCache) do
+			-- Get the quest data for the current world quest
+			local data = questData[questID]
+
+			-- Figure out if it should be tracked or not
+			local shouldBeTracked = data and (data.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (data.isWorldQuest)
+			if shouldBeTracked then
+				if (not worldQuestWatchQueue[questID]) then
+					worldQuestWatchQueue[questID] = true
+					needUpdate = true
+				end
+			else
+				if (worldQuestWatchQueue[questID]) then
+					worldQuestWatchQueue[questID] = false
+					needUpdate = true
+				end
+			end
+
+			-- check closest coords to current location
+			
+		end
+	end
+
+
+	-- Report back if anything was changed
+	return needUpdate
+end
+
+-- Most of the below is a copy of the WorldMap_DoesWorldQuestInfoPassFilters API call from WorldMapFrame.lua
+Module.DoesWorldQuestPassFilters = function(self, questID)
+	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex, displayTimeLeft = GetQuestTagInfo(questID)
+	if ( worldQuestType == LE.LE_QUEST_TAG_TYPE_PROFESSION ) then
+		local prof1, prof2, arch, fish, cook, firstAid = GetProfessions()
+		if ((tradeskillLineIndex == prof1) or (tradeskillLineIndex == prof2)) then
+			if (not GetCVarBool("primaryProfessionsFilter")) then
+				return false
+			end
+		end
+		if ((tradeskillLineIndex == fish) or (tradeskillLineIndex == cook) or (tradeskillLineIndex == firstAid)) then
+			if (not GetCVarBool("secondaryProfessionsFilter")) then
+				return false
+			end
+		end
+	elseif (worldQuestType == LE_QUEST_TAG_TYPE_PET_BATTLE) then
+		if (not GetCVarBool("showTamers")) then
+			return false
+		end
+	else
+		local dataLoaded, rewardType = WorldMap_GetWorldQuestRewardType(questID)
+		if (not dataLoaded) then
+			return false
+		end
+		local typeMatchesFilters = (GetCVarBool("worldQuestFilterGold") and bit_band(rewardType, WQ.WORLD_QUEST_REWARD_TYPE_FLAG_GOLD) ~= 0) 
+			or (GetCVarBool("worldQuestFilterOrderResources") and bit_band(rewardType, WQ.WORLD_QUEST_REWARD_TYPE_FLAG_ORDER_RESOURCES) ~= 0) 
+			or (GetCVarBool("worldQuestFilterArtifactPower") and bit_band(rewardType, WQ.WORLD_QUEST_REWARD_TYPE_FLAG_ARTIFACT_POWER) ~= 0) 
+			or (GetCVarBool("worldQuestFilterProfessionMaterials") and bit_band(rewardType, WQ.WORLD_QUEST_REWARD_TYPE_FLAG_MATERIALS) ~= 0) 
+			or (GetCVarBool("worldQuestFilterEquipment") and bit_band(rewardType, WQ.WORLD_QUEST_REWARD_TYPE_FLAG_EQUIPMENT) ~= 0) 
+
+		-- We always want to show quests that do not fit any of the enumerated reward types.
+		if ((rewardType ~= 0) and (not typeMatchesFilters)) then
+			return false
+		end
+	end
+	return true
+end
+
+-- Parse worldquests and store the data
+Module.GatherWorldQuestData = function(self)
+	local needUpdate
+
+	local oldCache = worldQuestCache
+	local newCache = {}
+
+	if isLegionZone[(self:GetCurrentMapAreaID())] then
+
+	-- Iterate all known outdoor Legion zones
+	for i = 1, #brokenIslesZones do
+		local questMapID = brokenIslesZones[i]
+		local worldQuests = C_TaskQuest.GetQuestsForPlayerByMapID(questMapID)
+
+		if (worldQuests ~= nil) and (#worldQuests > 0) then
+			for i,questInfo in ipairs(worldQuests) do
+				local questID = questInfo.questId
+				if (HaveQuestData(questID) and QuestUtils_IsQuestWorldQuest(questID)) then
+
+					-- If this is a new quest, report that we need an update
+					if (not oldCache[questID]) then
+						needUpdate = true
+					end
+
+					-- Add the quest to the current cache
+					newCache[questID] = true
+
+					-- Retrieve the existing quest database, if any 
+					local currentQuestData = questData[questID] or {}
+
+					local questTitle, factionID, capped = C_TaskQuest.GetQuestInfoByQuestID(questID)
+					local factionName = factionID and GetFactionInfoByID(factionID)
+					local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questID)
+					local isInArea, isOnMap, numObjectives, taskName, displayAsObjective = GetTaskInfo(questID)
+
+					local numQuestObjectives = questInfo.numObjectives or 0
+					local questObjectives = currentQuestData.questObjectives or {}
+
+					local questUpdated, questCompleted
+					local numVisibleObjectives = 0
+					for objectiveIndex = 1, numQuestObjectives do
+						local objectiveText, objectiveType, isCompleted, item, numCurrent, numNeeded = self:GetQuestObjectiveInfo(questID, objectiveIndex)
+
+						if isCompleted then
+							if (questCompleted == nil) then
+								questCompleted = true
+							end
+						else
+							questCompleted = false
+						end
+						
+						-- Appears to exist some empty objectives in these world quests, no idea why. 
+						-- For the sake of simplicity we're doing the same as everybody else and just skip them. Or?
+						if (objectiveText and #objectiveText > 0) then
+							numVisibleObjectives = numVisibleObjectives + 1
+							local questObjective = questObjectives[numVisibleObjectives]
+							if questObjective then
+								if not((objectiveText == questObjective.description) and (objectiveType == questObjective.objectiveType) and (isCompleted == questObjective.isCompleted) and (item == questObjective.item) and (numCurrent == questObjective.numCurrent) and (numNeeded == questObjective.numNeeded)) then
+
+									-- Something was changed
+									questUpdated = BLIZZ_LOCALE.UPDATE
+								end
+
+								questObjective.description = objectiveText
+								questObjective.objectiveType = objectiveType
+								questObjective.isCompleted = isCompleted
+								questObjective.item = item
+								questObjective.numCurrent = numCurrent
+								questObjective.numNeeded = numNeeded
+
+							else
+								-- new quest
+								questObjective = {
+									description = objectiveText,
+									objectiveType = objectiveType,
+									isCompleted = isCompleted,
+									item = item,
+									numCurrent = numCurrent, 
+									numNeeded = numNeeded
+								}
+							end
+							questObjectives[numVisibleObjectives] = questObjective
+						end
+					end
+
+					-- Can't really imagine why a quest's number of objectives should 
+					-- change after creation, but just in case we wipe away any unneeded entries.
+					-- Point is that we're using #questObjectives to determine number of objectives.
+					for i = #questObjectives, numVisibleObjectives + 1, -1 do
+						-- Got a nil bug here, so for some reason some of these tables don't exist...?..?
+						if questObjectives[i] then
+							table_wipe(questObjectives[i])
+						end
+					end
+
+					-- If we're dealing with an update, figure out what kind. New quest? Failed? Completed? Updated objectives?
+					currentQuestData.updateDescription = nil
+
+					-- The data most used
+					currentQuestData.questID = questID
+					currentQuestData.questTitle = questTitle
+					currentQuestData.questMapID = questMapID
+
+					-- Information about the faction the quest belongs to. 
+					-- Eventually I'll add this to the filtering system, 
+					-- to reduce the display priority of quests 
+					-- whose factions we're already maxed out with. 
+					currentQuestData.factionID = factionID
+					currentQuestData.factionName = factionName
+
+					currentQuestData.numQuestObjectives = numQuestObjectives
+					currentQuestData.questObjectives = questObjectives
+					--currentQuestData.questDescription = questDescription -- what to use?
+
+					-- Will be true if we're currently in the quest area and progressing on it
+					currentQuestData.inProgress = questInfo.inProgress
+					currentQuestData.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questID)
+
+					-- World quests only show up when they're incomplete, and disappear automatically when finished, 
+					-- and failed ones can be repeated instantly, they don't have to be picked up again,
+					-- so both these flags is in effect always false as long as these quests exist. 
+					-- 
+					-- Update 2017-07-05:  
+					-- The above appears to possibly be false, as far more world quests are appearing than what the map shows.
+					-- Seems like the timeLeft entry is 0 (or possibly nil) for unavailable (yet available in the API) world quests.
+					-- 
+					-- Update 2017-07-06:
+					-- The time left argument won't remove completed quests. We currently need a reload for that.
+					--
+					currentQuestData.isComplete = questCompleted or (not (currentQuestData.timeLeft and currentQuestData.timeLeft > 0))
+					currentQuestData.isFailed = false
+
+					currentQuestData.isWorldQuest = true -- obviously true, since we're ONLY checking for world quests here
+
+					-- Figure out what type of world quest we're dealing with
+					currentQuestData.isQuestBounty = IsQuestBounty(questID)
+					currentQuestData.isQuestTask = IsQuestTask(questID)
+					currentQuestData.isInvasion = worldQuestType == LE.LE_QUEST_TAG_TYPE_INVASION -- IsQuestInvasion(questID)
+					currentQuestData.isDungeon = worldQuestType == LE.LE_QUEST_TAG_TYPE_DUNGEON
+					currentQuestData.isRaid = worldQuestType == LE.LE_QUEST_TAG_TYPE_RAID
+					currentQuestData.isPvP = worldQuestType == LE.LE_QUEST_TAG_TYPE_PVP
+					currentQuestData.isPetBattle = worldQuestType == LE.LE_QUEST_TAG_TYPE_PET_BATTLE
+					currentQuestData.isTradeSkill = worldQuestType == LE.LE_QUEST_TAG_TYPE_PROFESSION
+					currentQuestData.isElite = isElite
+					currentQuestData.rarity = rarity
+
+					-- Store coordinates if any
+					-- Will be used to figure out the closest world quest to track (maybe)
+					currentQuestData.x = questInfo.x
+					currentQuestData.y = questInfo.y
+
+					-- If anything was updated within this quest, report it back
+					if (currentQuestData.updateDescription) then
+						needUpdate = true
+					end
+
+					-- update pointer in case it was a newly added quest
+					questData[questID] = currentQuestData
+				end
+			end
+		end
+
+	end
+
+	end
+
+	-- Point the questlog cache to our new table
+	worldQuestCache = newCache
+
+	return needUpdate
+end
+
+-- Parse the questlog and store its data
+-- Returns true if anything changed since last parsing
+Module.GatherQuestLogData = function(self, forced)
+
+	local playerMoney = GetMoney()
+	local numEntries, numQuests = GetNumQuestLogEntries() -- quests in the quest log
+	--local questFrameIsShown = QuestFrame:IsShown() -- is the quest frame visible?
+	--local currentQuestID = ENGINE_CATA and questFrameIsShown and GetQuestID()
+
+	local questData = questData
+	local oldCache = questLogCache
+	local newCache = {} 
+
+	-- This is a bug that's been around since 3.3.0 
+	-- when Blizzard added quests that were automatically 
+	-- accepted once you simply talked to the NPC.
+	-- The button text says "Accept", which is misleading
+	-- since the quest already has been accepted and will
+	-- stay accepted even if we close the window with the X. 
+	--if (questFrameIsShown and QuestGetAutoAccept()) then
+	--	self:UpdateQuestFrameVisibility()
+	--end
+
+	local needUpdate -- we set this to true if something has changed
+	local needZoneUpdate -- will return true if a new quest needs its zone data parsed
+	local questHeader -- name of the current questlog- or zone header
+
+	-- Store the user/wow selected quest in the questlog
+	local selection = GetQuestLogSelection()
+
+	-- Debugging shows this is working succesfully, picking up both added and removed quests. 
+	-- My update problem is NOT here
+	for questLogIndex = 1, numEntries do
+		local questID, questTitle, questLevel, suggestedGroup, isHeader, isComplete, isFailed, isRepeatable = self:GetQuestLogTitle(questLogIndex)
+		if isHeader then
+			-- Store the title of the current header, as this usually also is the zone name
+			questHeader = questTitle
+
+		-- Going to ignore all quests that are world quests here, 
+		-- as we're tracking all of them separately.
+		elseif (not ENGINE_LEGION) or (not QuestUtils_IsQuestWorldQuest(questID)) then
+
+			-- Probably the same bug as the WotLK ones above, but since we didn't get
+			-- the API call GetQuestID() until CATA, we're doing a double check here to be sure.
+			--if (currentQuestID and (currentQuestID == questID)) then
+			--	self:UpdateQuestFrameVisibility(isComplete)
+			--end
+
+			-- Select the entry in the quest log, for functions that require it to return info
+			SelectQuestLogEntry(questLogIndex)
+
+			-- Retrieve the existing quest database, if any 
+			local currentQuestData = questData[questID] or {}
+
+			-- If this is a new quest, report that we need an update
+			if (not oldCache[questID]) then
+				needZoneUpdate = true
+				needUpdate = true
+			end
+
+			-- Cache up the current questID and log index
+			newCache[questID] = questLogIndex
+
+			local link, icon, charges, showItemWhenComplete = GetQuestLogSpecialItemInfo(questLogIndex) -- only an iconID in Legion, not a texture link
+			local questCompletionText = isFailed and BLIZZ_LOCALE.QUEST_FAILED or GetQuestLogCompletionText(questLogIndex)
+			local numQuestObjectives = GetNumQuestLeaderBoards(questLogIndex)
+			local questDescription, questObjectivesDescription = GetQuestLogQuestText()
+
+			local requiredMoney = GetQuestLogRequiredMoney(questLogIndex) or 0
+			if (numQuestObjectives == 0) and (playerMoney >= requiredMoney) then
+				isComplete = true
+			end
+
+			-- Update the quest objectives
+			local questUpdated
+			local questObjectives = currentQuestData.questObjectives or {}
+			for i = 1, numQuestObjectives do
+				
+				local questObjective = questObjectives[i]
+				if questObjective then
+					local description, objectiveType, isCompleted, item, numCurrent, numNeeded = self:GetQuestLogLeaderBoard(i, questLogIndex)
+
+					if not((description == questObjective.description) and (objectiveType == questObjective.objectiveType) and (isCompleted == questObjective.isCompleted) and (item == questObjective.item) and (numCurrent == questObjective.numCurrent) and (numNeeded == questObjective.numNeeded)) then
+
+						-- Something was changed
+						questUpdated = BLIZZ_LOCALE.UPDATE
+					end
+
+					questObjective.description = description
+					questObjective.objectiveType = objectiveType
+					questObjective.isCompleted = isCompleted
+					questObjective.item = item
+					questObjective.numCurrent = numCurrent
+					questObjective.numNeeded = numNeeded
+					
+				else
+					questObjective = {}
+
+					-- new quest
+					questObjective.description, 
+					questObjective.objectiveType, 
+					questObjective.isCompleted, 
+					questObjective.item, 
+					questObjective.numCurrent, 
+					questObjective.numNeeded = self:GetQuestLogLeaderBoard(i, questLogIndex)
+
+				end
+
+				-- Needed for emissary quests to register as completed
+				if (questObjective.item) and (questObjective.numCurrent == questObjective.numNeeded) and (questObjective.numNeeded > 0) then
+					questObjective.isCompleted = true
+				end
+
+				questObjectives[i] = questObjective
+			end
+
+			-- Can't really imagine why a quest's number of objectives should 
+			-- change after creation, but just in case we wipe away any unneeded entries.
+			-- Point is that we're using #questObjectives to determine number of objectives.
+			for i = #questObjectives, numQuestObjectives + 1, -1 do
+				if questObjectives[i] then
+					table_wipe(questObjectives[i])
+				end
+			end
+
+			-- If we're dealing with an update, figure out what kind. New quest? Failed? Completed? Updated objectives?
+			currentQuestData.updateDescription = 
+				(not questData[questID]) and BLIZZ_LOCALE.NEW or 
+				(isComplete and (not currentQuestData.isComplete)) and BLIZZ_LOCALE.QUEST_COMPLETE or 
+				(isFailed and (not currentQuestData.isFailed)) and BLIZZ_LOCALE.QUEST_FAILED or questUpdated
+
+			currentQuestData.questID = questID
+			currentQuestData.questTitle = questTitle
+			currentQuestData.questLevel = questLevel
+			--currentQuestData.questMapID = questMapID -- we're doing this later
+			currentQuestData.questHeader = questHeader
+			currentQuestData.suggestedGroup = suggestedGroup
+			currentQuestData.isComplete = isComplete
+			currentQuestData.isFailed = isFailed
+			currentQuestData.isRepeatable = isRepeatable
+			currentQuestData.completionText = questCompletionText
+			currentQuestData.numQuestObjectives = numQuestObjectives
+			currentQuestData.questObjectives = questObjectives
+			currentQuestData.questDescription = questDescription
+			currentQuestData.questObjectivesDescription = questObjectivesDescription
+			currentQuestData.requiredMoney = requiredMoney
+			currentQuestData.icon = icon
+			currentQuestData.hasQuestItem = icon and ((not isComplete) or showItemWhenComplete)
+			currentQuestData.showItemWhenComplete = showItemWhenComplete
+
+			-- If anything was updated within this quest, report it back
+			if (currentQuestData.updateDescription) then
+				needUpdate = true
+			end
+
+			-- update pointer in case it was a newly added quest
+			questData[questID] = currentQuestData
+			
+		end
+	end
+
+	-- Return the selected quest to whatever it was before our parsing.
+	-- If we don't do this, hovering over quest rewards in the embedded worldmap 
+	-- will bug out in client versions using the new map. 
+	-- Return the selection to whatever the user or wow set it to seems to fix it.
+	if (GetQuestLogSelection() ~= selection) then
+		SelectQuestLogEntry(selection)
+	end
+
+	-- Point the questlog cache to our new table
+	-- *Will this cause a big performance drop, creating a new one every update?
+	--  Or can we get away with it, since it's just a single new one, not many? 
+	questLogCache = newCache
+
+	-- Report back if anything was changed and needs an update 
+	return needUpdate, needZoneUpdate
+end
+
+Module.UpdateScale = function(self, event, ...)
+	local arg = ...
+	if (event == "CVAR_UPDATE") and (arg ~= "WINDOWED_MAXIMIZED") then
+		return
+	end
+	if (event == "PLAYER_ENTERING_WORLD") then
+		self:UnregisterEvent("PLAYER_ENTERING_WORLD", "UpdateScale")
+	end
+	local pixelSize = UICenter:GetSizeOfPixel()
+	if (PIXEL_SIZE ~= pixelSize) then
+		local newBackdrop = getPixelPerfectBackdrop()
+		for frame, backdrop in pairs(backdropCache) do
+			local r, g, b, a = frame:GetBackdropColor()
+			local r2, g2, b2, a2 = frame:GetBackdropBorderColor()
+			frame:SetBackdrop(nil)
+			frame:SetBackdrop(newBackdrop)
+			frame:SetBackdropColor(r, g, b, a)
+			frame:SetBackdropBorderColor(r2, g2, b2, a2)
+		end
+		PIXEL_SIZE = pixelSize
 	end
 end
 
 Module.OnEvent = function(self, event, ...)
-	if event == "PLAYER_ALIVE" then
-		-- This event is only wanted prior to MoP, 
-		-- and we only want it the initial time it fires 
-		-- since this indicates that quest data is available.
-		self:UnregisterEvent("PLAYER_ALIVE", "OnEvent")
+	--if (not (event == "WORLD_MAP_UPDATE")) then
+	--	print(event, ...)
+	--end
 
-	elseif event == "PLAYER_ENTERING_WORLD" then
+	-- Mainly used to get the initial quest caches up and running, 
+	-- but also when changing continents, instances and such. 
+	if (event == "PLAYER_ENTERING_WORLD") then
+		-- Update stored quest log data
+		self:GatherQuestLogData()
 
-		-- parse auto quest popups
-		if ENGINE_CATA then
-			self:ParseAutoQuests()
+		-- Update stored world quest data
+		if ENGINE_LEGION then
+			self:GatherWorldQuestData()
 		end
-
-	elseif event == "QUEST_LOG_UPDATE" then
-
-	--elseif event == "PLAYER_MONEY" then
-		-- Should track quests requiring money, 
-		-- and return if the player doesn't have any such. 
-
-	elseif event == "PLAYER_REGEN_ENABLED" then
-
-		-- We only want this event to be active when something 
-		-- actually changed on the quest item bar while in combat. 
-		self:UnregisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
-		self:UpdateTrackerVisibility()
-
-	--elseif event == "ZONE_CHANGED" then
-
-	elseif event == "ZONE_CHANGED_NEW_AREA" then
-
-		-- parse auto quest popups
-		if ENGINE_CATA then
-			self:ParseAutoQuests()
-		end
-	
-
-	elseif event == "BAG_UPDATE" then
-		--self:ScanBags()
-
-		return
-	
-	elseif event == "BAG_UPDATE_COOLDOWN" then
-		self:UpdateItemCooldowns()
-		return
-	
-	elseif event == "UNIT_INVENTORY_CHANGED" then
-
-		return
-
-	elseif event == "QUEST_POI_UPDATE" then -- cata
-		self:UpdateSuperTracking()
-		return
-
-	elseif event == "QUEST_AUTOCOMPLETE" then -- cata
-
-		-- Cata auto completion and auto offering of quests
-		local questId = ...
-		local questLogIndex = GetQuestLogIndexByID(questId)
-
-		PlaySound("UI_AutoQuestComplete")
-		ShowQuestComplete(questLogIndex)
-
-		return
 	end
 
-	self:ParseQuests(event)
+	-- Called upon entering the world or changing zones or closing the map. 
+	if (event == "PLAYER_ENTERING_WORLD") or (event == "ZONE_CHANGED_NEW_AREA") or (event == "WORLD_MAP_CLOSED") then
+		-- Update map zone and quest zones in the cache
+		-- This forces the map to the current zone, so it shouldn't be called otherwise.
+		self:UpdateQuestZoneData()
+
+		-- Update what quests we're tracking
+		self:UpdateZoneTracking()
+		self:UpdateTrackerWatches()
+
+		-- Update the displayed tracker entries
+		self:UpdateTrackerEntries()
+		self:UpdateTrackerVisibility() -- make sure it's hidden in battlegrounds and arenas too
+	end
+
+	-- Something changed in the normal quest log
+	if (event == "QUEST_LOG_UPDATE") then
+
+		-- Parse the questlog and store the data
+		self:GatherQuestLogData()
+
+		-- Parse the available world quests
+		if ENGINE_LEGION then
+			self:GatherWorldQuestData()
+		end
+
+		-- Adding this here makes sure new questlog quests appear
+		if (not WorldMapFrame:IsShown()) then
+			self:UpdateQuestZoneData()
+		end
+
+		-- Update what quests we're tracking,
+		-- since quests could have been added or removed here.
+		self:UpdateZoneTracking()
+		self:UpdateTrackerWatches()
+
+		-- Update the displayed tracker entries
+		self:UpdateTrackerEntries()
+		self:UpdateTrackerVisibility()
+	end
+
+	-- The player entered a new subzone
+	if (event == "ZONE_CHANGED") then
+		local inMicroDungeon = IsPlayerInMicroDungeon and IsPlayerInMicroDungeon()
+		if (inMicroDungeon ~= self.inMicroDungeon) then
+			-- Inform the module we're in a micro dungeon.
+			-- When implemented this will affect what objectives are shown,
+			-- as we would like to track things only relevant to the dungeon, 
+			-- or preferably none at all, thus keeping the screen clean. 
+			self.inMicroDungeon = inMicroDungeon
+
+			-- Parse the zone and what quests to track
+			-- This requires log data to be loaded first
+			self:UpdateZoneTracking()
+			self:UpdateTrackerWatches()
+	
+			-- Update the displayed tracker entries
+			self:UpdateTrackerEntries()
+			self:UpdateTrackerVisibility()
+		end
+	end
+
+	if (event == "WORLD_MAP_UPDATE") then
+		-- This is where we register when the world map changes zone
+		-- There are a TON of updates here, so we need to filter out the ones that matter
+		if (self:GetCurrentMapAreaID() ~= CURRENT_MAP_ZONE) or (not CURRENT_MAP_ZONE) then
+
+			-- Update what quests we're tracking
+			self:UpdateZoneTracking()
+			self:UpdateTrackerWatches()
+	
+			-- Update the displayed tracker entries
+			self:UpdateTrackerEntries()
+			self:UpdateTrackerVisibility()
+		end
+	end
+
+	if ENGINE_CATA then
+		-- Parse auto quest popups
+		if (event == "PLAYER_ENTERING_WORLD") or (event == "ZONE_CHANGED") or (event == "ZONE_CHANGED_NEW_AREA") then
+			self:ParseAutoQuests()
+		end
+
+		-- Super tracking update
+		if (event == "QUEST_POI_UPDATE") then 
+			self:UpdateSuperTracking()
+		end
+
+		-- Auto completion and auto offering of quests
+		if (event == "QUEST_AUTOCOMPLETE") then 
+			PlaySound("UI_AutoQuestComplete")
+			ShowQuestComplete(GetQuestLogIndexByID((...)))
+		end
+	end
+
+
 end
 
-Module.ForceUpdate = function(self, event, ...)
-	if (event == "WORLDMAP_HIDE") then
-		if NEED_UPDATE then
-			self:ParseQuests()
+Module.SetUpEvents = function(self, event, ...)
+	-- Unregister whatever event brought us here
+	self:UnregisterEvent(event, "SetUpEvents")
+
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
+	self:RegisterEvent("ZONE_CHANGED", "OnEvent")
+	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
+	self:RegisterEvent("QUEST_LOG_UPDATE", "OnEvent")
+	self:RegisterEvent("WORLD_MAP_UPDATE", "OnEvent")
+
+	--self:RegisterEvent("QUESTLINE_UPDATE", "OnEvent")
+	
+	self:RegisterEvent("QUEST_ACCEPTED", "OnEvent")
+	self:RegisterEvent("QUEST_REMOVED", "OnEvent") -- local questID = ... -- fires on world quests
+
+	--[[
+	self:RegisterEvent("PLAYER_MONEY", "OnEvent")
+	self:RegisterEvent("BAG_UPDATE", "OnEvent")
+	self:RegisterEvent("BAG_UPDATE_COOLDOWN", "OnEvent")
+	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "OnEvent")
+	]]--
+
+	-- Scale changes our pixel borders must watch out for
+	self:RegisterEvent("UI_SCALE_CHANGED", "UpdateScale")
+	self:RegisterEvent("DISPLAY_SIZE_CHANGED", "UpdateScale")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateScale")
+	self:RegisterEvent("CVAR_UPDATE", "UpdateScale")
+
+	-- Need some fake events to update quest zones 
+	-- that couldn't be retrieved while the map was open
+	WorldMapFrame:HookScript("OnHide", function() self:OnEvent("WORLD_MAP_CLOSED") end)
+	WorldMapFrame:HookScript("OnShow", function() self:OnEvent("WORLD_MAP_OPENED") end)
+
+
+	if ENGINE_CATA then
+		-- Auto-accept and auto-completion introduced in Cata
+		-- Quests could be automatically accepted in WotLK too, 
+		-- but no specific events existed for it back then.
+		self:RegisterEvent("QUEST_AUTOCOMPLETE", "OnEvent")
+		self:RegisterEvent("QUEST_POI_UPDATE", "OnEvent") -- world quest update
+
+		if ENGINE_WOD then
+			--self:RegisterEvent("QUEST_WATCH_LIST_CHANGED", "OnEvent") -- world quest update
+
+			-- There are no events for world quests, 
+			-- so the easiest way is to hook into the Blizzard API.
+			-- Like with the world map, we create a dummy event here.
+			-- *Need to figure out everything we need to hook this into.
+			if ENGINE_LEGION then
+				self:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL", "OnEvent") -- world quest update
+				self:RegisterEvent("QUEST_TURNED_IN", "OnEvent") -- local questID, xp, money = ... -- fires on world quests
+			end
 		end
 	end
+
+	-- Do an initial full update
+	self:OnEvent("PLAYER_ENTERING_WORLD")
 end
 
 Module.OnInit = function(self)
@@ -1762,6 +2453,7 @@ Module.OnInit = function(self)
 	-- Tracker frame
 	-----------------------------------------------------------
 	local tracker = setmetatable(visibility:CreateFrame("Frame"), Tracker_MT)
+	--tracker:Hide() -- keep it initially hidden
 	tracker:SetFrameStrata("LOW")
 	tracker:SetFrameLevel(15)
 	tracker.config = config
@@ -1784,7 +2476,7 @@ Module.OnInit = function(self)
 	title:SetDrawLayer("BACKGROUND")
 	title:SetFontObject(config.header.title.normalFont)
 	title:Place(unpack(config.header.title.position))
-	title:SetText(L_OBJECTIVES)
+	title:SetText(BLIZZ_LOCALE.OBJECTIVES)
 
 	-- Maximize/minimize button
 	-- This needs to be secure, so we can use it to allow the user 
@@ -1883,42 +2575,14 @@ Module.OnEnable = function(self)
 	BlizzardUI:GetElement("ObjectiveTracker"):Disable()
 	BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsObjectivesPanelWatchFrameWidth")
 
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
-	self:RegisterEvent("PLAYER_MONEY", "OnEvent")
-	self:RegisterEvent("QUEST_LOG_UPDATE", "OnEvent")
-	self:RegisterEvent("ZONE_CHANGED", "OnEvent")
-	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
-
-	self:RegisterEvent("BAG_UPDATE", "OnEvent")
-	self:RegisterEvent("BAG_UPDATE_COOLDOWN", "OnEvent")
-	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "OnEvent")
-
-	if (not ENGINE_MOP) then
-		self:RegisterEvent("PLAYER_ALIVE", "OnEvent")
+	-- No real need to track any events at all prior to this
+	if ENGINE_MOP then
+		self:RegisterEvent("PLAYER_ENTERING_WORLD", "SetUpEvents")
+	else
+		-- Prior to MoP quest data wasn't available until this event
+		self:RegisterEvent("PLAYER_ALIVE", "SetUpEvents")
 	end
 
-	if ENGINE_CATA then
-		self:RegisterEvent("QUEST_AUTOCOMPLETE", "OnEvent")
-		self:RegisterEvent("QUEST_POI_UPDATE", "OnEvent")
-	end
-
-	self:RegisterEvent("UI_SCALE_CHANGED", UpdateScale)
-	self:RegisterEvent("DISPLAY_SIZE_CHANGED", UpdateScale)
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", UpdateScale)
-	self:RegisterEvent("CVAR_UPDATE", UpdateScale)
-
-	-- Our quest parser will forcefully keep the WorldMapFrame set to the current zone, 
-	-- so currently we're queueing updates to when the map is hidden. 
-	WorldMapFrame:HookScript("OnHide", function() self:ForceUpdate("WORLDMAP_HIDE") end)
-
-
-	--[[
-	self:RegisterEvent("SCENARIO_CRITERIA_UPDATE", "OnEvent")
-	self:RegisterEvent("SCENARIO_SPELL_UPDATE", "OnEvent")
-	self:RegisterEvent("SCENARIO_UPDATE", "OnEvent")
-	self:RegisterEvent("TRACKED_ACHIEVEMENT_LIST_CHANGED", "OnEvent")
-	self:RegisterEvent("TRACKED_ACHIEVEMENT_UPDATE", "OnEvent") 
-	self:RegisterEvent("VARIABLES_LOADED", "OnEvent") -- don't think I need this for anything
-	]]
-
+	-- Hide the tracker initially
+	self:UpdateTrackerVisibility()
 end

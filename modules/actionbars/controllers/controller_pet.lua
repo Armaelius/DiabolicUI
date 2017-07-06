@@ -13,8 +13,8 @@ local Controller_MT = { __index = Controller }
 
 Controller.UpdateBarArtwork = function(self)
 	local Bar = Module:GetWidget("Bar: Pet"):GetFrame()
-	if Bar then
-		Bar:UpdateStyle()
+	if Bar and Bar.PostUpdate then
+		Bar:PostUpdate()
 	end
 end
 
@@ -36,32 +36,6 @@ ControllerWidget.OnEnable = function(self)
 	self.Controller:SetSize(controlConfig.size[1], controlConfig.size[2])
 	self.Controller:Place(controlPosition.point, controlPosition.anchor, controlPosition.anchor_point, controlPosition.xoffset, controlPosition.yoffset)
 		
-	-- attribute driver to handle number of visible bars, layouts, sizes etc
-	self.Controller:SetAttribute("_onattributechanged", [[
-		if name == "state-page" then
-			if value == "vehicle" then
-				local width = self:GetAttribute("controller_width_vehicle");
-				local height = self:GetAttribute("controller_height_vehicle");
-
-				self:SetWidth(width);
-				self:SetHeight(height);
-			else
-				local width = self:GetAttribute("controller_width");
-				local height = self:GetAttribute("controller_height");
-
-				self:SetWidth(width);
-				self:SetHeight(height);
-			end
-		end
-		
-		-- update button artwork
-		control:CallMethod("UpdateBarArtwork");
-	]])	
-
-	
-	-- Enable the new page driver
-	RegisterStateDriver(self.Controller, "page", ENGINE_MOP and "[overridebar][possessbar][shapeshift][vehicleui][nopet]vehicle;novehicle" or "[bonusbar:5][vehicleui][nopet]vehicle;novehicle")
-	
 	-- because the bars aren't created when the first call comes
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateBarArtwork")
 

@@ -6,7 +6,7 @@ local C = Engine:GetStaticConfig("Data: Colors")
 -- Lua API
 local _G = _G
 local unpack = unpack
-local pairs = pair
+local pairs = pairs
 local tostring = tostring
 
 -- WoW API
@@ -28,71 +28,176 @@ local HAS_VEHICLE_UI = false -- entering a value just to reserve the memory. sem
 local NUM_VISIBLE_BARS = 1 -- need a fallback here or the spawn will bug out
 
 
+local postUpdateHealth = function(health, unit)
 
-local updateValueDisplay = function(self)
-	local forced = self.mouseIsOver
-	if UnitAffectingCombat("player") or forced then
-		local orbValue = self.orbValue
-		orbValue:SetAlpha(.9)
-		orbValue:Show()
-
-		if forced then
-			local ourLabel = orbValue.Label
-			ourLabel:SetAlpha(.9)
-			ourLabel:Show()
+	if (health.useClassColor and UnitIsPlayer(unit)) then
+		local _, class = UnitClass(unit)
+		if (class and C.Orb[class]) then
+			for i,v in pairs(C.Orb[class]) do
+				health:SetStatusBarColor(v[1], v[2], v[3], v[4], v[5])
+			end
 		else
-			local ourLabel = self.orbValue.Label
-			ourLabel:SetAlpha(0)
-			ourLabel:Hide()
+			r, g, b = unpack(C.Class[class] or C.Class.UNKNOWN)
+			health:SetStatusBarColor(r, g, b, "ALL")
 		end
 	else
-		local orbValue = self.orbValue
-		orbValue:SetAlpha(.4)
-		orbValue:Hide()
-
-		local ourLabel = self.orbValue.Label
-		ourLabel:SetAlpha(0)
-		ourLabel:Hide()
+		for i,v in pairs(C.Orb.HEALTH) do
+			health:SetStatusBarColor(v[1], v[2], v[3], v[4], v[5])
+		end
 	end
-end
 
-local postUpdateHealth = function(health)
-	updateValueDisplay(health._owner)
+	local forced = health._owner.mouseIsOver
+	local Value = health.Value
+	local Label = health.Label
+
+	local orbAlpha = (UnitAffectingCombat("player") or forced) and .9 or 0
+	local labelAlpha = forced and .9 or 0
+
+	if (orbAlpha == Value.alpha) and (labelAlpha == Label.alpha) then
+		return
+	end
+
+	Value:SetAlpha(orbAlpha)
+	Label:SetAlpha(labelAlpha)
+
+	Value.alpha = orbAlpha
+	Label.alpha = labelAlpha
 end
 
 local postUpdatePower = function(power)
 	local owner = power._owner
-	local label = power.Value.Label
 	local unit = owner.unit
 
 	-- Check if mana is the current resource or not, 
 	-- and crop the primary power bar as needed to 
 	-- give room for the secondary mana orb. 
 	local powerID, powerType = UnitPowerType(unit)
-	label:SetText(_G[powerType] or "")
 
-	if powerType == "MANA" then
-		power:SetCrop(0, 0)
-	else
-		local manamax = UnitPowerMax(unit, SPELL_POWER_MANA)
-		if manamax > 0 then
-			power:SetCrop(0, power.crop)
-		else
+	-- Only do any of this if the type has changed, 
+	-- or if it's the first time calling this. 
+	if (power.currentPowerType ~= powerType) then
+		if (powerType == "MANA") then
 			power:SetCrop(0, 0)
+		else
+			local manamax = UnitPowerMax(unit, SPELL_POWER_MANA)
+			if manamax > 0 then
+				power:SetCrop(0, power.crop)
+			else
+				power:SetCrop(0, 0)
+			end
 		end
+
+		-- Update the label
+		local label = power.Label
+		label:SetText(_G[powerType] or "")
+
+		-- Store the powertype to avoid extra updates.
+		-- Note that this isn't stored before this point
+		-- to ensure that this is called at least once.
+		power.currentPowerType = powerType
 	end
 
-	updateValueDisplay(owner)
+	local forced = power._owner.mouseIsOver
+	local Value = power.Value
+	local Label = power.Label
+
+	local orbAlpha = (UnitAffectingCombat("player") or forced) and .9 or 0
+	local labelAlpha = forced and .9 or 0
+
+	if (orbAlpha == Value.alpha) and (labelAlpha == Label.alpha) then
+		return
+	end
+
+	Value:SetAlpha(orbAlpha)
+	Label:SetAlpha(labelAlpha)
+
+	Value.alpha = orbAlpha
+	Label.alpha = labelAlpha
+		
 end
 
-local onEnter = function(self)
+local onEnterLeft = function(self)
 	self.mouseIsOver = true
-	updateValueDisplay(self)
+
+	local Value = self.Health.Value
+	local Label = self.Health.Label
+
+	local orbAlpha = .9
+	local labelAlpha = .9
+
+	if (orbAlpha == Value.alpha) and (labelAlpha == Label.alpha) then
+		return
+	end
+
+	Value:SetAlpha(orbAlpha)
+	Label:SetAlpha(labelAlpha)
+
+	Value.alpha = orbAlpha
+	Label.alpha = labelAlpha
+		
 end
 
-local onLeave = function(self)
+local onEnterRight = function(self)
+	self.mouseIsOver = true
+
+	local Value = self.Power.Value
+	local Label = self.Power.Label
+
+	local orbAlpha = .9
+	local labelAlpha = .9
+
+	if (orbAlpha == Value.alpha) and (labelAlpha == Label.alpha) then
+		return
+	end
+
+	Value:SetAlpha(orbAlpha)
+	Label:SetAlpha(labelAlpha)
+
+	Value.alpha = orbAlpha
+	Label.alpha = labelAlpha
+		
+end
+
+local onLeaveLeft = function(self)
 	self.mouseIsOver = false
-	updateValueDisplay(self)
+
+	local Value = self.Health.Value
+	local Label = self.Health.Label
+
+	local orbAlpha = UnitAffectingCombat("player") and .9 or 0
+	local labelAlpha = 0
+
+	if (orbAlpha == Value.alpha) and (labelAlpha == Label.alpha) then
+		return
+	end
+
+	Value:SetAlpha(orbAlpha)
+	Label:SetAlpha(labelAlpha)
+
+	Value.alpha = orbAlpha
+	Label.alpha = labelAlpha
+	
+end
+
+local onLeaveRight = function(self)
+	self.mouseIsOver = false
+
+	local Value = self.Power.Value
+	local Label = self.Power.Label
+
+	local orbAlpha = UnitAffectingCombat("player") and .9 or 0
+	local labelAlpha = 0
+
+	if (orbAlpha == Value.alpha) and (labelAlpha == Label.alpha) then
+		return
+	end
+
+	Value:SetAlpha(orbAlpha)
+	Label:SetAlpha(labelAlpha)
+
+	Value.alpha = orbAlpha
+	Label.alpha = labelAlpha
+	
 end
 
 local postCreateAuraButton = function(self, button)
@@ -312,6 +417,9 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	self:Size(unpack(config.left.size))
 	self:Place(unpack(config.left.position))
 
+	local Pet = Engine:GetModule("ActionBars"):GetWidget("Bar: Pet"):GetFrame()
+	local hasPet = Pet:IsShown()
+
 
 	-- Health
 	-------------------------------------------------------------------
@@ -336,10 +444,10 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	Health.Value:SetFontObject(configHealthTexts.font_object)
 	Health.Value:SetPoint(unpack(configHealthTexts.position))
 
-	Health.Value.Label = Health:GetOverlay():CreateFontString(nil, "OVERLAY")
-	Health.Value.Label:SetFontObject(configHealthTexts.font_object)
-	Health.Value.Label:SetPoint("BOTTOM", Health.Value, "TOP", 0, 2)
-	Health.Value.Label:SetText(HEALTH)
+	Health.Label = Health:GetOverlay():CreateFontString(nil, "OVERLAY")
+	Health.Label:SetFontObject(configHealthTexts.font_object)
+	Health.Label:SetPoint("BOTTOM", Health.Value, "TOP", 0, 2)
+	Health.Label:SetText(HEALTH)
 
 	Health.Value.showPercent = false
 	Health.Value.showDeficit = false
@@ -361,7 +469,7 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	CastBar:SetSparkSize(unpack(config.castbar.spark.size))
 	CastBar:SetSparkFlash(unpack(config.castbar.spark.flash))
 	CastBar:DisableSmoothing(true)
-	CastBar:Place(unpack(config.castbar.position))
+	CastBar:Place(unpack(hasPet and config.castbar.positionPet or config.castbar.position))
 	
 	CastBar.Backdrop = CastBar:CreateTexture(nil, "BACKGROUND")
 	CastBar.Backdrop:SetSize(unpack(config.castbar.backdrop.size))
@@ -407,7 +515,7 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	-------------------------------------------------------------------
 	local Buffs = self:CreateFrame()
 	Buffs:SetSize(unpack(config.buffs.size[HAS_VEHICLE_UI and "vehicle" or tostring(NUM_VISIBLE_BARS)])) 
-	Buffs:Place(unpack(config.buffs.position))
+	Buffs:Place(unpack(hasPet and config.buffs.positionPet or config.buffs.position))
 
 	Buffs.config = config.buffs
 	Buffs.buttonConfig = config.buffs.button
@@ -431,7 +539,7 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	-------------------------------------------------------------------
 	local Debuffs = self:CreateFrame()
 	Debuffs:SetSize(unpack(config.debuffs.size[HAS_VEHICLE_UI and "vehicle" or tostring(NUM_VISIBLE_BARS)]))  
-	Debuffs:Place(unpack(config.debuffs.position))
+	Debuffs:Place(unpack(hasPet and config.debuffs.positionPet or config.debuffs.position))
 
 	Debuffs.config = config.debuffs
 	Debuffs.buttonConfig = config.debuffs.button
@@ -452,10 +560,8 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 
 	hooksecurefunc(CastBar.Name, "SetText", function(self) self.Shade:SetSize(self:GetStringWidth() + 128, self:GetStringHeight() + 48) end)
 
-	self.orbValue = Health.Value
-
-	self:HookScript("OnEnter", onEnter)
-	self:HookScript("OnLeave", onLeave)
+	self:HookScript("OnEnter", onEnterLeft)
+	self:HookScript("OnLeave", onLeaveLeft)
 
 	self.Buffs = Buffs
 	self.Debuffs = Debuffs
@@ -508,10 +614,10 @@ local StyleRightOrb = function(self, unit, index, numBars, inVehicle)
 	Power.Value.showMaximum = true
 	Power.Value.showAtZero = true
 
-	Power.Value.Label = Power:GetOverlay():CreateFontString(nil, "OVERLAY")
-	Power.Value.Label:SetFontObject(configPowerTexts.font_object)
-	Power.Value.Label:SetPoint("BOTTOM", Power.Value, "TOP", 0, 2)
-	Power.Value.Label:SetText("")
+	Power.Label = Power:GetOverlay():CreateFontString(nil, "OVERLAY")
+	Power.Label:SetFontObject(configPowerTexts.font_object)
+	Power.Label:SetPoint("BOTTOM", Power.Value, "TOP", 0, 2)
+	Power.Label:SetText("")
 	
 	Power.frequent = 1/120
 	
@@ -580,12 +686,8 @@ local StyleRightOrb = function(self, unit, index, numBars, inVehicle)
 	Buffs.PostCreateButton = postCreateAuraButton
 	Buffs.PostUpdateButton = postUpdateAuraButton
 
-
-
-	self.orbValue = Power.Value
-
-	self:HookScript("OnEnter", onEnter)
-	self:HookScript("OnLeave", onLeave)
+	self:HookScript("OnEnter", onEnterRight)
+	self:HookScript("OnLeave", onLeaveRight)
 
 	self.Buffs = Buffs
 	self.Power = Power
@@ -639,6 +741,18 @@ UnitFrameWidget.OnEvent = function(self, event, ...)
 			self.Left.Buffs:ForceUpdate("Buffs")
 			NUM_VISIBLE_BARS = numVisibleBars
 		end
+
+	elseif event == "ENGINE_ACTIONBAR_PET_CHANGED" then
+		local isPetBarVisible = ...
+		if isPetBarVisible then 
+			self.Left.CastBar:Place(unpack(self.config.castbar.positionPet))
+			self.Left.Buffs:Place(unpack(self.config.buffs.positionPet))
+			self.Left.Debuffs:Place(unpack(self.config.debuffs.positionPet))
+		else
+			self.Left.CastBar:Place(unpack(self.config.castbar.position))
+			self.Left.Buffs:Place(unpack(self.config.buffs.position))
+			self.Left.Debuffs:Place(unpack(self.config.debuffs.position))
+		end
 	
 	elseif event == "ENGINE_MINIMAP_VISIBLE_CHANGED" then
 		local isMinimapVisible = ...
@@ -681,6 +795,8 @@ UnitFrameWidget.OnEnable = function(self)
 	self:RegisterMessage("ENGINE_ACTIONBAR_VEHICLE_CHANGED", "OnEvent")
 	self:RegisterMessage("ENGINE_ACTIONBAR_VISIBLE_CHANGED", "OnEvent")
 	self:RegisterMessage("ENGINE_MINIMAP_VISIBLE_CHANGED", "OnEvent")
+	self:RegisterMessage("ENGINE_ACTIONBAR_PET_CHANGED", "OnEvent")
+	
 
 	--[[
 	local box = UIParent:CreateTexture(nil, "OVERLAY")

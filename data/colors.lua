@@ -100,6 +100,13 @@ local C = {
 		[""] 			= prepare(   0/255,   0/255,   0/255 )
 	},
 
+	Faction = {
+		Alliance 		= prepare(  74/255,  84/255, 232/255 ), -- Alliance
+		Horde 			= prepare( 229/255,  13/255,  18/255 ), -- Horde
+		Neutral 		= prepare( 192/255, 192/255, 133/255 )
+		--Neutral 		= prepare( 255/255, 255/255, 178/255 )
+	},
+
 	-- Unit Friendships
 	Friendship = {
 		[1] = prepare( 192/255,  68/255,   0/255 ), -- Stranger
@@ -384,6 +391,10 @@ local C = {
 		UNUSED 					= prepare(195/255, 202/255, 217/255)  -- Fallback for the rare cases where an unknown type is requested.
 	},
 
+	Quality = {
+
+	},
+
 	-- Unit Reactions
 	Reaction = {
 		[1] 					= prepare( 175/255,  76/255,  56/255 ), -- hated
@@ -437,6 +448,11 @@ local C = {
 		unknown 	= prepare( 255/255, 234/255, 137/255 )
 	}
 }
+
+for i = 0, #ITEM_QUALITY_COLORS do
+	local r, g, b = ITEM_QUALITY_COLORS[i].r, ITEM_QUALITY_COLORS[i].g, ITEM_QUALITY_COLORS[i].b
+	C.Quality[i-1] = prepare(r, g, b)
+end
 
 
 

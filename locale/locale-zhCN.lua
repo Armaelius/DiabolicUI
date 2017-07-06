@@ -8,38 +8,6 @@ if not L then return end
 ---------------------------------------------------------------------
 
 -- Core Engine
-L["Bad argument #%d to '%s': %s expected, got %s"] = true
-L["The Engine has no method named '%s'!"] = true
-L["The handler '%s' has no method named '%s'!"] = true
-L["The handler element '%s' has no method named '%s'!"] = true
-L["The module '%s' has no method named '%s'!"] = true
-L["The module widget '%s' has no method named '%s'!"] = true
-L["The Engine has no method named '%s'!"] = true
-L["The handler '%s' has no method named '%s'!"] = true
-L["The module '%s' has no method named '%s'!"] = true
-L["The event '%s' isn't currently registered to any object."] = true
-L["The event '%s' isn't currently registered to the object '%s'."] = true
-L["Attempting to unregister the general occurence of the event '%s' in the object '%s', when no such thing has been registered. Did you forget to add function or method name to UnregisterEvent?"] = true
-L["The method named '%s' isn't registered for the event '%s' in the object '%s'."] = true
-L["The function call assigned to the event '%s' in the object '%s' doesn't exist."] = true
-L["The message '%s' isn't currently registered to any object."] = true
-L["The message '%s' isn't currently registered to the object '%s'."] = true
-L["Attempting to unregister the general occurence of the message '%s' in the object '%s', when no such thing has been registered. Did you forget to add function or method name to UnregisterMessage?"] = true
-L["The method named '%s' isn't registered for the message '%s' in the object '%s'."] = true
-L["The function call assigned to the message '%s' in the object '%s' doesn't exist."] = true
-L["The config '%s' already exists!"] = true
-L["The config '%s' doesn't exist!"] = true
-L["The config '%s' doesn't have a profile named '%s'!"] = true
-L["The static config '%s' doesn't exist!"] = true
-L["The static config '%s' already exists!"] = true
-L["Bad argument #%d to '%s': No handler named '%s' exist!"] = true
-L["Bad argument #%d to '%s': No module named '%s' exist!"] = true
-L["The element '%s' is already registered to the '%s' handler!"] = true
-L["The widget '%s' is already registered to the '%s' module!"] = true
-L["A handler named '%s' is already registered!"] = true
-L["Bad argument #%d to '%s': The name '%s' is reserved for a handler!"] = true
-L["Bad argument #%d to '%s': A module named '%s' already exists!"] = true
-L["Bad argument #%d to '%s': The load priority '%s' is invalid! Valid priorities are: %s"] = true
 L["Attention!"] = "注意!"
 L["The UI scale is wrong, so the graphics might appear fuzzy or pixelated. If you choose to ignore it, you won't be asked about this issue again.|n|nFix this issue now?"] = "界面尺寸是错误的,所以图形可能会出现模糊或失真.如果你选择忽略,你就不会再被问到这个问题了|n|n是否修复?"
 L["UI scaling is activated and needs to be disabled, otherwise you'll might get fuzzy borders or pixelated graphics. If you choose to ignore it and handle the UI scaling yourself, you won't be asked about this issue again.|n|nFix this issue now?"] = "需要关闭UI缩放,否则你会得到边界模糊或失真的图形.如果你选择忽略,你就不会再被问到这个问题了|n|n是否修复?"
@@ -55,9 +23,6 @@ L["Auto scaling of the UI has been disabled."] = "用户界面自动缩放已禁
 L["Reload Needed"] = "需要重新加载"
 L["The user interface has to be reloaded for the changes to be applied.|n|nDo you wish to do this now?"] = "用户界面必须重新加载应用更改.你想现在这样做吗?"
 L["The Engine can't be tampered with!"] = "引擎不能被篡改!"
-
--- Blizzard Handler
-L["Bad argument #%d to '%s'. No object named '%s' exists."] = true
 
 
 ---------------------------------------------------------------------
@@ -79,7 +44,6 @@ L["Friends & Guild"] = "社交"
 L["<Left-click> to toggle social frames."] = "<单击左键>打开社交框"
 
 -- actionbar menu
---L["Action Bars"] = true
 L["Side Bars"] = "侧边栏"
 L["Hold |cff00b200<Alt+Ctrl+Shift>|r and drag to remove spells, macros and items from the action buttons."] = "按住|cff00b200<Alt+Ctrl+Shift>|r拖动或移除动作按钮上的法术、宏和物品"
 L["No Bars"] = "无"
@@ -102,8 +66,61 @@ L["You should rest at an Inn."] = "你应该在一个旅馆休息"
 L["Stances"] = "姿态栏"
 L["<Left-click> to toggle stance bar."] = "<单击左键>打开姿态栏"
 
--- added to the interface options menu in WotLK
-L["Cast action keybinds on key down"] = true
+-- keybinds
+L["Alt"] = "A"
+L["Ctrl"] = "C"
+L["Shift"] = "S"
+L["NumPad"] = "N"
+L["Backspace"] = "BS"
+L["Button1"] = "B1"
+L["Button2"] = "B2"
+L["Button3"] = "B3"
+L["Button4"] = "B4"
+L["Button5"] = "B5"
+L["Button6"] = "B6"
+L["Button7"] = "B7"
+L["Button8"] = "B8"
+L["Button9"] = "B9"
+L["Button10"] = "B10"
+L["Button11"] = "B11"
+L["Button12"] = "B12"
+L["Button13"] = "B13"
+L["Button14"] = "B14"
+L["Button15"] = "B15"
+L["Button16"] = "B16"
+L["Button17"] = "B17"
+L["Button18"] = "B18"
+L["Button19"] = "B19"
+L["Button20"] = "B20"
+L["Button21"] = "B21"
+L["Button22"] = "B22"
+L["Button23"] = "B23"
+L["Button24"] = "B24"
+L["Button25"] = "B25"
+L["Button26"] = "B26"
+L["Button27"] = "B27"
+L["Button28"] = "B28"
+L["Button29"] = "B29"
+L["Button30"] = "B30"
+L["Button31"] = "B31"
+L["Capslock"] = "Cp"
+L["Clear"] = "Cl"
+L["Delete"] = "Del"
+L["End"] = "En"
+L["Home"] = "HM"
+L["Insert"] = "Ins"
+L["Mouse Wheel Down"] = "WD"
+L["Mouse Wheel Up"] = "WU"
+L["Num Lock"] = "NL"
+L["Page Down"] = "PD"
+L["Page Up"] = "PU"
+L["Scroll Lock"] = "SL"
+L["Spacebar"] = "Sp"
+L["Tab"] = "Tb"
+L["Down Arrow"] = "DA"
+L["Left Arrow"] = "LA"
+L["Right Arrow"] = "RA"
+L["Up Arrow"] = "UA"	
 
 -- chat module
 L["Chat Setup"] = "聊天设置"

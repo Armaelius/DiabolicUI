@@ -6,7 +6,7 @@ It features both custom artwork and artwork based on my own screenshots from Dia
 
 It's frequently tested on Warmane's WotLK-, Cata- and MoP clients, as well as retail Legion and PTR realms.
 
-[ ![Support me on Patreon](http://i.imgur.com/kVU2d3f.png) ](https://www.patreon.com/goldpaw)
+[ ![Support me on Patreon](http://i.imgur.com/kVU2d3f.png) ](https://www.patreon.com/cogwerkz)
 
 ## How to install
 
@@ -27,8 +27,8 @@ Bug reports and feature suggestions are all done through GitHub's Issue tracker 
 
 There are thousands of users, but most are content to simply download and use the interface without further ado. If you wish to get more involved though, have some questions you can't find answers to anywhere else or simply just wish to stop by and say hello, we have both a [discord](https://discordapp.com/) server and a facebook page.
 
-* Discord: [aevEEZV](https://discord.gg/aevEEZV)
-* Facebook: [@goldpawsui](https://www.facebook.com/goldpawsui/)
+* Discord: [Mqnrr8t](https://discord.gg/Mqnrr8t)
+* Facebook: [@cogwerkz](https://www.facebook.com/cogwerkz)
 
 ## Buy me a beer
 
@@ -38,7 +38,7 @@ Donations are in no way required, since my addons always has been and always wil
 
 * PayPal: [paypal@cogwerkz.org](https://www.paypal.com/cgi-bin/webscr?hosted_button_id=NYTWF68FKGLL6&item_name=DiabolicUI+%28By+Lars+Norberg%29&cmd=_s-xclick) (click to go straight to PayPal)
 * PayPal Me: [www.paypal.me/larsnorberg](https://www.paypal.me/larsnorberg)
-* Patreon: [www.patreon.com/goldpaw](https://www.patreon.com/goldpaw)
+* Patreon: [www.patreon.com/cogwerkz](https://www.patreon.com/cogwerkz)
 * Steam: [My Steam Trade URL](https://steamcommunity.com/tradeoffer/new/?partner=12981766&token=YxIjFAlT)
 * Warmane: [www.warmane.com/account/services](http://www.warmane.com/account/services) (Coins can be gifted to Goldpaw@Icecrown)
 

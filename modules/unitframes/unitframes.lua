@@ -60,6 +60,11 @@ Module.OnInit = function(self)
 	self:GetWidget("Unit: Focus"):Enable()
 	self:GetWidget("Unit: Target"):Enable()
 	self:GetWidget("Unit: ToT"):Enable()
+
+	-- Set a keyword for our petframe, 
+	-- for modules like the actionbars to hook into.
+	local PetFrame = self:GetWidget("Unit: Pet"):GetFrame()
+	Engine:RegisterKeyword("PetFrame", function() return PetFrame end)
 	
 end
 

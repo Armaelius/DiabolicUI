@@ -5,6 +5,9 @@ local C = Engine:GetStaticConfig("Data: Colors")
 local F = Engine:GetStaticConfig("Data: Functions")
 local UICenter = Engine:GetFrame()
 
+-- Register incompatibilities
+Module:SetIncompatible("TidyPlates")
+
 -- Lua API
 local _G = _G
 local ipairs = ipairs
@@ -524,18 +527,22 @@ NamePlate_WotLK.UpdateAlpha = function(self)
 	if self.visiblePlates[self] then
 		local oldHealth = self.old.bars.health
 		local current, min, max = oldHealth:GetValue(), oldHealth:GetMinMaxValues()
-		if (current == 0) or (max == 0) then
+		if ((current == 0) or (max == 0)) then
 			self.targetAlpha = 0 -- just fade out the dead units fast, they tend to get stuck. weird. 
-		else 
-			if TARGET then
-				if info.isTarget then
-					self.targetAlpha = 1 -- current target, keep alpha at max
-				else
-					self.targetAlpha = .3 -- non-targets while you have an actual target
-				end
+		elseif TARGET then
+			if info.isTarget then
+				self.targetAlpha = 1 
+			elseif info.isPlayer then
+				self.targetAlpha = .35
 			else
-				self.targetAlpha = .7 -- no target selected
+				self.targetAlpha = .15 
 			end
+		elseif info.isPlayer then
+			self.targetAlpha = .7 
+		elseif info.isFriendly then
+			self.targetAlpha = .15
+		else
+			self.targetAlpha = .7 
 		end
 	else
 		self.targetAlpha = 0 -- fade out hidden frames
@@ -747,18 +754,24 @@ NamePlate_Legion.UpdateAlpha = function(self)
 	if self.visiblePlates[self] then
 		if UnitExists("target") then
 			if UnitIsUnit(unit, "target") then
-				self.targetAlpha = 1 -- current target, keep alpha at max
+				self.targetAlpha = 1 
 			elseif UnitIsTrivial(unit) then 
-				self.targetAlpha = .15 -- keep the trivial frames transparent
+				self.targetAlpha = .15 
+			elseif UnitIsPlayer(unit) then
+				self.targetAlpha = .35 
+			elseif UnitIsFriend("player", unit) then
+				self.targetAlpha = .15 
 			else
-				self.targetAlpha = .35 -- non-targets while you have an actual target
+				self.targetAlpha = .35
 			end
+		elseif UnitIsTrivial(unit) then 
+			self.targetAlpha = .25 
+		elseif UnitIsPlayer(unit) then
+			self.targetAlpha = .7 
+		elseif UnitIsFriend("player", unit) then
+			self.targetAlpha = .15 
 		else
-			if UnitIsTrivial(unit) then 
-				self.targetAlpha = .25 -- keep trivial frames more transparent
-			else
-				self.targetAlpha = .85 -- no target selected
-			end
+			self.targetAlpha = .7
 		end
 	else
 		self.targetAlpha = 0 -- fade out hidden frames
@@ -1618,10 +1631,21 @@ end
 
 -- Player level updates
 Module.UpdateLevel = function(self, event, ...)
-	if event == "PLAYER_LEVEL_UP" then
-		LEVEL = ...
+	if (event == "PLAYER_LEVEL_UP") then
+		local level = ...
+		if level and (level > LEVEL) then
+			LEVEL = level
+		else
+			local level = UnitLevel("player")
+			if (level > LEVEL) then
+				LEVEL = level
+			end
+		end
 	else
-		LEVEL = UnitLevel("player")
+		local level = UnitLevel("player")
+		if (level > LEVEL) then
+			LEVEL = level
+		end
 	end
 end
 
@@ -1724,8 +1748,6 @@ or ENGINE_WOTLK and function(self, event, ...)
 		self:UpdateAllPlates()
 	elseif event == "PLAYER_CONTROL_LOST" then
 		self:UpdateAllPlates()
-	elseif event == "PLAYER_LEVEL_UP" then
-		self:UpdateLevel()
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		self:UpdateTarget()
 	elseif (event == "PLAYER_REGEN_ENABLED") or (event == "PLAYER_REGEN_DISABLED") then
@@ -1873,7 +1895,7 @@ Module.OnUpdate = function(self, elapsed)
 				FadingPlates[plate] = false
 			end
 
-			if plate.currentAlpha == 0 and plate.targetAlpha == 0 then
+			if (plate.currentAlpha == 0) and (plate.targetAlpha == 0) then
 				plate.visiblePlates[plate] = nil
 				plate:Hide()
 			end
@@ -1911,6 +1933,12 @@ end
 Module.UpdateBlizzardSettings = ENGINE_LEGION and Engine:Wrap(function(self)
 	local config = self.config
 	local setCVar = SetCVar
+
+	-- Because we want friendly NPC nameplates
+	-- We're toning them down a lot as it is, 
+	-- but we still prefer to have them visible, 
+	-- and not the fugly super sized names we get otherwise.
+	setCVar("nameplateShowFriendlyNPCs", 1)
 
 	-- Insets at the top and bottom of the screen 
 	-- which the target nameplate will be kept away from. 
@@ -1964,6 +1992,8 @@ Module.UpdateBlizzardSettings = ENGINE_LEGION and Engine:Wrap(function(self)
 	C_NamePlate.SetNamePlateFriendlySize(width, height)
 	C_NamePlate.SetNamePlateEnemySize(width, height)
 
+	NamePlateDriverFrame.UpdateNamePlateOptions = function() end
+
 	--NamePlateDriverMixin:SetBaseNamePlateSize(unpack(config.size))
 
 	--[[
@@ -2002,7 +2032,7 @@ or Engine:Wrap(function(self)
 	--setCVar("bloattest", 0) -- weird setting that shrinks plates for values > 0
 	--setCVar("bloatnameplates", 0) -- don't change frame size based on threat. it's silly.
 	--setCVar("repositionfrequency", 1) -- don't skip frames between updates
-	-- setCVar("ShowClassColorInNameplate", 1) -- display class colors -- leave this to the setup tutorial, let the user decide later
+	-- setCVar("ShowClassColorInNameplate", 1) -- display class colors -- let the user decide later
 	--setCVar("ShowVKeyCastbar", 1) -- display castbars
 	--setCVar("showVKeyCastbarSpellName", 1) -- display spell names on castbars
 	--setCVar("showVKeyCastbarOnlyOnTarget", 0) -- display castbars only on your current target
@@ -2018,7 +2048,6 @@ Module.OnInit = function(self)
 end
 
 Module.OnEnable = function(self)
-	--do return end
 	if not self.Updater then
 		-- We parent our update frame to the WorldFrame, 
 		-- as we need it to run even if the user has hidden the UI.
@@ -2042,7 +2071,7 @@ Module.OnEnable = function(self)
 		--self:RegisterEvent("PLAYER_CONTROL_LOST", "OnEvent")
 		--self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
 		--self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
-		self:RegisterEvent("PLAYER_LEVEL_UP", "OnEvent")
+		self:RegisterEvent("PLAYER_LEVEL_UP", "UpdateLevel")
 		self:RegisterEvent("RAID_TARGET_UPDATE", "OnEvent")
 		--self:RegisterEvent("UNIT_AURA", "OnEvent")
 		self:RegisterEvent("UNIT_FACTION", "OnEvent")
@@ -2066,7 +2095,7 @@ Module.OnEnable = function(self)
 		-- Update
 		self:RegisterEvent("PLAYER_CONTROL_GAINED", "OnEvent")
 		self:RegisterEvent("PLAYER_CONTROL_LOST", "OnEvent")
-		self:RegisterEvent("PLAYER_LEVEL_UP", "OnEvent")
+		self:RegisterEvent("PLAYER_LEVEL_UP", "UpdateLevel")
 		self:RegisterEvent("PLAYER_TARGET_CHANGED", "OnEvent") 
 		self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
 		self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")

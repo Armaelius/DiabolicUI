@@ -128,6 +128,8 @@ local disableUnitFrame = function(unit)
 	if unit == "tot" then unit = "targettarget" end
 	if unit == "player" then
 		local PlayerFrame = _G.PlayerFrame
+		local MonkStaggerBar = _G.MonkStaggerBar
+
 		killUnitFrame(PlayerFrame)
 		
 		-- A lot of blizz modules relies on PlayerFrame.unit
@@ -141,7 +143,12 @@ local disableUnitFrame = function(unit)
 		-- User placed frames don't animate
 		PlayerFrame:SetUserPlaced(true)
 		PlayerFrame:SetDontSavePosition(true)
-		
+
+		-- Disable stagger bar events in MoP and higher
+		if MonkStaggerBar then
+			MonkStaggerBar:UnregisterAllEvents()
+		end
+
 	elseif unit == "pet" then
 		killUnitFrame(_G.PetFrame)
 	elseif unit == "target" then
@@ -245,6 +252,7 @@ local elements = {
 		OnDisable = function(self, ...)
 			local _G = _G
 			local UIHider = UIHider
+			local ExtraActionBarFrame = _G.ExtraActionBarFrame
 			local MainMenuBar = _G.MainMenuBar
 			local MainMenuBarArtFrame = _G.MainMenuBarArtFrame
 			local MainMenuBarMaxLevelBar = _G.MainMenuBarMaxLevelBar
@@ -256,6 +264,7 @@ local elements = {
 			local PetActionBarFrame = _G.PetActionBarFrame
 			local PossessBarFrame = _G.PossessBarFrame
 			local ReputationWatchBar = _G.ReputationWatchBar
+			local StreamingIcon = _G.StreamingIcon
 			local TutorialFrameAlertButton = _G.TutorialFrameAlertButton
 			local UIPARENT_MANAGED_FRAME_POSITIONS = _G.UIPARENT_MANAGED_FRAME_POSITIONS
 
@@ -277,7 +286,7 @@ local elements = {
 			MainMenuExpBar:SetScale(0.00001)
 			MainMenuExpBar:SetParent(UIHider)
 			
-			if not ENGINE_MOP then
+			if (not ENGINE_MOP) then
 				local BonusActionBarFrame = _G.BonusActionBarFrame
 				local VehicleMenuBar = _G.VehicleMenuBar
 
@@ -315,7 +324,7 @@ local elements = {
 
 			ReputationWatchBar:SetParent(UIHider)
 			
-			if not ENGINE_MOP then
+			if (not ENGINE_MOP) then
 				local ShapeshiftBarFrame = _G.ShapeshiftBarFrame
 				local ShapeshiftBarLeft = _G.ShapeshiftBarLeft
 				local ShapeshiftBarMiddle = _G.ShapeshiftBarMiddle
@@ -337,6 +346,8 @@ local elements = {
 			end
 
 			if ENGINE_CATA then
+				StreamingIcon:SetParent(UIHider)
+
 				if not ENGINE_LEGION_710 then
 					local GuildChallengeAlertFrame = _G.GuildChallengeAlertFrame
 					GuildChallengeAlertFrame:UnregisterAllEvents()
@@ -345,6 +356,15 @@ local elements = {
 				local TalentMicroButtonAlert = _G.TalentMicroButtonAlert
 				TalentMicroButtonAlert:UnregisterAllEvents()
 				TalentMicroButtonAlert:SetParent(UIHider)
+
+				--ExtraActionBarFrame.ignoreFramePositionManager = true
+				--ExtraActionBarFrame:UnregisterAllEvents()
+				--ExtraActionBarFrame:SetScript("OnLoad", nil)
+				--ExtraActionBarFrame:SetScript("OnShow", nil)
+				--ExtraActionBarFrame:SetScript("OnHide", nil)
+				--ExtraActionBarFrame:SetScript("OnEvent", nil)
+
+				--UIPARENT_MANAGED_FRAME_POSITIONS["ExtraActionBarFrame"] = nil
 			end
 
 			if ENGINE_MOP then
@@ -450,7 +470,8 @@ local elements = {
 				_G.PlayerTalentFrame:UnregisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
 			else
 				hooksecurefunc("TalentFrame_LoadUI", function() _G.PlayerTalentFrame:UnregisterEvent("ACTIVE_TALENT_GROUP_CHANGED") end)
-			end				
+			end
+
 		end
 			
 	},
@@ -477,6 +498,13 @@ local elements = {
 			end
 		end
 	},
+	Alerts = {
+		OnDisable = function(self)
+			self:DisableAlerts()
+		end,
+		DisableAlerts = function(self)
+		end
+	},
 	CaptureBars = {
 		OnDisable = function(self)
 		end
@@ -501,6 +529,19 @@ local elements = {
 				PetCastingBarFrame:SetParent(UIHider)
 				PetCastingBarFrame:UnregisterAllEvents()
 			end
+		end
+	},
+	LevelUpDisplay = {
+		OnDisable = function(self)
+			if _G.LevelUpDisplay then
+				self:DisableLevelUpDisplay()
+			end
+		end,
+		DisableLevelUpDisplay = function(self)
+			local LevelUpDisplay = _G.LevelUpDisplay
+			
+			LevelUpDisplay:UnregisterAllEvents()
+			LevelUpDisplay:StopBanner()
 		end
 	},
 	Minimap = {
@@ -544,6 +585,11 @@ local elements = {
 				QueueStatusMinimapButton:SetHighlightTexture("") 
 				QueueStatusMinimapButton.Eye.texture:SetParent(UIHider)
 				QueueStatusMinimapButton.Eye.texture:SetAlpha(0)
+
+				if QueueStatusMinimapButtonBorder then
+					QueueStatusMinimapButtonBorder:SetTexture("")
+					QueueStatusMinimapButtonBorder:SetAlpha(0)
+				end
 
 				if QueueStatusMinimapButton.Highlight then -- bugged out in MoP
 					QueueStatusMinimapButton.Highlight:SetTexture("")
@@ -677,6 +723,19 @@ local elements = {
 					end
 				end
 			end
+		end
+	},
+	Tutorials = {
+		OnDisable = function(self)
+			if _G.TutorialFrame then
+				self:DisableAll()
+			end
+		end,
+		DisableAll = function(self)
+			local TutorialFrame = _G.TutorialFrame
+			TutorialFrame:UnregisterAllEvents()
+			TutorialFrame:Hide()
+			TutorialFrame.Show = TutorialFrame.Hide
 		end
 	},
 	UnitFrames = {

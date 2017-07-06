@@ -2,21 +2,146 @@ local _, Engine = ...
 local Handler = Engine:GetHandler("UnitFrame")
 
 -- Lua API
+local _G = _G
 local select = select
-local tinsert = table.insert
+local table_insert = table.insert
 
 -- WoW API
-local GetComboPoints = GetComboPoints
-local IsPlayerSpell = IsPlayerSpell -- added in 5.0.4
-local UnitBuff = UnitBuff
-local UnitClass = UnitClass
-local UnitExists = UnitExists
-local UnitPower = UnitPower
-local UnitPowerMax = UnitPowerMax
-local UnitHasVehicleUI = UnitHasVehicleUI
+local GetComboPoints = _G.GetComboPoints
+local IsPlayerSpell = _G.IsPlayerSpell -- added in 5.0.4
+local UnitBuff = _G.UnitBuff
+local UnitClass = _G.UnitClass
+local UnitExists = _G.UnitExists
+local UnitPower = _G.UnitPower
+local UnitPowerMax = _G.UnitPowerMax
+local UnitHasVehicleUI = _G.UnitHasVehicleUI
 
+local ENGINE_WOTLK = Engine:IsBuild("WotLK")
+local ENGINE_CATA = Engine:IsBuild("Cata")
 local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_LEGION = Engine:IsBuild("Legion")
+
+local _, CLASS = UnitClass("player")
+
+--[[
+
+-- What point based resources do various classes have?
+-- (Source: http://www.mmo-champion.com/threads/2059860-Primary-and-Secondary-Resources-Guide)
+-------------------------------------------------------------------------------------------------------
+
+Legion:
+	Chi: 			Generated points. 4 cap, 5 if talented, 0 baseline
+	Combo Points: 	Fast generated points. 5 cap, 6 if talented, 0 baseline
+	Holy Power: 	Fast generated points. 3 cap, 0 baseline
+	Runes: 			Self, fast refilling points. 6 cap, 6 baseline
+	Soul Shards: 	Slowly generated points. 5 cap, 1 point baseline
+
+
+MoP:
+	Arcane Charges
+	Burning Embers
+	Chi
+	Combo Points
+	Holy Power
+	Runes
+	Shadow Orbs
+	Soul Shards
+
+
+Cata: 
+	Combo Points
+	Holy Power
+	Runes
+	Soul Shards
+
+
+WotLK:
+	Combo Points
+	Holy Power
+	Runes
+
+
+
+]]--
+
+local Bar = {}
+local Bar_MT = { __index = Bar }
+
+local ArcaneChargeBar = setmetatable({}, { __index = Bar })
+local ArcaneChargeBar_MT = { __index = ArcaneChargeBar }
+
+local BurningEmbersBar = setmetatable({}, { __index = Bar })
+local BurningEmbersBar_MT = { __index = BurningEmbersBar }
+
+local ChiBar = setmetatable({}, { __index = Bar })
+local ChiBar_MT = { __index = ChiBar }
+
+local ComboBar = setmetatable({}, { __index = Bar })
+local ComboBar_MT = { __index = ComboBar }
+
+local ChiBar = setmetatable({}, { __index = Bar })
+local ChiBar_MT = { __index = ChiBar }
+
+local HolyPowerBar = setmetatable({}, { __index = Bar })
+local HolyPowerBar_MT = { __index = HolyPowerBar }
+
+local HolyPowerBar = setmetatable({}, { __index = Bar })
+local HolyPowerBar_MT = { __index = HolyPowerBar }
+
+local ShadowOrbBar = setmetatable({}, { __index = Bar })
+local ShadowOrbBar_MT = { __index = ShadowOrbBar }
+
+local SoulShardBar = setmetatable({}, { __index = Bar })
+local SoulShardBar_MT = { __index = SoulShardBar }
+
+
+
+
+local Point = {}
+local Point_MT = { __index = Point }
+
+local ArcaneChargePoint = setmetatable({}, { __index = Point })
+local ArcaneChargePoint_MT = { __index = ArcaneChargePoint }
+
+local BurningEmberPoint = setmetatable({}, { __index = Point })
+local BurningEmberPoint_MT = { __index = BurningEmberPoint }
+
+local ChiPoint = setmetatable({}, { __index = Point })
+local ChiPoint_MT = { __index = ChiPoint }
+
+local ComboPoint = setmetatable({}, { __index = Point })
+local ComboPoint_MT = { __index = ComboPoint }
+
+local HolyPowerPoint = setmetatable({}, { __index = Point })
+local HolyPowerPoint_MT = { __index = HolyPowerPoint }
+
+local RunePoint = setmetatable({}, { __index = Point })
+local RunePoint_MT = { __index = RunePoint }
+
+local ShadowOrbPoint = setmetatable({}, { __index = Point })
+local ShadowOrbPoint_MT = { __index = ShadowOrbPoint }
+
+local SoulShardPoint = setmetatable({}, { __index = Point })
+local SoulShardPoint_MT = { __index = SoulShardPoint }
+
+
+
+
+
+
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+--
+-- 					OLD FILE BELOW THIS POINT!!! 
+--
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+-- Uncomment to disable old system while testing.
+--do return end
 
 local PlayerIsRogue = select(2, UnitClass("player")) == "ROGUE" -- to check for rogue anticipation
 local PlayerIsDruid = select(2, UnitClass("player")) == "DRUID" -- we won't be needing this. leaving it here because. druid. master race.
@@ -46,9 +171,9 @@ if OldAnticipation then
 	-- 	 the spell that activates it, and even the talent that causes it. 
 	--   I mean... one of them HAS to be right in every client language, right? :/
 	anticipation = {}
-	tinsert(anticipation, (GetSpellInfo(115190))) -- the buff the rogue gets
-	tinsert(anticipation, (GetSpellInfo(115189))) -- the ability that triggers
-	tinsert(anticipation, (GetSpellInfo(114015))) -- the rogue talent from MoP 5.0.4
+	table_insert(anticipation, (GetSpellInfo(115190))) -- the buff the rogue gets
+	table_insert(anticipation, (GetSpellInfo(115189))) -- the ability that triggers
+	table_insert(anticipation, (GetSpellInfo(114015))) -- the rogue talent from MoP 5.0.4
 
 	Anticipation_Talent = 114015
 	HasAnticipation = ENGINE_MOP and PlayerIsRogue and IsPlayerSpell(Anticipation_Talent)
