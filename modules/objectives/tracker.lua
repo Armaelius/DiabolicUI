@@ -543,19 +543,19 @@ end
 
 local sortByLevelAndName = function(a,b)
 	if (not a) or (not b) then
-		return 
+		return false
 	end
 
-	if a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel) then
-		return a.questLevel < b.questLevel
+	if (a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel)) then
+		return (a.questLevel < b.questLevel)
 	elseif a.questTitle and b.questTitle then
-		return a.questTitle < b.questTitle
+		return (a.questTitle < b.questTitle)
 	end
 end
 
 local sortByProximity = function(a,b)
 	if (not a) or (not b) then
-		return 
+		return false
 	end
 
 	-- Get current player coordinates
@@ -570,7 +570,7 @@ local sortByProximity = function(a,b)
 
 	-- Figure out which is closest, if we have current or stored player coordinates available
 	if (posX and posY) and (a.x and a.y and b.x and b.y) then
-		return math_sqrt( math_abs(a.x - posX)^2 + math_abs(a.y - posY)^2 ) < math_sqrt( math_abs(b.x - posX)^2 + math_abs(b.y - posY)^2 )
+		return (math_sqrt( math_abs(a.x - posX)^2 + math_abs(a.y - posY)^2 ) < math_sqrt( math_abs(b.x - posX)^2 + math_abs(b.y - posY)^2 ))
 	else
 		return sortByLevelAndName(a,b)
 	end
@@ -578,7 +578,7 @@ end
 
 local sortFunction = function(a,b)
 	if (not a) or (not b) then
-		return 
+		return false
 	end
 
 	if a.isComplete and b.isComplete then

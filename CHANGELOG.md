@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.37] 2017-07-07
+### Fixed
+- The custom objectives tracker sorting function now specifically returns true/false values, and no nil values as these would cause and "invalid sorting function" lua error. Coding for dummies. 
+
 ## [1.2.36] 2017-07-07
 ### Fixed
 - Added an existance check to the custom objectives tracker sorting function, since it for some reason only receives one element now and then.
