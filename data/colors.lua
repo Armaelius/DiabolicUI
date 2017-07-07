@@ -9,6 +9,8 @@ local math_floor = math.floor
 local select = select
 local unpack = unpack
 
+local _, playerClass = UnitClass("player")
+
 local hex = function(r, g, b)
 	return ("|cff%02x%02x%02x"):format(math_floor(r*255), math_floor(g*255), math_floor(b*255))
 end
@@ -175,7 +177,12 @@ local C = {
 			{  96/255, 160/255, 255/255, .5, "smoke" },
 			{   1/255,   6/255,  25/255,  1, "shade" }
 		},
-		MANA = {
+		MANA = (playerClass == "DRUID" or playerClass == "MONK") and {
+			{   4/255,  17/255,  64/255,  1, "bar" },
+			{   9/255,  34/255, 127/255, .9, "moon" },
+			{  27/255, 102/255, 255/255, .5, "smoke" },
+			{   0/255,   3/255,  23/255,  1, "shade" }
+		} or {
 			{   4/255,  17/255,  64/255,  1, "bar" },
 			{   9/255,  34/255, 127/255, .9, "moon" },
 			{  18/255,  68/255, 255/255, .5, "smoke" },

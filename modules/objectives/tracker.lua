@@ -1059,9 +1059,17 @@ end
 
 -- Sets which quest item to display along with the quest entry
 -- *Todo: add support for equipped items too! 
+-- 
+-- Update 2017-07-07-1819:
+-- Bugs out, saying the ID isn't right...?
 Entry.SetQuestItem = function(self)
+	local questLogIndex = self.questLogIndex or questLogCache[questID]
+	if (not questLogIndex) then
+		return
+	end
+
 	local item = self.questItem or self:AddQuestItem()
-	item:SetID(self.questLogIndex)
+	item:SetID(questLogIndex)
 	item:Place("TOPRIGHT", -10, -4)
 	item:SetItemTexture(questData[self.questID].icon)
 	item:Show()
@@ -1250,34 +1258,6 @@ Tracker.Update = function(self)
 		return
 	end 
 
-	--[[
-
-
-	-- Do a sweep to remove untracked questIDs
-	for questID, entryID in pairs(trackedQuestsByQuestID) do
-		local entryID
-		for i = 1, numZoneQuests do
-			local zoneQuest = sortedTrackedQuests[i]
-			if zoneQuest.questID == questID then
-				entryID = i
-				break
-			end
-		end
-		-- As the questID is no longer tracked, 
-		-- we clear it from our database.
-		-- 
-		-- Update 2017-07-06:
-		-- Either this isn't working, or this isn't called properly or at the correct time, 
-		-- because completed world quests remain in the log, though become unresponsive 
-		-- and refuses to be removed no matter how many times I change the zone. 
-		-- Only a /reload will remove it, which is clearly NOT the intended behavior! 
-		-- 
-		if (not entryID) or (questData[questID] and questData[questID].isComplete) then
-			trackedQuestsByQuestID[questID] = nil
-		end
-	end
-	]]
-
 	-- Do a first pass to find already tracked quests, 
 	-- and reorder database as needed.
 	-- ...something feels a bit wonky here...
@@ -1328,14 +1308,16 @@ Tracker.Update = function(self)
 		-- has been deleted, thus resulting in a nil error up 
 		-- in the SetQuest() method. 
 		-- Trying to avoid this now.
-		if questData[zoneQuest.questID] then
-			local currentQuestData = questData[zoneQuest.questID]
+		--if questData[zoneQuest.questID] then
+		if zoneQuest then
+			local currentQuestData = zoneQuest -- questData[zoneQuest.questID]
 
 			-- Get the entry or create one
 			local entry = entries[i] or self:AddEntry()
 
 			-- Set the entry's quest
-			entry:SetQuest(zoneQuest.questLogIndex, zoneQuest.questID)
+			--entry:SetQuest(zoneQuest.questLogIndex, zoneQuest.questID)
+			entry:SetQuest(currentQuestData.questLogIndex, zoneQuest.questID)
 
 			-- Store the current entryID of the quest 
 			trackedQuestsByQuestID[zoneQuest.questID] = i
@@ -2228,6 +2210,7 @@ Module.GatherQuestLogData = function(self, forced)
 			currentQuestData.icon = icon
 			currentQuestData.hasQuestItem = icon and ((not isComplete) or showItemWhenComplete)
 			currentQuestData.showItemWhenComplete = showItemWhenComplete
+			currentQuestData.questLogIndex = questLogIndex 
 
 			-- Debugging why they won't sort, or register as completed
 			--if questTitle:find("Wardens") then

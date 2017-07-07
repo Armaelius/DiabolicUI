@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.38] 2017-07-07
+### Changed
+- Trying a slightly brigher mana orb color for Druids and Monks, to make it fit better with their other resources. 
+
+### Fixed
+- Fixed an issue where quest items wouldn't be shown in the objectives tracker, and instead return an error. Weird as it may seem, I missed this error since I developed the whole thing on a top level character with no quests with usable quest items in them, and thus only discovered this minor oversight when returning to level a low level alternate character. Sorry! :o
+
 ## [1.2.37] 2017-07-07
 ### Fixed
 - The custom objectives tracker sorting function now specifically returns true/false values, and no nil values as these would cause and "invalid sorting function" lua error. Coding for dummies. 
