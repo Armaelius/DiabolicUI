@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.36] 2017-07-07
+### Fixed
+- Added an existance check to the custom objectives tracker sorting function, since it for some reason only receives one element now and then.
+
 ## [1.2.35] 2017-07-07
 ### Added
 - Added GitHub templates for issue reports, repository contributors and pull requests. Thanks Kkthnx! :)

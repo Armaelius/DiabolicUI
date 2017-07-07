@@ -577,6 +577,9 @@ local sortByProximity = function(a,b)
 end
 
 local sortFunction = function(a,b)
+	if (not a) or (not b) then
+		return 
+	end
 
 	if a.isComplete and b.isComplete then
 		return sortByLevelAndName(a,b)
