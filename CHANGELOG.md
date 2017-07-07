@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.35] 2017-07-07
+### Added
+- Added GitHub templates for issue reports, repository contributors and pull requests. Thanks Kkthnx! :)
+
+### Changed
+- Quest super tracking should now for the most parts follow the top entry of the custom objectives tracker. Applies to Cataclysm clients and higher.
+- Completed quests in the objectives tracker are now placed at the bottom of the tracker, and had their opacity slightly toned down. 
+- Elite Legion world quests in the objectives tracker are now placed right before the completed quests at the bottom.
+- Legion Emissary quests don't display their redundant level requirement in the objectives tracker anymore, as they're only visible and accessible at the proper level anyway.
+
+### Fixed
+- Added a fix for the excessive "Not enough players" chat spam in battlegrounds on the Felsong Legion realm.
+
 ## [1.2.34] 2017-07-06
 ### Fixed
 - Attempted to bypass some errors in the objectives tracker by temporarily ignoring invasion quests. Will add them back in when the issue is sorted.  

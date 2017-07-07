@@ -540,66 +540,64 @@ end
 -- Sort function for our tracker display
 -- 	world quests > normal quests
 -- 	world quest proximity > level > name
-local sortFunction = function(a,b)
-	-- No idea why this is happening, didn't think it was possible. 
+
+local sortByLevelAndName = function(a,b)
 	if (not a) or (not b) then
-		return
+		return 
 	end
 
-	-- Put completed quests at the bottom
-	if (a.isComplete or b.isComplete) then
-		return (not a.isComplete)
-	end 
-
-	-- Put elite quests 2nd to last
-	if (a.isElite or b.isElite) then
-		if (a.isElite) and (b.isElite) then
-			if (a.rarity) and (b.rarity) then
-				return a.rarity < b.rarity
-			end
-		else
-			return (not a.isElite)
-		end
-	end
-
-	-- If both objectives are world quests, 
-	-- we will determine which is closest to the player if possible. 
-	if (a.isWorldQuest and b.isWorldQuest) then
-
-		-- Get current player coordinates
-		local posX, posY = GetPlayerMapPosition("player")
-
-		-- Store them for later if they exist
-		if (posX and posY) and (posX > 0) and (posY > 0) then
-			CURRENT_PLAYER_X, CURRENT_PLAYER_Y = posX, posY
-		else 
-			posX, posY = CURRENT_PLAYER_X, CURRENT_PLAYER_Y
-		end
-
-		-- Figure out which is closest, if we have current or stored player coordinates available
-		if (posX and posY) and (a.x and a.y and b.x and b.y) then
-			return math_sqrt( math_abs(a.x - posX)^2 + math_abs(a.y - posY)^2 ) < math_sqrt( math_abs(b.x - posX)^2 + math_abs(b.y - posY)^2 )
-		end
-
-		-- Revert to standard sorting of coordinates aren't available yet
-		if a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel) then
-			return a.questLevel < b.questLevel
-		elseif a.questTitle and b.questTitle then
-			return a.questTitle < b.questTitle
-		end
-	end
-
-	-- If only one of them is a world quest, we prioritize that one. 
-	if (a.isWorldQuest or b.isWorldQuest) then
-		return a.isWorldQuest
-	end
-
-	-- If none of them are world quests, we revert to the old sorting.
 	if a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel) then
 		return a.questLevel < b.questLevel
 	elseif a.questTitle and b.questTitle then
 		return a.questTitle < b.questTitle
 	end
+end
+
+local sortByProximity = function(a,b)
+	if (not a) or (not b) then
+		return 
+	end
+
+	-- Get current player coordinates
+	local posX, posY = GetPlayerMapPosition("player")
+
+	-- Store them for later if they exist
+	if (posX and posY) and (posX > 0) and (posY > 0) then
+		CURRENT_PLAYER_X, CURRENT_PLAYER_Y = posX, posY
+	else 
+		posX, posY = CURRENT_PLAYER_X, CURRENT_PLAYER_Y
+	end
+
+	-- Figure out which is closest, if we have current or stored player coordinates available
+	if (posX and posY) and (a.x and a.y and b.x and b.y) then
+		return math_sqrt( math_abs(a.x - posX)^2 + math_abs(a.y - posY)^2 ) < math_sqrt( math_abs(b.x - posX)^2 + math_abs(b.y - posY)^2 )
+	else
+		return sortByLevelAndName(a,b)
+	end
+end
+
+local sortFunction = function(a,b)
+
+	if a.isComplete and b.isComplete then
+		return sortByLevelAndName(a,b)
+	elseif a.isComplete then
+		return false
+	elseif a.isElite and b.isElite then
+		return sortByLevelAndName(a,b)
+	elseif a.isElite then
+		return false
+	elseif a.isWorldQuest and b.isWorldQuest then
+		if a.isElite or b.isElite then
+			return not a.isElite
+		else
+			return sortByProximity(a,b)
+		end
+	elseif a.isWorldQuest then
+		return true
+	else
+		return sortByLevelAndName(a,b)
+	end
+
 end
 
 
@@ -958,7 +956,7 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 	entryHeight = entryHeight + titleHeight
 
 	-- Tone down completed entries
-	self:SetAlpha(currentQuestData.isComplete and .75 or 1)
+	self:SetAlpha(currentQuestData.isComplete and .5 or 1)
 
 	-- Update objective descriptions and completion text
 	if currentQuestData.isComplete then
@@ -1300,6 +1298,18 @@ Tracker.Update = function(self)
 			-- to reflect the new entryID
 			trackedQuestsByQuestID[zoneQuest.questID] = i
 		end
+	end
+
+	if (#sortedTrackedQuests > 0) then
+		-- Supertrack if we have a valid quest
+		local zoneQuest = sortedTrackedQuests[1]
+		if zoneQuest.questID then
+			SetSuperTrackedQuestID(zoneQuest.questID)
+		else
+			SetSuperTrackedQuestID(0)
+		end
+	else
+		SetSuperTrackedQuestID(0)
 	end
 
 	-- Update existing and create new entries
@@ -2089,6 +2099,13 @@ Module.GatherQuestLogData = function(self, forced)
 	-- My update problem is NOT here
 	for questLogIndex = 1, numEntries do
 		local questID, questTitle, questLevel, suggestedGroup, isHeader, isComplete, isFailed, isRepeatable = self:GetQuestLogTitle(questLogIndex)
+
+		-- Remove level from quest title, if it exists. This applies to Legion emissary quests, amongst others. 
+		-- *I used the quest title "[110] The Wardens" for my testing, because I suck at patterns. 
+		if questTitle then
+			questTitle = string.gsub(questTitle, "^(%[%d+%]%s+)", "")
+		end
+
 		if isHeader then
 			-- Store the title of the current header, as this usually also is the zone name
 			questHeader = questTitle
@@ -2131,6 +2148,7 @@ Module.GatherQuestLogData = function(self, forced)
 			-- Update the quest objectives
 			local questUpdated
 			local questObjectives = currentQuestData.questObjectives or {}
+			local numObjectivesCompleted = 0
 			for i = 1, numQuestObjectives do
 				
 				local questObjective = questObjectives[i]
@@ -2167,6 +2185,9 @@ Module.GatherQuestLogData = function(self, forced)
 				if (questObjective.item) and (questObjective.numCurrent == questObjective.numNeeded) and (questObjective.numNeeded > 0) then
 					questObjective.isCompleted = true
 				end
+				if questObjective.isCompleted then
+					numObjectivesCompleted = numObjectivesCompleted + 1
+				end
 
 				questObjectives[i] = questObjective
 			end
@@ -2192,7 +2213,7 @@ Module.GatherQuestLogData = function(self, forced)
 			--currentQuestData.questMapID = questMapID -- we're doing this later
 			currentQuestData.questHeader = questHeader
 			currentQuestData.suggestedGroup = suggestedGroup
-			currentQuestData.isComplete = isComplete
+			currentQuestData.isComplete = isComplete or (numObjectivesCompleted == numQuestObjectives)  
 			currentQuestData.isFailed = isFailed
 			currentQuestData.isRepeatable = isRepeatable
 			currentQuestData.completionText = questCompletionText
@@ -2204,6 +2225,11 @@ Module.GatherQuestLogData = function(self, forced)
 			currentQuestData.icon = icon
 			currentQuestData.hasQuestItem = icon and ((not isComplete) or showItemWhenComplete)
 			currentQuestData.showItemWhenComplete = showItemWhenComplete
+
+			-- Debugging why they won't sort, or register as completed
+			--if questTitle:find("Wardens") then
+			--	for k,v in pairs(currentQuestData) do print(k,v) end
+			--end
 
 			-- If anything was updated within this quest, report it back
 			if (currentQuestData.updateDescription) then
@@ -2257,9 +2283,6 @@ Module.UpdateScale = function(self, event, ...)
 end
 
 Module.OnEvent = function(self, event, ...)
-	--if (not (event == "WORLD_MAP_UPDATE")) then
-	--	print(event, ...)
-	--end
 
 	-- Mainly used to get the initial quest caches up and running, 
 	-- but also when changing continents, instances and such. 
@@ -2358,7 +2381,7 @@ Module.OnEvent = function(self, event, ...)
 
 		-- Super tracking update
 		if (event == "QUEST_POI_UPDATE") then 
-			self:UpdateSuperTracking()
+			--self:UpdateSuperTracking()
 		end
 
 		-- Auto completion and auto offering of quests
