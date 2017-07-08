@@ -3,6 +3,7 @@
 <Script file='alerts.lua'/>
 <Script file='capturebars.lua'/>
 <Script file='orderhall.lua'/>
+<Script file='pvpemotes.lua'/>
 <Script file='questtimers.lua'/>
 <Script file='tracker.lua'/>
 <Script file='warnings.lua'/>

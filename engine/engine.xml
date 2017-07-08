@@ -2,6 +2,7 @@
 
 <Script file="blizzard-compatibility.lua"/>
 <Script file="blizzard-taint.lua"/>
+<Script file="realm-compatibility.lua"/>
 <Script file="engine-core.lua"/>
 <Script file="engine-global-API.lua"/>
 

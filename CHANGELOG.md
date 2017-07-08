@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.39] 2017-07-08
+### Added
+- Added support for the addon WorldQuestGroupFinder's middle click functionality to the objective tracker's quest titles.
+- Added a PvP emote module that'll hug and do various other things to dead enemy players for achievements and fun.
+
+### Changed
+- Changed layer order for battleground opening countdown timers, as the spark sometimes would appear behind the bar texture.
+- Changed the custom tracker sorting function in an attempt to have it comply with the strict rules for sorting nested tables and get rid of the "Invalid order function for sorting" bug. Hard issue to fix. Fix not guaranteed.
+- Moved custom realm compatibility and fixes into the core folder and made the file standalone.
+
 ## [1.2.38] 2017-07-07
 ### Changed
 - Trying a slightly brigher mana orb color for Druids and Monks, to make it fit better with their other resources. 

@@ -542,22 +542,16 @@ end
 -- 	world quest proximity > level > name
 
 local sortByLevelAndName = function(a,b)
-	if (not a) or (not b) then
-		return false
-	end
-
 	if (a.questLevel and b.questLevel and (a.questLevel ~= b.questLevel)) then
 		return (a.questLevel < b.questLevel)
 	elseif a.questTitle and b.questTitle then
 		return (a.questTitle < b.questTitle)
+	else
+		return false
 	end
 end
 
 local sortByProximity = function(a,b)
-	if (not a) or (not b) then
-		return false
-	end
-
 	-- Get current player coordinates
 	local posX, posY = GetPlayerMapPosition("player")
 
@@ -576,33 +570,44 @@ local sortByProximity = function(a,b)
 	end
 end
 
+
 local sortFunction = function(a,b)
-	if (not a) or (not b) then
-		return false
+
+	-- this happens, no idea why. Appears to have something to do with nested tables.
+	if (not b) then 
+		return true 
 	end
 
-	if a.isComplete and b.isComplete then
-		return sortByLevelAndName(a,b)
-	elseif a.isComplete then
+	-- world quest > normal quest > elite > complete
+	-- We iterate from end to start in the order above.
+
+	-- Completed quests last
+	if a.isComplete and (not b.isComplete) then
 		return false
-	elseif a.isElite and b.isElite then
-		return sortByLevelAndName(a,b)
-	elseif a.isElite then
+
+	-- Elite quests second to last
+	elseif a.isElite and (not b.isElite) then
 		return false
+
+	-- Normal quests 
+	elseif (not a.isWorldQuest) and (b.isWorldQuest) then
+		return true
+
+	-- World quests at the beginning
 	elseif a.isWorldQuest and b.isWorldQuest then
-		if a.isElite or b.isElite then
-			return not a.isElite
+		-- Elite quests are also world quests, 
+		-- but do to their harder nature we want them last.
+		if a.isElite and (not b.isElite) then
+			return false
 		else
+			-- We sort world quests by player proximity to them.
 			return sortByProximity(a,b)
 		end
-	elseif a.isWorldQuest then
-		return true
 	else
+		-- Normal quests are sorted by quest level and quest title.
 		return sortByLevelAndName(a,b)
 	end
-
 end
-
 
 
 -- Maximize/Minimize button Template
@@ -680,13 +685,15 @@ local Title = Engine:CreateFrame("Button")
 Title_MT = { __index = Title }
 
 Title.OnClick = function(self, mouseButton)
-	local questLogIndex = self._owner.questLogIndex
+	local owner = self._owner
+	local questLogIndex = owner.questLogIndex
+	local currentQuestData = questData[owner.questID]
 
 	-- This is needed to open to the correct index in Legion
 	-- *Might be needed in other versions too, not sure. 
 	--  Function got added in Cata, so that's where we start too.
-	if ENGINE_CATA then
-		questLogIndex = GetQuestLogIndexByID(self._owner.questID)
+	if ENGINE_CATA and (not currentQuestData.isWorldQuest) then
+		questLogIndex = GetQuestLogIndexByID(owner.questID)
 	end
 
 	if IsModifiedClick("CHATLINK") and ChatEdit_GetActiveWindow() then
@@ -694,7 +701,11 @@ Title.OnClick = function(self, mouseButton)
 		if questLink then
 			ChatEdit_InsertLink(questLink)
 		end
-	elseif not(mouseButton == "RightButton") then
+
+	elseif (mouseButton == "MiddleButton") and WorldQuestGroupFinder and currentQuestData.isWorldQuest and (not currentQuestData.isComplete) then
+		WorldQuestGroupFinder.HandleBlockClick(owner.questID)
+
+	elseif not(mouseButton == "RightButton") and (not currentQuestData.isWorldQuest) then
 		CloseDropDownMenus()
 		if ENGINE_WOD then
 			QuestLogPopupDetailFrame_Show(questLogIndex)
@@ -1047,12 +1058,6 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		end
 	end
 
-	if (currentQuestData.isWorldQuest) then
-		title:SetScript("OnClick", nil)
-	else
-		title:SetScript("OnClick", Title.OnClick)
-	end
-
 	self:SetHeight(entryHeight)
 
 end
@@ -1146,8 +1151,8 @@ Tracker.AddEntry = function(self)
 	title._owner = entry
 	title:EnableMouse(true)
 	title:SetHitRectInsets(-10, -10, -10, -10)
-	title:RegisterForClicks("LeftButtonUp")
-	--title:SetScript("OnClick", Title.OnClick)
+	title:RegisterForClicks("AnyUp")
+	title:SetScript("OnClick", Title.OnClick)
 
 	-- Quest title
 	local titleText = title:CreateFontString()
@@ -1298,6 +1303,7 @@ Tracker.Update = function(self)
 	-- Update existing and create new entries
 	local anchor = self.header
 	local offset = 0
+	local allComplete = true
 	for i = 1, numZoneQuests do
 
 		-- Get the zone quest data
@@ -1310,7 +1316,10 @@ Tracker.Update = function(self)
 		-- Trying to avoid this now.
 		--if questData[zoneQuest.questID] then
 		if zoneQuest then
-			local currentQuestData = zoneQuest -- questData[zoneQuest.questID]
+			local currentQuestData = questData[zoneQuest.questID]
+			if (not currentQuestData.isComplete) then
+				allComplete = false
+			end
 
 			-- Get the entry or create one
 			local entry = entries[i] or self:AddEntry()
@@ -1360,6 +1369,17 @@ Tracker.Update = function(self)
 				entry:Hide()
 				entry:Clear()
 				entry:ClearAllPoints() 
+			end
+		end
+	end
+
+	-- Do an alpha adjustment sweep for situations when ALL quests are completed, 
+	-- and the completed ones no longer needs to be toned down. 
+	if allComplete then
+		for i = 1, numZoneQuests do
+			local entry = entries[i]
+			if entry then
+				entry:SetAlpha(1)
 			end
 		end
 	end
@@ -1736,6 +1756,7 @@ end
 -- so it pretty much just iterates through already created lists, 
 -- as does the actual tracker update method, though that is limited by size.
 Module.UpdateTrackerEntries = function(self)
+
 	-- Wipe the table, it's only a bunch of references anyway
 	table_wipe(sortedTrackedQuests)
 
@@ -1745,7 +1766,9 @@ Module.UpdateTrackerEntries = function(self)
 	end
 
 	-- Sort it to something more readable
-	table_sort(sortedTrackedQuests, sortFunction)
+	if #sortedTrackedQuests > 1 then
+		table_sort(sortedTrackedQuests, sortFunction)
+	end
 
 	-- Update the tracker display
 	self:UpdateTracker()
@@ -2592,6 +2615,9 @@ Module.OnEnable = function(self)
 		-- Prior to MoP quest data wasn't available until this event
 		self:RegisterEvent("PLAYER_ALIVE", "SetUpEvents")
 	end
+
+
+	--WorldQuestTrackerQuestsHeader
 
 	-- Hide the tracker initially
 	self:UpdateTrackerVisibility()

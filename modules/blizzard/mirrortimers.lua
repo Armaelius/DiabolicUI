@@ -68,33 +68,39 @@ Module.Skin = function(self, frame)
 	local config = self.config
 
 	local timer = self.timers[frame]
+
 	timer.frame:SetFrameLevel(timer.frame:GetFrameLevel() + 10)
+
+	timer.backdropFrame = timer.backdropFrame or CreateFrame("Frame", nil, timer.bar)
+	timer.backdropFrame:SetAllPoints()
+	timer.backdropFrame:SetFrameLevel(timer.frame:GetFrameLevel() - 10)
+
+	timer.backdropFrame.texture = timer.backdropFrame:CreateTexture()
+	timer.backdropFrame.texture:SetDrawLayer("BACKGROUND")
+	timer.backdropFrame.texture:SetPoint(unpack(config.texture_position))
+	timer.backdropFrame.texture:SetSize(unpack(config.texture_size))
+	timer.backdropFrame.texture:SetTexture(config.backdrop_texture)
+
+	timer.bar:SetStatusBarTexture(config.statusbar_texture)
+	timer.bar:SetFrameLevel(timer.frame:GetFrameLevel() - 5)
+
+	timer.spark = timer.spark or timer.bar:CreateTexture()
+	timer.spark:SetDrawLayer("OVERLAY") -- needs to be OVERLAY, as ARTWORK will sometimes be behind the bars
+	timer.spark:SetPoint("CENTER", timer.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
+	timer.spark:SetSize(config.spark_size[1], timer.bar:GetHeight() + 2)
+	timer.spark:SetTexture(config.spark_texture)
+
+	timer.borderFrame = timer.borderFrame or CreateFrame("Frame", nil, timer.bar)
+	timer.borderFrame:SetAllPoints()
+	timer.borderFrame:SetFrameLevel(timer.frame:GetFrameLevel() + 10)
+
+	timer.border:SetParent(timer.borderFrame)
 	timer.border:ClearAllPoints()
 	timer.border:SetPoint(unpack(config.texture_position))
 	timer.border:SetSize(unpack(config.texture_size))
 	timer.border:SetTexture(config.texture)
+
 	timer.msg:SetFontObject(config.font_object)
-	timer.bar:SetStatusBarTexture(config.statusbar_texture)
-	timer.bar:SetFrameLevel(timer.frame:GetFrameLevel() - 5)
-
-	if (not timer.backdrop) then
-		timer.backdrop = CreateFrame("Frame", nil, timer.bar) -- connecting to the bar instead of the frame, since the frame remains visible
-		timer.backdrop:SetAllPoints()
-		timer.backdrop:SetFrameLevel(timer.frame:GetFrameLevel() - 10)
-		timer.backdrop.texture = timer.backdrop:CreateTexture()
-		timer.backdrop.texture:SetDrawLayer("BACKGROUND")
-		timer.backdrop.texture:SetPoint(unpack(config.texture_position))
-		timer.backdrop.texture:SetSize(unpack(config.texture_size))
-		timer.backdrop.texture:SetTexture(config.backdrop_texture)
-	end
-
-	if (not timer.spark) then
-		timer.spark = timer.bar:CreateTexture()
-		timer.spark:SetDrawLayer("ARTWORK") -- reduced from "OVERLAY" to get behind the border texture
-		timer.spark:SetPoint("CENTER", timer.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
-		timer.spark:SetSize(config.spark_size[1], timer.bar:GetHeight() + 2)
-		timer.spark:SetTexture(config.spark_texture)
-	end
 	
 	hooksecurefunc(timer.bar, "SetValue", function(...) self:UpdateTimer(frame) end)
 	hooksecurefunc(timer.bar, "SetMinMaxValues", function(...) self:UpdateTimer(frame) end)
