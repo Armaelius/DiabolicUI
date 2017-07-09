@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.40] 2017-07-08
+### Fixed
+- Fixed a tracker bug on WotLK clients, as quests can only be super tracked on Cata clients or higher.
+- Fixed a tracker nil bug occurring for some Legion World Quests as they sometimes have hidden, empty objectives. Weird. 
+- Redid the fracking tracker sorting function again. Am I getting better or worse? 
+
 ## [1.2.39] 2017-07-08
 ### Added
 - Added support for the addon WorldQuestGroupFinder's middle click functionality to the objective tracker's quest titles.

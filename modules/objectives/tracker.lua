@@ -182,6 +182,16 @@ for _,zoneID in pairs(brokenIslesZones) do
 	isLegionZone[zoneID] = true
 end
 
+-- Emissary quests
+local emissaryQuestIDs = {
+	[42170] = true, -- The Dreamweavers 
+	[42233] = true, -- Highmountain Tribes
+	[42234] = true, -- The Valarjar
+	[42420] = true, -- Court of Farondis 
+	[42421] = true, -- The Nightfallen 
+	[42422] = true  -- The Wardens
+}
+
 -- Order Hall zones
 -- *Note that Death Knights, Paladins, Rogues and Warlocks 
 --  have order halls that either are inside existing cities 
@@ -573,40 +583,46 @@ end
 
 local sortFunction = function(a,b)
 
-	-- this happens, no idea why. Appears to have something to do with nested tables.
+	-- This happens, no idea why. Appears to have something to do with nested tables.
 	if (not b) then 
 		return true 
 	end
 
-	-- world quest > normal quest > elite > complete
-	-- We iterate from end to start in the order above.
-
-	-- Completed quests last
-	if a.isComplete and (not b.isComplete) then
-		return false
-
-	-- Elite quests second to last
-	elseif a.isElite and (not b.isElite) then
-		return false
-
-	-- Normal quests 
-	elseif (not a.isWorldQuest) and (b.isWorldQuest) then
-		return true
-
-	-- World quests at the beginning
-	elseif a.isWorldQuest and b.isWorldQuest then
-		-- Elite quests are also world quests, 
-		-- but do to their harder nature we want them last.
-		if a.isElite and (not b.isElite) then
-			return false
+	-- Emissary Quests(ALWAYS first) > World Quests > Normal Quests > Elite World Quests > Completed Quests(ALWAYS last)
+	if a.isComplete or b.isComplete then
+		if a.isComplete == b.isComplete then
+			return a.questTitle < b.questTitle
 		else
-			-- We sort world quests by player proximity to them.
+			return not a.isComplete
+		end
+	elseif a.isEmissaryQuest or b.isEmissaryQuest then
+		if a.isEmissaryQuest == b.isEmissaryQuest then
 			return sortByProximity(a,b)
+		else
+			return a.isEmissaryQuest
 		end
 	else
-		-- Normal quests are sorted by quest level and quest title.
-		return sortByLevelAndName(a,b)
+		local aWQ = a.isWorldQuest and (not a.isElite)
+		local bWQ = b.isWorldQuest and (not b.isElite)
+		if aWQ or bWQ then
+			if aWQ == bWQ then
+				return sortByProximity(a,b)
+			else
+				return aWQ
+			end
+		else
+			if a.isNormalQuest or b.isNormalQuest then
+				if a.isNormalQuest == b.isNormalQuest then
+					return sortByLevelAndName(a,b)
+				else
+					return a.isNormalQuest
+				end
+			else
+				return sortByLevelAndName(a,b)
+			end
+		end
 	end
+
 end
 
 
@@ -1288,16 +1304,18 @@ Tracker.Update = function(self)
 		end
 	end
 
-	if (#sortedTrackedQuests > 0) then
-		-- Supertrack if we have a valid quest
-		local zoneQuest = sortedTrackedQuests[1]
-		if zoneQuest.questID then
-			SetSuperTrackedQuestID(zoneQuest.questID)
+	if ENGINE_CATA then
+		if (#sortedTrackedQuests > 0) then
+			-- Supertrack if we have a valid quest
+			local zoneQuest = sortedTrackedQuests[1]
+			if zoneQuest.questID then
+				SetSuperTrackedQuestID(zoneQuest.questID)
+			else
+				SetSuperTrackedQuestID(0)
+			end
 		else
 			SetSuperTrackedQuestID(0)
 		end
-	else
-		SetSuperTrackedQuestID(0)
 	end
 
 	-- Update existing and create new entries
@@ -1626,6 +1644,13 @@ end
 
 Module.GetQuestObjectiveInfo = function(self, questID, objectiveIndex)
 	local description, objectiveType, isCompleted = GetQuestObjectiveInfo(questID, objectiveIndex, false)
+
+	-- Sometimes we get empty objectives in world quests, no idea why. 
+	-- Returning early since without the description there's nothing else to parse.
+	if (not description) then
+		return description, objectiveType, isCompleted
+	end
+
 	local item, numCurrent, numNeeded = string_match(description, questCaptures[objectiveType])
 
 	if (objectiveType == "progressbar") then
@@ -2234,11 +2259,8 @@ Module.GatherQuestLogData = function(self, forced)
 			currentQuestData.hasQuestItem = icon and ((not isComplete) or showItemWhenComplete)
 			currentQuestData.showItemWhenComplete = showItemWhenComplete
 			currentQuestData.questLogIndex = questLogIndex 
-
-			-- Debugging why they won't sort, or register as completed
-			--if questTitle:find("Wardens") then
-			--	for k,v in pairs(currentQuestData) do print(k,v) end
-			--end
+			currentQuestData.isEmissaryQuest = emissaryQuestIDs[questID]
+			currentQuestData.isNormalQuest = not emissaryQuestIDs[questID]
 
 			-- If anything was updated within this quest, report it back
 			if (currentQuestData.updateDescription) then
