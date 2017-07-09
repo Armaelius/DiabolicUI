@@ -129,6 +129,9 @@ local ENGINE_WOD 		= Engine:IsBuild("WoD")
 local ENGINE_MOP 		= Engine:IsBuild("MoP")
 local ENGINE_CATA 		= Engine:IsBuild("Cata")
 
+-- Flag to indicate all operations are suspended
+local SUSPENDED = false 
+
 -- 	Tracking quest zones is a tricky thing, since the map needs to be changed  
 -- 	to the current zone in order to retrieve that information about regular quests. 
 -- 	However, doing this while the worldmap is open will lock it to the current zone, 
@@ -1260,6 +1263,31 @@ Tracker.AddEntry = function(self)
 	return entry
 end
 
+Tracker.Clear = function(self, firstEntry, lastEntry)
+	if firstEntry then
+		for entryID = firstEntry, (lastEntry or firstEntry) do
+			local entry = self.entries[entryID]
+			if entry then
+				entry:Hide()
+				entry:Clear()
+				entry:ClearAllPoints()
+			end
+		end
+	else
+		local numEntries = #self.entries
+		if (numEntries > 0) then
+			for entryID = 1, numEntries do
+				local entry = self.entries[entryID]
+				if entry then
+					entry:Hide()
+					entry:Clear()
+					entry:ClearAllPoints()
+				end
+			end
+		end
+	end
+end
+
 -- Full tracker update.
 Tracker.Update = function(self)
 	local entries = self.entries
@@ -1267,44 +1295,6 @@ Tracker.Update = function(self)
 
 	local maxTrackerHeight = self:GetHeight()
 	local currentTrackerHeight = self.header:GetHeight() + 4
-
-	for i = 1, numEntries do
-		local entry = entries[i]
-		entry:Hide()
-		entry:Clear()
-		entry:ClearAllPoints() 
-	end
-
-	-- Clear everything and return if nothing is tracked in the zone
-	local numZoneQuests = #sortedTrackedQuests
-	if (numZoneQuests == 0) then
-		return
-	end 
-
-	-- Do a first pass to find already tracked quests, 
-	-- and reorder database as needed.
-	-- ...something feels a bit wonky here...
-	for i = 1, numZoneQuests do
-		local zoneQuest = sortedTrackedQuests[i]
-		local oldID = trackedQuestsByQuestID[zoneQuest.questID]
-		if oldID then
-			-- Grab the existing entry, if any
-			local currentEntry = entries[i]
-
-			-- Grab the existing entryID of the quest
-			local oldEntry = entries[oldID]
-
-			-- Put the entry in the current place
-			entries[i] = oldEntry
-
-			-- Put the current entry where the old one was?
-			entries[oldID] = currentEntry
-
-			-- Update the pointer of tracked questIDs 
-			-- to reflect the new entryID
-			trackedQuestsByQuestID[zoneQuest.questID] = i
-		end
-	end
 
 	-- Supertrack if we have a valid quest to track
 	if ENGINE_CATA then
@@ -1322,36 +1312,45 @@ Tracker.Update = function(self)
 		SetSuperTrackedQuestID(superTrackID or 0)
 	end
 
+	-- Clear everything and return if nothing is tracked in the zone
+	local numZoneQuests = #sortedTrackedQuests
+	if (numZoneQuests == 0) then
+		return self:Clear()
+	end 
+
+
 	-- Update existing and create new entries
 	local anchor = self.header
 	local offset = 0
 	local allComplete = true
+	local entryID = 1 
 	for i = 1, numZoneQuests do
 
 		-- Get the zone quest data
-		local zoneQuest = sortedTrackedQuests[i]
+		local currentQuestData = sortedTrackedQuests[i]
 
 		-- Sometimes the events collide or something, 
 		-- and we end up calling this right after the questData
 		-- has been deleted, thus resulting in a nil error up 
 		-- in the SetQuest() method. 
 		-- Trying to avoid this now.
-		--if questData[zoneQuest.questID] then
-		if zoneQuest then
-			local currentQuestData = questData[zoneQuest.questID]
+		if currentQuestData then
+
 			if (not currentQuestData.isComplete) then
 				allComplete = false
 			end
 
 			-- Get the entry or create one
-			local entry = entries[i] or self:AddEntry()
+			local entry = entries[entryID]
+			if (not entry) then
+				entry = self:AddEntry()
+			end
 
 			-- Set the entry's quest
-			--entry:SetQuest(zoneQuest.questLogIndex, zoneQuest.questID)
-			entry:SetQuest(currentQuestData.questLogIndex, zoneQuest.questID)
+			entry:SetQuest(currentQuestData.questLogIndex, currentQuestData.questID)
 
 			-- Store the current entryID of the quest 
-			trackedQuestsByQuestID[zoneQuest.questID] = i
+			trackedQuestsByQuestID[currentQuestData.questID] = i
 			
 			-- Set the entry's usable item, if any
 			if currentQuestData.hasQuestItem and ((not currentQuestData.isComplete) or currentQuestData.showItemWhenComplete) then
@@ -1361,7 +1360,7 @@ Tracker.Update = function(self)
 			end
 
 			-- Update entry pointer
-			entries[i] = entry
+			entries[entryID] = entry
 
 			-- Don't show more entries than there's room for,
 			-- forcefully quit and hide the rest when it would overflow.
@@ -1384,21 +1383,18 @@ Tracker.Update = function(self)
 				-- Add the full size of the entry with its margin to the tracker height 
 				currentTrackerHeight = currentTrackerHeight + entrySize
 			end
-		else
-			-- hide finished entries
-			local entry = entries[i]
-			if entry then
-				entry:Hide()
-				entry:Clear()
-				entry:ClearAllPoints() 
-			end
+
+			entryID = entryID + 1
+			
+
 		end
 	end
 
 	-- Do an alpha adjustment sweep for situations when ALL quests are completed, 
 	-- and the completed ones no longer needs to be toned down. 
 	if allComplete then
-		for i = 1, numZoneQuests do
+		--for i = 1, numZoneQuests do
+		for i = 1, entryID do
 			local entry = entries[i]
 			if entry then
 				entry:SetAlpha(1)
@@ -1407,14 +1403,7 @@ Tracker.Update = function(self)
 	end
 
 	-- Hide unused entries
-	for i = numZoneQuests + 1, numEntries do
-		local entry = entries[i]
-		if entry then
-			entry:Hide()
-			entry:Clear()
-			entry:ClearAllPoints() 
-		end
-	end	
+	self:Clear(entryID, #entries)
 
 end
 
@@ -1451,20 +1440,10 @@ Module.ParseTimers = function(self, ...)
 	end
 end
 
-
--- Should only be done out of combat. 
--- To have more control we user our own combat tracking system here, 
--- instead of relying on the Engine's secure wrapper handler.  
--- 
--- Note that we can theoretically experience situations where
--- the tracker is hidden before combat, a quest is accepted during combat, 
--- and the tracker isn't displayed until combat ends. 
--- This is acceptable, though, as we strictly speaking aren't constantly 
--- in combat, and if there is a BIG fight going on, it is ok to wait. 
---
--- Update 2017-07-05:
--- The tracker isn't a secure frame... only its parent is. Doh.
 Module.UpdateTrackerVisibility = function(self, numZoneQuests)
+	if SUSPENDED then
+		return self.tracker:Hide()
+	end
 	local isInInstance, instanceType = IsInInstance()
 	if isInInstance and (instanceType == "pvp" or instanceType == "arena") then
 		return self.tracker:Hide()
@@ -2318,21 +2297,35 @@ Module.UpdateScale = function(self, event, ...)
 end
 
 Module.OnEvent = function(self, event, ...)
-
-	-- Mainly used to get the initial quest caches up and running, 
-	-- but also when changing continents, instances and such. 
-	if (event == "PLAYER_ENTERING_WORLD") then
-		-- Update stored quest log data
-		self:GatherQuestLogData()
-
-		-- Update stored world quest data
-		if ENGINE_LEGION then
-			self:GatherWorldQuestData()
+	if (event == "PLAYER_ENTERING_WORLD") or (event == "ZONE_CHANGED_NEW_AREA") then
+		if IsInInstance() then
+			SUSPENDED = true
+		else
+			SUSPENDED = false
 		end
+		self:UpdateTrackerVisibility()
+	end
+
+	-- Bail out if we're in an instance
+	if SUSPENDED then
+		return 
 	end
 
 	-- Called upon entering the world or changing zones or closing the map. 
 	if (event == "PLAYER_ENTERING_WORLD") or (event == "ZONE_CHANGED_NEW_AREA") or (event == "WORLD_MAP_CLOSED") then
+
+		-- Mainly used to get the initial quest caches up and running, 
+		-- but also when changing continents, instances and such. 
+		if (event == "PLAYER_ENTERING_WORLD") then
+			-- Update stored quest log data
+			self:GatherQuestLogData()
+
+			-- Update stored world quest data
+			if ENGINE_LEGION then
+				self:GatherWorldQuestData()
+			end
+		end
+
 		-- Update map zone and quest zones in the cache
 		-- This forces the map to the current zone, so it shouldn't be called otherwise.
 		self:UpdateQuestZoneData()
@@ -2344,6 +2337,12 @@ Module.OnEvent = function(self, event, ...)
 		-- Update the displayed tracker entries
 		self:UpdateTrackerEntries()
 		self:UpdateTrackerVisibility() -- make sure it's hidden in battlegrounds and arenas too
+
+		-- Parse auto quest popups
+		if ENGINE_CATA and (not event == "WORLD_MAP_CLOSED") then
+			self:ParseAutoQuests()
+		end
+
 	end
 
 	-- Something changed in the normal quest log
@@ -2409,8 +2408,9 @@ Module.OnEvent = function(self, event, ...)
 	end
 
 	if ENGINE_CATA then
+
 		-- Parse auto quest popups
-		if (event == "PLAYER_ENTERING_WORLD") or (event == "ZONE_CHANGED") or (event == "ZONE_CHANGED_NEW_AREA") then
+		if (event == "ZONE_CHANGED") then
 			self:ParseAutoQuests()
 		end
 

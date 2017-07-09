@@ -4,7 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.2.40] 2017-07-08
+## [1.2.42] 2017-07-09
+### Changed
+- Tracker is hidden and suspended within instances for the time being. Will re-activate later, and add boss kill tracking, mythic timers and more. 
+- Minor optimizations to how the tracker shows, hides and updates its quest objectives.
+
+### Fixed
+- Attempted to disable more of the default Blizzard objectives tracker functionality to avoid some mythic instance bugs. Untested. 
+- Fixed a nil bug which would occur in the tracker when changing zones or changing visible world map zone.
+
+## [1.2.41] 2017-07-09
+### Changed
+- Don't supertrack Emissary quests, as they have no general direction to head in except their zone, which we're probably already in.
+
+### Fixed
+- Rearranged levels of breath timer textures, as the bar accidentally ended up behind the backdrop texture.
+
+## [1.2.40] 2017-07-09
 ### Fixed
 - Fixed a tracker bug on WotLK clients, as quests can only be super tracked on Cata clients or higher.
 - Fixed a tracker nil bug occurring for some Legion World Quests as they sometimes have hidden, empty objectives. Weird. 
