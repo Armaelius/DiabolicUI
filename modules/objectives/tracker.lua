@@ -781,6 +781,8 @@ Entry.AddQuestItem = function(self)
 
 	local item = setmetatable(self:CreateFrame("Button", name, ENGINE_WOD and "QuestObjectiveItemButtonTemplate" or "WatchFrameItemButtonTemplate"), Item_MT)
 	item:Hide()
+	item:EnableMouse(true)
+	item:RegisterForClicks("AnyUp")
 
 	-- We just clean out everything from the old template, 
 	-- as we're really only after its inherited functionality.
@@ -1304,18 +1306,20 @@ Tracker.Update = function(self)
 		end
 	end
 
+	-- Supertrack if we have a valid quest to track
 	if ENGINE_CATA then
-		if (#sortedTrackedQuests > 0) then
-			-- Supertrack if we have a valid quest
-			local zoneQuest = sortedTrackedQuests[1]
-			if zoneQuest.questID then
-				SetSuperTrackedQuestID(zoneQuest.questID)
-			else
-				SetSuperTrackedQuestID(0)
+		local superTrackID
+		local numQuests = #sortedTrackedQuests
+		if (numQuests > 0) then
+			for i = 1, numQuests do
+				local currentQuestData = sortedTrackedQuests[i]
+				if currentQuestData and (not currentQuestData.isEmissaryQuest) then
+					superTrackID = currentQuestData.questID
+					break
+				end
 			end
-		else
-			SetSuperTrackedQuestID(0)
 		end
+		SetSuperTrackedQuestID(superTrackID or 0)
 	end
 
 	-- Update existing and create new entries

@@ -82,7 +82,7 @@ Module.Skin = function(self, frame)
 	timer.backdropFrame.texture:SetTexture(config.backdrop_texture)
 
 	timer.bar:SetStatusBarTexture(config.statusbar_texture)
-	timer.bar:SetFrameLevel(timer.frame:GetFrameLevel() - 5)
+	timer.bar:SetFrameLevel(timer.frame:GetFrameLevel() + 5)
 
 	timer.spark = timer.spark or timer.bar:CreateTexture()
 	timer.spark:SetDrawLayer("OVERLAY") -- needs to be OVERLAY, as ARTWORK will sometimes be behind the bars
@@ -100,6 +100,9 @@ Module.Skin = function(self, frame)
 	timer.border:SetSize(unpack(config.texture_size))
 	timer.border:SetTexture(config.texture)
 
+	timer.msg:SetParent(timer.borderFrame)
+	timer.msg:ClearAllPoints()
+	timer.msg:SetPoint("CENTER", 0, 0)
 	timer.msg:SetFontObject(config.font_object)
 	
 	hooksecurefunc(timer.bar, "SetValue", function(...) self:UpdateTimer(frame) end)
