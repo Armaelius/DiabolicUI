@@ -1716,26 +1716,26 @@ Module.UpdateTrackerWatches = function(self)
 
 	if ENGINE_LEGION then
 		for questID in pairs(worldQuestCache) do
+
+			--- Remove blizzard tracking, but only initially(?)
+			if not self.clearOnce then
+				if IsWorldQuestWatched(questID) then
+					RemoveWorldQuestWatch(questID)
+				end
+			end
+
 			if worldQuestWatchQueue[questID] then
 
 				-- Add our own tracking
 				local currentQuestData = questData[questID]
-				allTrackedQuests[questID] = 
-					(currentQuestData.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and 
-					(currentQuestData.isWorldQuest) and 
-					(not currentQuestData.isComplete) and 
-					--(currentQuestData.timeLeft and (currentQuestData.timeLeft > 0)) and
-					(self:DoesWorldQuestPassFilters(questID)) or nil
+				allTrackedQuests[questID] = (currentQuestData.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (not currentQuestData.isComplete) and (currentQuestData.isWorldQuest) and (self:DoesWorldQuestPassFilters(questID)) or nil
 
 				-- Add blizzard tracking
-				if (not IsWorldQuestWatched(questID)) then
-					AddWorldQuestWatch(questID)
-				end
-			else
-				--- Remove blizzard tracking
-				if IsWorldQuestWatched(questID) then
-					RemoveWorldQuestWatch(questID)
-				end
+				-- *This sometimes create a "Script ran too long" bug, 
+				--  and we don't really need it, so we're skipping it. 
+				--if (not IsWorldQuestWatched(questID)) then
+					--AddWorldQuestWatch(questID)
+				--end
 			end
 		end
 
@@ -1750,9 +1750,9 @@ Module.UpdateTrackerWatches = function(self)
 	--
 	-- *The supertracking is actually unrelated to the tracker currently, 
 	-- but since we block the blizzard code for this, we need to add something back.
-	if ENGINE_CATA then
-		self:UpdateSuperTracking()
-	end
+	--if ENGINE_CATA then
+	--	self:UpdateSuperTracking()
+	--end
 
 	return needUpdate
 end
@@ -1846,7 +1846,7 @@ Module.UpdateZoneTracking = function(self)
 		for questID in pairs(worldQuestCache) do
 			-- Get the quest data for the current world quest
 			local data = questData[questID]
-
+	
 			-- Figure out if it should be tracked or not
 			local shouldBeTracked = data and (data.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (data.isWorldQuest)
 			if shouldBeTracked then
@@ -1860,8 +1860,7 @@ Module.UpdateZoneTracking = function(self)
 					needUpdate = true
 				end
 			end
-
-			-- check closest coords to current location
+	
 			
 		end
 	end
@@ -2415,9 +2414,9 @@ Module.OnEvent = function(self, event, ...)
 		end
 
 		-- Super tracking update
-		if (event == "QUEST_POI_UPDATE") then 
+		--if (event == "QUEST_POI_UPDATE") then 
 			--self:UpdateSuperTracking()
-		end
+		--end
 
 		-- Auto completion and auto offering of quests
 		if (event == "QUEST_AUTOCOMPLETE") then 

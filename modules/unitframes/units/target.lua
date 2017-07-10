@@ -29,17 +29,6 @@ local TIME_LIMIT = 300
 
 -- Utility Functions
 --------------------------------------------------------------------------
-local getBackdropName = function(haspower)
-	return "Backdrop" .. (haspower and "Power" or "")
-end
-
-local getBorderName = function(isboss, haspower, ishighlight)
-	return "Border" .. (isboss and "Boss" or "Normal") .. (haspower and "Power" or "") .. (ishighlight and "Highlight" or "")
-end
-
-local getThreatName = function(isboss, haspower)
-	return "Threat" .. (isboss and "Boss" or "Normal") .. (haspower and "Power" or "")
-end
 
 local compare = function(a,b,c,d,e,f)
 	if d == nil and e == nil and f == nil then
@@ -107,40 +96,6 @@ local classificationPostUpdate = function(self, unit)
 	end
 end
 
-local setArtworkLayer = function(self, isboss, haspower, ishighlight)
-	local cache = self.layers
-	local border_name = getBorderName(isboss, haspower, ishighlight)
-	local backdrop_name = getBackdropName(haspower)
-	local threat_name = getThreatName(isboss, haspower)
-	
-	-- display the correct border texture
-	cache.border[border_name]:Show()
-	for id,layer in pairs(cache.border) do
-		if id ~= border_name then
-			layer:Hide()
-		end
-	end
-	
-	-- display the correct backdrop texture
-	cache.backdrop[backdrop_name]:Show()
-	for id,layer in pairs(cache.backdrop) do
-		if id ~= backdrop_name then
-			layer:Hide()
-		end
-	end
-	
-	-- display the correct threat texture
-	--  *This does not affect the visibility of the main threat object, 
-	--   it only handles the visibility of the separate sub-textures.
-	cache.threat[threat_name]:Show()
-	for id,layer in pairs(cache.threat) do
-		if id ~= threat_name then
-			layer:Hide()
-		end
-	end
-	
-end
-
 local updateArtworkLayers = function(self)
 	local unit = self.unit
 	if not unit then
@@ -157,10 +112,10 @@ local updateArtworkLayers = function(self)
 	local isboss = UnitClassification(unit) == "worldboss"
 	local ishighlight = self:IsMouseOver()
 	
-	if compare(isboss, haspower, ishighlight, self.isboss, self.haspower, self.ishighlight) then
+	if (isboss == self.isboss) and (haspower == self.haspower) and (ishighlight == self.ishighlight) then
 		return -- avoid unneeded graphic updates
 	else
-		if not haspower and self.haspower == true then
+		if (not haspower) and (self.haspower == true) then
 			-- Forcefully empty the bar fast to avoid 
 			-- it being visible after the border has been hidden.
 			self.Power:Clear() 
@@ -170,7 +125,36 @@ local updateArtworkLayers = function(self)
 		self.haspower = haspower
 		self.ishighlight = ishighlight
 
-		setArtworkLayer(self, isboss, haspower, ishighlight)
+		local cache = self.layers
+		local border_name = "Border" .. (isboss and "Boss" or "Normal") .. (haspower and "Power" or "") .. (ishighlight and "Highlight" or "")
+		local backdrop_name = "Backdrop" .. (haspower and "Power" or "")
+		local threat_name = "Threat" .. (isboss and "Boss" or "Normal") .. (haspower and "Power" or "")
+		
+		-- display the correct border texture
+		cache.border[border_name]:Show()
+		for id,layer in pairs(cache.border) do
+			if id ~= border_name then
+				layer:Hide()
+			end
+		end
+		
+		-- display the correct backdrop texture
+		cache.backdrop[backdrop_name]:Show()
+		for id,layer in pairs(cache.backdrop) do
+			if id ~= backdrop_name then
+				layer:Hide()
+			end
+		end
+		
+		-- display the correct threat texture
+		--  *This does not affect the visibility of the main threat object, 
+		--   it only handles the visibility of the separate sub-textures.
+		cache.threat[threat_name]:Show()
+		for id,layer in pairs(cache.threat) do
+			if id ~= threat_name then
+				layer:Hide()
+			end
+		end
 	end
 	
 end

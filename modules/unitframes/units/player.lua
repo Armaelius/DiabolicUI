@@ -386,6 +386,8 @@ local shortDebuffFilter = function(self, name, rank, icon, count, debuffType, du
 			return false
 		end
 		return true
+	elseif (count and count > 0) then -- Decomposing Aura
+		return true
 	end
 end
 
@@ -510,7 +512,12 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	CastBar.Value.Shade:SetVertexColor(0, 0, 0)
 	CastBar.Value.Shade:SetAlpha(1/3)
 
-	
+
+	-- Class Resource
+	-------------------------------------------------------------------
+
+
+
 	-- Buffs (combat)
 	-------------------------------------------------------------------
 	local Buffs = self:CreateFrame()
