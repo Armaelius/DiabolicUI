@@ -54,7 +54,7 @@ end
 
 
 PopUp.OnShow = function(self)
-	PlaySound("igMainMenuOpen")
+	PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPEN, "SFX")
 
 	local id = self.id
 	local popup = popups[id]
@@ -68,7 +68,7 @@ PopUp.OnShow = function(self)
 end
 
 PopUp.OnHide = function(self)
-	PlaySound("igMainMenuClose")
+	PlaySoundKitID(SOUNDKIT.IG_MAINMENU_CLOSE, "SFX")
 	
 	local id = self.id
 	local popup = popups[id]

@@ -975,11 +975,12 @@ MenuWidget.OnEnable = function(self)
 
 	-- Sounds
 	---------------------------------------------
-	ActionBarMenuWindow:HookScript("OnShow", function(self) PlaySound("INTERFACESOUND_GAMEMENUOPEN", "SFX") end)
-	ActionBarMenuWindow:HookScript("OnHide", function(self) PlaySound("INTERFACESOUND_GAMEMENUCLOSE", "SFX") end)
+	ActionBarMenuWindow:HookScript("OnShow", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPEN, "SFX") end)
+	ActionBarMenuWindow:HookScript("OnHide", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_CLOSE, "SFX") end)
 
-	MicroMenuWindow:HookScript("OnShow", function(self) PlaySound("INTERFACESOUND_GAMEMENUOPEN", "SFX") end)
-	MicroMenuWindow:HookScript("OnHide", function(self) PlaySound("INTERFACESOUND_GAMEMENUCLOSE", "SFX") end)
+	MicroMenuWindow:HookScript("OnShow", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPEN, "SFX") end)
+	MicroMenuWindow:HookScript("OnHide", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_CLOSE, "SFX") end)
 
+	
 end
 

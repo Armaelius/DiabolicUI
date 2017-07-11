@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.44] 2017-07-11
+### Added
+- Added back the PlaySoundKitID() API call to WoW client versions 7.3.0 and higher, as Blizzard decided to remove it and have the regular PlaySound() use soundkitIDs as input argument instead. We want consistency.
+
+### Changed
+- Changed all the PlaySound() calls to use PlaySoundKitID() instead.
+- Actionbuttons should now all be grayed out when the player is dead, similar to when the player is using a taxi.
+
+### Fixed
+- Fixed bugs related to when CompactPartyFrames spawn in Legion clients, which was causing bugs and lag in small groups.
+
 ## [1.2.43] 2017-07-10
 ### Changed
 - Removed the blizzard tracking of world quests from our own tracker, as it was producing lag and freezes for some people. It's not needed for us to either track the quest or have it's area and objectives visible on the Minimap. 

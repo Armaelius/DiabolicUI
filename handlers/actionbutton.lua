@@ -65,6 +65,7 @@ local IsUsableAction = _G.IsUsableAction
 local IsUsableItem = _G.IsUsableItem
 local IsUsableSpell = _G.IsUsableSpell
 local UnitAffectingCombat = _G.UnitAffectingCombat
+local UnitIsDeadOrGhost = _G.UnitIsDeadOrGhost
 local UnitOnTaxi = _G.UnitOnTaxi
 
 -- Will replace these with our custom tooltiplib later on!
@@ -551,19 +552,28 @@ Button.UpdateUsable = function(self, forced)
 	local colors = colors
 	local icon = self.icon
 
-	local isFlying = UnitOnTaxi("player") or (IsFlying() and (not UnitAffectingCombat("player") and (not IsInInstance())))
 	local isUsable, notEnoughMana = self:IsUsable()
-	local outOfRange = self.outOfRange or not(self:IsInRange()) -- need that extra check here
 	local previousUsableState = self.usableState
 
 	-- Values we pass on to PostUpdate
-	local canDesaturate
-	local usableState = (isFlying) 		and "taxi"
-					or (not isUsable) 	and "unusable"
-					or (outOfRange) 	and "range"
-					or (isUsable) 		and "usable"
-					or (notEnoughMana)	and "mana"
-					or 						"unusable"
+	local canDesaturate, usableState
+	if UnitIsDeadOrGhost("player") then
+		usableState = "taxi"
+	elseif UnitOnTaxi("player") then 
+		usableState = "taxi"
+	elseif IsFlying() and (not UnitAffectingCombat("player") and (not IsInInstance())) then 
+		usableState = "taxi"
+	elseif (not isUsable) then
+		usableState = "unusable"
+	elseif (self.outOfRange or not(self:IsInRange())) then
+		usableState = "range"
+	elseif isUsable then
+		usableState = "usable"
+	elseif (notEnoughMana) then 
+		usableState = "mana"
+	else
+		usableState = "unusable"
+	end
 
 	-- bail out of nothing actually has changed
 	if (previousUsableState == usableState) and (not forced) then 
@@ -574,6 +584,8 @@ Button.UpdateUsable = function(self, forced)
 	self.usableState = usableState
 
 	-- Change what needs to be changed
+	--  "taxi" is meant to apply to all states where 
+	--   the buttons can't really be used at all.
 	if (usableState == "taxi") then
 		-- NOTE!
 		-- SetDesaturated FAILS early in the reload process, for reasons unknown.

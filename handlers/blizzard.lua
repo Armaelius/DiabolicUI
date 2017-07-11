@@ -796,17 +796,17 @@ local elements = {
 			-- I do the same simple existence checks here too. 
 			-- Will just have to do for now.
 			if _G.CompactPartyFrame then -- 4.0?
-				killUnitFrame(_G.CompactPartyFrame)
-				for i=1, _G.MEMBERS_PER_RAID_GROUP do
-					killUnitFrame(_G["CompactPartyFrameMember" .. i])
-				end	
+				--killUnitFrame(_G.CompactPartyFrame)
+				--for i=1, _G.MEMBERS_PER_RAID_GROUP do
+				--	killUnitFrame(_G["CompactPartyFrameMember" .. i])
+				--end	
 			elseif _G.CompactPartyFrame_Generate then -- 4.1?
-				hooksecurefunc("CompactPartyFrame_Generate", function() 
-					killUnitFrame(_G.CompactPartyFrame)
-					for i=1, _G.MEMBERS_PER_RAID_GROUP do
-						killUnitFrame(_G["CompactPartyFrameMember" .. i])
-					end	
-				end)
+				--hooksecurefunc("CompactPartyFrame_Generate", function() 
+				--	killUnitFrame(_G.CompactPartyFrame)
+				--	for i=1, _G.MEMBERS_PER_RAID_GROUP do
+				--		killUnitFrame(_G["CompactPartyFrameMember" .. i])
+				--	end	
+				--end)
 			end
 
 		end,

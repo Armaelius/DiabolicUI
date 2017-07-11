@@ -85,14 +85,15 @@ MenuWidget.OnEnable = function(self)
 	ChatButton:SetSize(unpack(input_config.button.size))
 
 	self:Skin(ChatButton, input_config, "chat")
-	
+
+
 	InputBox:HookScript("OnShow", function() 
 		ChatButton:SetButtonState("PUSHED", 1)
-		PlaySound("INTERFACESOUND_CHARWINDOWOPEN", "SFX")
+		PlaySoundKitID(SOUNDKIT.IG_CHARACTER_INFO_OPEN, "SFX")
 	end)
 	InputBox:HookScript("OnHide", function() 
 		ChatButton:SetButtonState("NORMAL") 
-		PlaySound("INTERFACESOUND_CHARWINDOWCLOSE", "SFX")
+		PlaySoundKitID(SOUNDKIT.IG_CHARACTER_INFO_CLOSE, "SFX")
 	end)
 
 

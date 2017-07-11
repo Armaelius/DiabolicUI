@@ -639,11 +639,11 @@ MinMaxButton.OnClick = function(self, mouseButton)
 		if (self.currentState == "maximized") then
 			self.body:Hide()
 			self.currentState = "minimized"
-			PlaySound("igQuestListClose")
+			PlaySoundKitID(SOUNDKIT.IG_QUEST_LIST_CLOSE, "SFX")
 		else
 			self.body:Show()
 			self.currentState = "maximized"
-			PlaySound("igQuestListOpen")
+			PlaySoundKitID(SOUNDKIT.IG_QUEST_LIST_OPEN, "SFX")
 		end
 	end	
 	self:UpdateLayers()
@@ -1531,7 +1531,7 @@ Module.ParseAutoQuests = function(self)
 				ShowQuestOffer(questLogIndex)
 
 			else
-				PlaySound("UI_AutoQuestComplete")
+				PlaySoundKitID(SOUNDKIT.UI_AUTO_QUEST_COMPLETE, "SFX")
 				ShowQuestComplete(questLogIndex)
 			end
 			needUpdate = true
@@ -2420,7 +2420,7 @@ Module.OnEvent = function(self, event, ...)
 
 		-- Auto completion and auto offering of quests
 		if (event == "QUEST_AUTOCOMPLETE") then 
-			PlaySound("UI_AutoQuestComplete")
+			PlaySoundKitID(SOUNDKIT.UI_AUTO_QUEST_COMPLETE, "SFX")
 			ShowQuestComplete(GetQuestLogIndexByID((...)))
 		end
 	end

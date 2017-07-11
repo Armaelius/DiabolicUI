@@ -6,6 +6,11 @@ local ActionButton = Engine:GetHandler("ActionButton")
 local setmetatable = setmetatable
 local tinsert = table.insert
 
+-- Client Constants
+local ENGINE_LEGION_730 = Engine:IsBuild("7.3.0")
+local ENGINE_LEGION_725 = Engine:IsBuild("7.2.5")
+local ENGINE_LEGION_715 = Engine:IsBuild("7.1.5")
+
 local Bar = Engine:CreateFrame("Button")
 local Bar_MT = { __index = Bar }
 
@@ -13,7 +18,6 @@ local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]]
 
 local visibilityHandlers = {}
 local visibilityDrivers = {}
-
 
 -- update button lock, text visibility, cast on down/up here!
 Bar.UpdateButtonSettings = function(self)
@@ -102,8 +106,8 @@ Handler.New = function(self, id, parent, barTemplate, ...)
 	bar:SetFrameRef("Visibility", visibility)
 
 	-- Sounds
-	bar:HookScript("OnShow", function(self) PlaySound("INTERFACESOUND_CHARWINDOWOPEN", "SFX") end)
-	bar:HookScript("OnHide", function(self) PlaySound("INTERFACESOUND_CHARWINDOWCLOSE", "SFX") end)
+	bar:HookScript("OnShow", function(self) PlaySoundKitID(SOUNDKIT.IG_CHARACTER_INFO_OPEN, "SFX") end)
+	bar:HookScript("OnHide", function(self) PlaySoundKitID(SOUNDKIT.IG_CHARACTER_INFO_CLOSE, "SFX") end)
 
 	-- Tell the visibility layer where to find the bar
 	visibility:SetFrameRef("Bar", bar)

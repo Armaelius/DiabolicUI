@@ -638,14 +638,14 @@ UnitFrameWidget.OnEvent = function(self, event, ...)
 	if event == "PLAYER_TARGET_CHANGED" then
 		if UnitExists("target") then
 			if UnitIsEnemy("target", "player") then
-				PlaySound("igCreatureAggroSelect")
+				PlaySoundKitID(SOUNDKIT.IG_CREATURE_AGGRO_SELECT, "SFX")
 			elseif UnitIsFriend("player", "target") then
-				PlaySound("igCharacterNPCSelect")
+				PlaySoundKitID(SOUNDKIT.IG_CHARACTER_NPC_SELECT, "SFX")
 			else
-				PlaySound("igCreatureNeutralSelect")
+				PlaySoundKitID(SOUNDKIT.IG_CREATURE_NEUTRAL_SELECT, "SFX")
 			end
 		else
-			PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
+			PlaySoundKitID(SOUNDKIT.INTERFACE_SOUND_LOST_TARGET_UNIT, "SFX")
 		end
 	end
 end
