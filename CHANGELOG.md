@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.45] 2017-07-11
+### Fixed
+- Fixed an issue with the tracker that would sometimes cause objectives to have overlapping (and wrong) messages displayed.
+
 ## [1.2.44] 2017-07-11
 ### Added
 - Added back the PlaySoundKitID() API call to WoW client versions 7.3.0 and higher, as Blizzard decided to remove it and have the regular PlaySound() use soundkitIDs as input argument instead. We want consistency.

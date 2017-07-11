@@ -228,6 +228,8 @@ local pop = function()
 	return {}
 end
 
+-- Not using camel case for the names of these two, 
+-- since we're sort of pretending they're regular lua math calls.
 local math_round = function(n, accuracy) 
 	return (math_floor(n*accuracy))/accuracy 
 end

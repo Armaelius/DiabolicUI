@@ -1026,14 +1026,19 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		local numObjectives = #currentQuestObjectives
 
 		if numObjectives > 0 then
+			local currentObjectiveID = 0
 			for objectiveID = 1, numObjectives  do
+
+				-- Use a manual counter to avoid skipping objectiveIDs
+				currentObjectiveID = currentObjectiveID + 1
+
 				-- Only display unfinished quest objectives
-				if (currentQuestObjectives[objectiveID].isCompleted) then
-					self:ClearObjective(objectiveID)
+				if (currentQuestObjectives[currentObjectiveID].isCompleted) then
+					self:ClearObjective(currentObjectiveID)
 				else
 					visibleObjectives = visibleObjectives + 1
 
-					local objective = self:SetObjective(objectiveID)
+					local objective = self:SetObjective(currentObjectiveID)
 					local height = objective:GetHeight()
 
 					if visibleObjectives > 1 then
@@ -1685,7 +1690,7 @@ Module.UpdateTrackerWatches = function(self)
 	for questID in pairs(allTrackedQuests) do
 		if (not questLogCache[questID]) or (not worldQuestCache[questID]) then
 			allTrackedQuests[questID] = nil
-			zoneTrackedQuests[questID] = true
+			zoneTrackedQuests[questID] = nil -- true -- why was this true?
 		end
 	end
 
@@ -1715,20 +1720,21 @@ Module.UpdateTrackerWatches = function(self)
 	table_wipe(questWatchQueue)
 
 	if ENGINE_LEGION then
+		local currentZone = CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE
 		for questID in pairs(worldQuestCache) do
 
 			--- Remove blizzard tracking, but only initially(?)
-			if not self.clearOnce then
-				if IsWorldQuestWatched(questID) then
-					RemoveWorldQuestWatch(questID)
-				end
-			end
+			--if (not self.clearOnce) then
+			--	if IsWorldQuestWatched(questID) then
+			--		RemoveWorldQuestWatch(questID)
+			--	end
+			--end
 
 			if worldQuestWatchQueue[questID] then
 
 				-- Add our own tracking
 				local currentQuestData = questData[questID]
-				allTrackedQuests[questID] = (currentQuestData.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (not currentQuestData.isComplete) and (currentQuestData.isWorldQuest) and (self:DoesWorldQuestPassFilters(questID)) or nil
+				allTrackedQuests[questID] = (currentQuestData.questMapID == currentZone) and (not currentQuestData.isComplete) and (currentQuestData.isWorldQuest) and (self:DoesWorldQuestPassFilters(questID)) or nil
 
 				-- Add blizzard tracking
 				-- *This sometimes create a "Script ran too long" bug, 
@@ -1825,6 +1831,8 @@ Module.UpdateZoneTracking = function(self)
 	-- Store the current map zone
 	CURRENT_MAP_ZONE = questMapID
 
+	local currentZone = CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE
+
 	-- Parse the current questlog cache for quests in the active map zone
 	for questID, questLogIndex in pairs(questLogCache) do
 
@@ -1832,7 +1840,7 @@ Module.UpdateZoneTracking = function(self)
 		local data = questData[questID]
 
 		-- Figure out if it should be tracked or not
-		local shouldBeTracked = data and (data.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (not data.isWorldQuest)
+		local shouldBeTracked = data and (data.questMapID == currentZone) and (not data.isWorldQuest)
 
 		-- Add it to the questwatch update queue
 		if shouldBeTracked then
@@ -1844,11 +1852,12 @@ Module.UpdateZoneTracking = function(self)
 	-- Parse for world quests in the current zone
 	if ENGINE_LEGION then
 		for questID in pairs(worldQuestCache) do
+
 			-- Get the quest data for the current world quest
 			local data = questData[questID]
 	
 			-- Figure out if it should be tracked or not
-			local shouldBeTracked = data and (data.questMapID == (CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE)) and (data.isWorldQuest)
+			local shouldBeTracked = data and (data.questMapID == currentZone) and (data.isWorldQuest)
 			if shouldBeTracked then
 				if (not worldQuestWatchQueue[questID]) then
 					worldQuestWatchQueue[questID] = true
@@ -1860,7 +1869,6 @@ Module.UpdateZoneTracking = function(self)
 					needUpdate = true
 				end
 			end
-	
 			
 		end
 	end
@@ -1911,6 +1919,11 @@ end
 -- Parse worldquests and store the data
 Module.GatherWorldQuestData = function(self)
 	local needUpdate
+
+	-- Trying this for a while, to avoid replacing the table.
+	if not isLegionZone[(self:GetCurrentMapAreaID())] then
+		return 
+	end
 
 	local oldCache = worldQuestCache
 	local newCache = {}
@@ -2640,9 +2653,6 @@ Module.OnEnable = function(self)
 		-- Prior to MoP quest data wasn't available until this event
 		self:RegisterEvent("PLAYER_ALIVE", "SetUpEvents")
 	end
-
-
-	--WorldQuestTrackerQuestsHeader
 
 	-- Hide the tracker initially
 	self:UpdateTrackerVisibility()
