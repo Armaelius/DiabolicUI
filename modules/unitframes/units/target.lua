@@ -2,6 +2,7 @@ local Addon, Engine = ...
 
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
+local AuraData = Engine:GetStaticConfig("Data: Auras").whitelist
 local C = Engine:GetStaticConfig("Data: Colors")
 
 local Module = Engine:GetModule("UnitFrames")
@@ -13,8 +14,11 @@ local _G = _G
 local unpack = unpack
 
 -- WoW API
-local PlaySound = _G.PlaySound
+local IsInInstance = _G.IsInInstance
+local PlaySoundKitID = _G.PlaySoundKitID
+local UnitCanAttack = _G.UnitCanAttack
 local UnitClassification = _G.UnitClassification
+local UnitPlayerControlled = _G.UnitPlayerControlled
 local UnitExists = _G.UnitExists
 local UnitPowerType = _G.UnitPowerType
 local UnitPower = _G.UnitPower
@@ -29,14 +33,6 @@ local TIME_LIMIT = 300
 
 -- Utility Functions
 --------------------------------------------------------------------------
-
-local compare = function(a,b,c,d,e,f)
-	if d == nil and e == nil and f == nil then
-		return 
-	end
-	return (a == d) and (b == e) and (c == f)
-end
-
 
 -- reposition the unit classification when needed
 local classificationPostUpdate = function(self, unit)
@@ -225,13 +221,35 @@ local postCreateAuraButton = function(self, button)
 	button:SetBorderColor(r * 4/5, g * 4/5, b * 4/5)
 end
 
+-- TODO: Add PvP relevant buffs to a whitelist here 
 local buffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
+
+	local unit = self.unit
 	if isBossDebuff then
 		return true
 	elseif isStealable then
 		return true
+	elseif (unitCaster == "vehicle") then
+		return true
+
+	elseif (not unitCaster) and (not IsInInstance()) then
+		-- EXPERIMENTAL: ignore debuffs from players outside the group, eg. world bosses
+		return
+
+	elseif (UnitCanAttack("player", unit)) and (not UnitPlayerControlled(unit)) then
+		-- Hostile NPC.
+		-- Show auras cast by the unit, and auras of unknown origin.
+		return (not unitCaster) or (unitCaster == unit)
+
+	elseif (not unitCaster) then
+		-- Friendly target or hostile player
+		-- Show auras of unknown origin
+		return true
+
 	elseif (not isCastByPlayer) then
-		return false
+		-- Need to make a whitelist of certain pvp related player shields, cooldowns and stuff here
+		return spellId and AuraData[spellId] or false
+
 	elseif duration and (duration > 0) then
 		if duration > TIME_LIMIT then
 			return false
@@ -241,10 +259,25 @@ local buffFilter = function(self, name, rank, icon, count, debuffType, duration,
 end
 
 local debuffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
+
+	local unit = self.unit
 	if isBossDebuff then
 		return true
+	elseif (unitCaster == "vehicle") then
+		return true
+	elseif (not unitCaster) and (not IsInInstance()) then
+		-- EXPERIMENTAL: ignore debuffs from players outside the group, eg. world bosses
+		return
+
+	elseif (UnitCanAttack("player", unit)) and (not UnitPlayerControlled(unit)) then
+		-- Hostile NPC.
+		-- Show auras cast by the unit, and auras of unknown origin.
+		return (not unitCaster) or (unitCaster == unit)
+
 	elseif (not isCastByPlayer) then
-		return false
+		-- Need to make a whitelist of certain pvp related player shields, cooldowns and stuff here
+		return spellId and AuraData[spellId] or false
+
 	elseif duration and (duration > 0) then
 		if duration > TIME_LIMIT then
 			return false
@@ -288,9 +321,7 @@ local postUpdateAuraButton = function(self, button, ...)
 				icon:SetDesaturated(false)
 				icon:SetVertexColor(1, 1, 1)
 				icon.Overlay:Hide()
-
 			else
-
 				local color = config.color
 				button:SetBorderColor(color[1], color[2], color[3]) 
 
@@ -635,7 +666,7 @@ local Style = function(self, unit)
 end
 
 UnitFrameWidget.OnEvent = function(self, event, ...)
-	if event == "PLAYER_TARGET_CHANGED" then
+	if (event == "PLAYER_TARGET_CHANGED") then
 		if UnitExists("target") then
 			if UnitIsEnemy("target", "player") then
 				PlaySoundKitID(SOUNDKIT.IG_CREATURE_AGGRO_SELECT, "SFX")

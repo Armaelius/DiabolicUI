@@ -995,13 +995,8 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 
 	-- Update objective descriptions and completion text
 	if currentQuestData.isComplete then
-		if (not currentQuestData.hasBeenCompleted) then
-			-- Clear away all objectives
-			self:ClearObjectives()
-
-			-- No need repeating this step
-			currentQuestData.hasBeenCompleted = true
-		end
+		-- Clear away all objectives to avoid overlapping texts
+		self:ClearObjectives()
 
 		-- Change quest description to the completion text
 		local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or BLIZZ_LOCALE.QUEST_COMPLETE
@@ -1091,10 +1086,10 @@ end
 -- Sets which quest item to display along with the quest entry
 -- *Todo: add support for equipped items too! 
 -- 
--- Update 2017-07-07-1819:
--- Bugs out, saying the ID isn't right...?
-Entry.SetQuestItem = function(self)
-	local questLogIndex = self.questLogIndex or questLogCache[questID]
+-- Update 2017-07-13-2113:
+-- This requires a reload for new quest items. Weird.
+Entry.SetQuestItem = function(self, questID)
+	local questLogIndex = questLogCache[questID]
 	if (not questLogIndex) then
 		return
 	end
@@ -1111,7 +1106,16 @@ Entry.SetQuestItem = function(self)
 	return questItem
 end
 
-Entry.UpdateQuestItem = function(self)
+Entry.UpdateQuestItem = function(self, questID)
+	local questLogIndex = questLogCache[questID]
+	if (questLogIndex) then
+		local item = self.questItem
+		item:SetID(questLogIndex)
+		item:SetItemTexture(questData[self.questID].icon)
+		item:Show()
+	else
+		return self:ClearQuestItem()
+	end
 end
 
 -- Removes any item currently connected with the entry's current quest.
@@ -1296,8 +1300,6 @@ end
 -- Full tracker update.
 Tracker.Update = function(self)
 	local entries = self.entries
-	local numEntries = #entries
-
 	local maxTrackerHeight = self:GetHeight()
 	local currentTrackerHeight = self.header:GetHeight() + 4
 
@@ -1323,12 +1325,12 @@ Tracker.Update = function(self)
 		return self:Clear()
 	end 
 
-
 	-- Update existing and create new entries
-	local anchor = self.header
-	local offset = 0
-	local allComplete = true
-	local entryID = 1 
+	local anchor = self.header -- current anchor
+	local offset = 0 -- current vertical offset from the top of the tracker
+	local entryID = 0 -- current entry in the tracker
+	local allComplete = true -- true until proven false while parsing
+
 	for i = 1, numZoneQuests do
 
 		-- Get the zone quest data
@@ -1341,14 +1343,20 @@ Tracker.Update = function(self)
 		-- Trying to avoid this now.
 		if currentQuestData then
 
+			-- If the quest is incomplete, our all-true check fails.
 			if (not currentQuestData.isComplete) then
 				allComplete = false
 			end
 
+			-- Increase the entry counter
+			entryID = entryID + 1
+
 			-- Get the entry or create one
 			local entry = entries[entryID]
 			if (not entry) then
-				entry = self:AddEntry()
+				-- Update entry pointers for new entries
+				entries[entryID] = self:AddEntry()
+				entry = entries[entryID]
 			end
 
 			-- Set the entry's quest
@@ -1359,13 +1367,11 @@ Tracker.Update = function(self)
 			
 			-- Set the entry's usable item, if any
 			if currentQuestData.hasQuestItem and ((not currentQuestData.isComplete) or currentQuestData.showItemWhenComplete) then
-				entry:SetQuestItem()
+				entry:SetQuestItem(currentQuestData.questID)
 			else
 				entry:ClearQuestItem()
 			end
 
-			-- Update entry pointer
-			entries[entryID] = entry
 
 			-- Don't show more entries than there's room for,
 			-- forcefully quit and hide the rest when it would overflow.
@@ -1389,16 +1395,12 @@ Tracker.Update = function(self)
 				currentTrackerHeight = currentTrackerHeight + entrySize
 			end
 
-			entryID = entryID + 1
-			
-
 		end
 	end
 
 	-- Do an alpha adjustment sweep for situations when ALL quests are completed, 
 	-- and the completed ones no longer needs to be toned down. 
 	if allComplete then
-		--for i = 1, numZoneQuests do
 		for i = 1, entryID do
 			local entry = entries[i]
 			if entry then
@@ -1407,8 +1409,9 @@ Tracker.Update = function(self)
 		end
 	end
 
-	-- Hide unused entries
-	self:Clear(entryID, #entries)
+	-- Hide unused entries 
+	-- *not working as intended
+	self:Clear(entryID + 1, #entries)
 
 end
 
@@ -2358,7 +2361,9 @@ Module.OnEvent = function(self, event, ...)
 	end
 
 	-- Something changed in the normal quest log
-	if (event == "QUEST_LOG_UPDATE") then
+	-- *We need all three in order to get correct questLogIndex when dealing with usable quest items.
+	--  Will look further into this at a later point, for now we're just running the updates on all events. 
+	if (event == "QUEST_LOG_UPDATE") or (event == "QUEST_ACCEPTED") or (event == "QUEST_REMOVED") then
 
 		-- Parse the questlog and store the data
 		self:GatherQuestLogData()

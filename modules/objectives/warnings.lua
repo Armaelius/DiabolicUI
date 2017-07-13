@@ -8,8 +8,11 @@ local unpack = unpack
 local strmatch = string.match
 
 -- WoW API
-local CreateFrame = CreateFrame
-local GetTime = GetTime
+local GetTime = _G.GetTime
+
+-- WoW Client Constants
+local ENGINE_LEGION = Engine:IsBuild("Legion")
+
 
 local OnUpdate = function(self, elapsed)
 	if self.new_message then
@@ -40,9 +43,6 @@ local OnUpdate = function(self, elapsed)
 			self.message:SetText("")
 			self.is_fading = false
 			self.time_fading = 0
---			if not self.is_fading_quest then
---				self:SetScript("OnUpdate", nil)
---			end
 		end
 	else
 		if self.showing_message then
@@ -65,9 +65,6 @@ local OnUpdate = function(self, elapsed)
 			self.message_quest:SetText("")
 			self.is_fading_quest = false
 			self.time_fading_quest = 0
---			if not self.is_fading then
---				self:SetScript("OnUpdate", nil)
---			end
 		end
 	else
 		if self.showing_quest_message then
@@ -92,61 +89,72 @@ Module.AddMessage = function(self, msg, type, r, g, b)
 	local config = self.config
 	local hasPriority = config.whitelist.plain[msg]
 	local isQuestProgress
-	if not hasPriority then
-		for i,pattern in ipairs(config.whitelist.pattern) do
+	local isBlackListed
+
+	if (not hasPriority) then
+		-- first check if it's blacklisted
+		for i,pattern in ipairs(config.blacklist.pattern) do
 			if strmatch(msg, pattern) then
-				hasPriority = true
+				isBlackListed = true
 				break
 			end
 		end
-	end
-	
-	-- quest update?
-	if not hasPriority then
-		isQuestProgress = config.tracker.plain[msg]
-		if not isQuestProgress then
-			for i,pattern in ipairs(config.tracker.pattern) do
+		-- then do a sweep to see if it's whitelisted
+		if (not isBlackListed) then
+			for i,pattern in ipairs(config.whitelist.pattern) do
 				if strmatch(msg, pattern) then
-					isQuestProgress = true
+					hasPriority = true
 					break
+				end
+			end
+			-- quest update?
+			isQuestProgress = config.tracker.plain[msg]
+			if not isQuestProgress then
+				for i,pattern in ipairs(config.tracker.pattern) do
+					if strmatch(msg, pattern) then
+						isQuestProgress = true
+						break
+					end
 				end
 			end
 		end
 	end
 
-	if type == "error" then
+	if (type == "error") then
 		r, g, b = unpack(config.color.error)
-	elseif type == "info" then
+	elseif (type == "info") then
 		r, g, b = unpack(config.color.info)
-	elseif type == "system" and not(r and g and b) then
+	elseif (type == "system") and not(r and g and b) then
 		r, g, b = unpack(config.color.system)
 	end
+
 	if hasPriority then
-		if type == "error" then
+		if (type == "error") then
 			self.player.new_message_type = type
 			self.player.new_message = msg
-		elseif type == "info" then
+		elseif (type == "info") then
 			self.player.new_quest_message_type = type
 			self.player.new_quest_message = msg
-		elseif type == "system" and not(r and g and b) then
+		elseif (type == "system") and not(r and g and b) then
 			self.player.new_message_type = type
 			self.player.new_message = msg
 		end
---		self.player:SetScript("OnUpdate", OnUpdate)
 		return
 	elseif isQuestProgress then
 		self.player.new_quest_message_type = type
 		self.player.new_quest_message = msg
---		self.player:SetScript("OnUpdate", OnUpdate)
 		return
 	end
-	DEFAULT_CHAT_FRAME:AddMessage(msg, r, g, b)
+
+	if (not isBlackListed) then
+		DEFAULT_CHAT_FRAME:AddMessage(msg, r, g, b)
+	end
 end
 
 Module.OnEvent = function(self, event, ...)
 	if event == "UI_ERROR_MESSAGE" then
 		local messageType, msg
-		if Engine:IsBuild("Legion") then
+		if ENGINE_LEGION then
 			messageType, msg = ...
 			if self.blackListedMessageTypes[messageType] then
 				return
@@ -157,7 +165,7 @@ Module.OnEvent = function(self, event, ...)
 		self:AddMessage(msg, "error")
 	elseif event == "UI_INFO_MESSAGE" then
 		local messageType, msg
-		if Engine:IsBuild("Legion") then
+		if ENGINE_LEGION then
 			messageType, msg = ...
 			if self.blackListedMessageTypes[messageType] then
 				return
@@ -166,12 +174,6 @@ Module.OnEvent = function(self, event, ...)
 			msg = ...
 		end
 		self:AddMessage(msg, "info")
-	elseif event == "SYSMSG" then
-		local msg, r, g, b = ...
-		-- System messages are displayed by default in the chat anyway, 
-		-- so we're going to simply ignore them. 
-		-- local r, g, b = ...
-		-- self:AddMessage(msg, "system", r, g, b)
 	end
 end
 
@@ -179,7 +181,7 @@ Module.OnInit = function(self)
 	self.config = self:GetStaticConfig("Warnings")
 	
 	self.frames = {}
-	self.frames.player = CreateFrame("Frame", nil, Engine:GetFrame())
+	self.frames.player = Engine:CreateFrame("Frame")
 	
 	-- error frame
 	self.frames.player.message = self.frames.player:CreateFontString(nil, "OVERLAY")
@@ -238,7 +240,7 @@ Module.OnEnable = function(self)
 	self:RegisterEvent("UI_INFO_MESSAGE", "OnEvent")
 	self:RegisterEvent("SYSMSG", "OnEvent")
 	
-	if Engine:IsBuild("Legion") then
+	if ENGINE_LEGION then
 		-- copied from the Blizzard FrameXML file UIErrorsFrame.lua
 		self.blackListedMessageTypes = {
 			[LE_GAME_ERR_ABILITY_COOLDOWN] = true,

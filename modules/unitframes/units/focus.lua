@@ -7,12 +7,14 @@ local StatusBar = Engine:GetHandler("StatusBar")
 local C = Engine:GetStaticConfig("Data: Colors")
 
 -- Lua API
+local _G = _G
+local pairs = pairs
+local table_concat = table.concat
+local table_insert = table.insert
 local tostring = tostring
-local unpack, pairs = unpack, pairs
-local tinsert, tconcat = table.insert, table.concat
+local unpack = unpack
 
 -- WoW API
-local CreateFrame = _G.CreateFrame
 local UnitClass = _G.UnitClass
 local UnitIsEnemy = _G.UnitIsEnemy
 local UnitIsFriend = _G.UnitIsFriend
@@ -96,8 +98,8 @@ local Style = function(self, unit)
 	Backdrop:SetTexture(config.backdrop.texture)
 
 	-- border overlay frame
-	local Border = CreateFrame("Frame", nil, self)
-	Border:SetFrameLevel(self:GetFrameLevel() + 3)
+	local Border = self:CreateFrame("Frame")
+	Border:SetFrameLevel(self:GetFrameLevel() + 5)
 	Border:SetAllPoints()
 	
 	local BorderNormal = Border:CreateTexture(nil, "BORDER")
@@ -146,7 +148,7 @@ local Style = function(self, unit)
 
 	-- Portrait
 	-------------------------------------------------------------------
-	local PortraitHolder = CreateFrame("Frame", nil, self)
+	local PortraitHolder = self:CreateFrame("Frame")
 	PortraitHolder:SetSize(unpack(config.portrait.size))
 	PortraitHolder:SetPoint(unpack(config.portrait.position))
 	
@@ -155,11 +157,11 @@ local Style = function(self, unit)
 	PortraitBackdrop:SetPoint(unpack(config.portrait.texture_position))
 	PortraitBackdrop:SetTexture(config.portrait.textures.backdrop)
 	
-	local Portrait = CreateFrame("PlayerModel", nil, PortraitHolder)
+	local Portrait = PortraitHolder:CreateFrame("PlayerModel")
 	Portrait:SetFrameLevel(self:GetFrameLevel() + 1)
 	Portrait:SetAllPoints()
 	
-	local PortraitBorder = CreateFrame("Frame", ni, PortraitHolder)
+	local PortraitBorder = PortraitHolder:CreateFrame("Frame")
 	PortraitBorder:SetFrameLevel(self:GetFrameLevel() + 2)
 	PortraitBorder:SetAllPoints()
 
@@ -250,7 +252,7 @@ UnitFrameWidget.OnEnable = function(self)
 	local onattribute = ""
 
 	for i,v in ipairs(config.offsets) do
-		tinsert(driver, v[1]..i)
+		table_insert(driver, v[1]..i)
 		local x, y = v[2], v[3]
 		onattribute = onattribute .. ([[
 			if value == "%d" then 
@@ -260,8 +262,8 @@ UnitFrameWidget.OnEnable = function(self)
 		]]):format(i, x == 0 and "0.0001" or tostring(x), y == 0 and "0.0001" or tostring(y))
 	end
 
-	if onattribute ~= "" then
-		self.Mover = CreateFrame("Frame", nil, Engine:GetFrame(), "SecureHandlerAttributeTemplate")
+	if (onattribute ~= "") then
+		self.Mover = Engine:CreateFrame("Frame", nil, "UICenter", "SecureHandlerAttributeTemplate")
 		self.Mover:SetSize(.0001, .0001)
 		self.UnitFrame.Place(self.Mover, unpack(config.position))
 		self.Mover:SetAttribute("_onattributechanged", ([[
@@ -270,7 +272,7 @@ UnitFrameWidget.OnEnable = function(self)
 				%s 
 			end 
 		]]):format(onattribute))
-		RegisterStateDriver(self.Mover, "pos", tconcat(driver, "; "))
+		RegisterStateDriver(self.Mover, "pos", table_concat(driver, "; "))
 		
 		-- We're making the assumption that the base position is in the topleft corner here,
 		-- so it's important that the configuration file follows up on this.

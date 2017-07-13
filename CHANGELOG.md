@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.46] 2017-07-13
+### Changed
+- Some code cleanup.
+- Added the "Already looted" error message to a new blacklist in the objective module's warnings element. This is mainly a workaround for a known bug in TrinityCore based realms.
+
+### Fixed
+- Added in some extra event checks to fix an issue where new quest items needed the world map to be toggled before working properly in our tracker.
+- Fixed an issue that could cause both completed objectives and the completed quest message to be visible and overlapping in the tracker.
+
 ## [1.2.45] 2017-07-11
 ### Fixed
 - Fixed an issue with the tracker that would sometimes cause objectives to have overlapping (and wrong) messages displayed.

@@ -312,6 +312,33 @@ Engine:NewStaticConfig("Warnings", {
 		})
 	},
 	
+	-- blacklisted stuff
+	blacklist = {
+		-- Our 'pattern' list is an indexed table, 
+		-- as we want to iterate in the same order every time.
+		pattern = (function(list) 
+			local pattern_list = {}
+			for i,v in pairs(list) do
+				if v then
+					local pattern = to_pattern(v)
+					local exists
+					for _,old in ipairs(pattern_list) do
+						if old == pattern then
+							exists = true
+							break
+						end
+					end
+					if not exists then
+						pattern_list[#pattern_list + 1] = to_pattern(v)
+					end
+				end
+			end
+			return pattern_list
+		end)({
+			ERR_LOOT_GONE, -- "Already looted (%d/%d)" -- Happens on Felsong ALL the time! Appears to be a TrinityCore issue.
+		})			
+	},
+
 	tracker = {
 		plain = (function(list) 
 			local plain_list = {}
