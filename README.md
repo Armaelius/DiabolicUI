@@ -16,6 +16,16 @@ If not, and you need to do this manually, then download and unzip it to your `Wo
 
 Also, make sure the game is closed when moving new files into the addon directory as it is unable to discover new files when it's already running. And remember to check the "load out of date addons" checkbox in the addon listing on the character selection screen, or the game won't load the addon. The latter should not be a problem in Legion as the addon is always labeled with the most recent version it supports, but for game clients running older versions of WoW, it is vital to check this box to load the addon!
 
+## Recommended addons with DiabolicUI
+
+The following addons will either enhance the functionality of DiabolicUI, or help style other addons to match the look and feel of it.
+
+* [AdvancedInterfaceOptions](https://mods.curse.com/addons/wow/advancedinterfaceoptions) - (Legion) Adds back missing Blizzard options to the interface menu.
+* [Bagnon](https://mods.curse.com/addons/wow/bagnon) - _All-in-one bag and bank addon._
+* [Bagnon Facade](https://mods.curse.com/addons/wow/bagnon-facade) - _Adds Masque support to Bagnon._
+* [Masque](https://mods.curse.com/addons/wow/masque) - _Provides a skinning engine for buttons._
+* [Masque: Goldpaw](http://www.curse.com/addons/wow/masque_goldpaw) - _Button skin pack that can be configured to match DiabolicUI._
+
 ## Report bugs, suggest features, development progress
 
 Bug reports and feature suggestions are all done through GitHub's Issue tracker linked below. If you're looking for the current development status of the current or next version of the UI, you can check that out at DiabolicUI's GitHub project pages.
