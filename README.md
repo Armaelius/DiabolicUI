@@ -25,6 +25,8 @@ The following addons will either enhance the functionality of DiabolicUI, or hel
 * [Bagnon Facade](https://mods.curse.com/addons/wow/bagnon-facade) - _Adds Masque support to Bagnon._
 * [Masque](https://mods.curse.com/addons/wow/masque) - _Provides a skinning engine for buttons._
 * [Masque: Goldpaw](http://www.curse.com/addons/wow/masque_goldpaw) - _Button skin pack that can be configured to match DiabolicUI._
+* [Engraved](https://mods.curse.com/addons/wow/engraved) - Adds combo points, holy power, soul shards etc. 
+
 
 ## Report bugs, suggest features, development progress
 

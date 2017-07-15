@@ -229,6 +229,8 @@ local buffFilter = function(self, name, rank, icon, count, debuffType, duration,
 		return true
 	elseif isStealable then
 		return true
+	elseif isCastByPlayer then
+		return true
 	elseif (unitCaster == "vehicle") then
 		return true
 
@@ -262,6 +264,8 @@ local debuffFilter = function(self, name, rank, icon, count, debuffType, duratio
 
 	local unit = self.unit
 	if isBossDebuff then
+		return true
+	elseif isCastByPlayer then
 		return true
 	elseif (unitCaster == "vehicle") then
 		return true

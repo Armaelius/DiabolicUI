@@ -981,6 +981,19 @@ MenuWidget.OnEnable = function(self)
 	MicroMenuWindow:HookScript("OnShow", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPEN, "SFX") end)
 	MicroMenuWindow:HookScript("OnHide", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_CLOSE, "SFX") end)
 
-	
+	-- We need to manually handle this, as our actionbar script 
+	-- is blocking this event for the talent button. Or?
+	self:RegisterEvent("PLAYER_LEVEL_UP", "OnEvent")	
 end
 
+MenuWidget.OnEvent = function(self, event, ...)
+	if UnitAffectingCombat("player") then
+		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
+	end
+	if (event == "PLAYER_REGEN_ENABLED") then
+		self:UnregisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
+	end
+
+	-- This should fire off our own post updates too.
+	UpdateMicroButtons() 
+end

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.47] 2017-07-15
+### Changed
+- Added the combat resource tracking addon Engraved as a recommended addon in the README file.
+
+### Fixed
+- Fixed a bug that prevent auras from being shown on the target frame.
+
 ## [1.2.46] 2017-07-13
 ### Changed
 - Some code cleanup.
