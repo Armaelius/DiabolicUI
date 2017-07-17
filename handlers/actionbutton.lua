@@ -740,7 +740,7 @@ Button.UpdateCount = function(self)
 		end
 	else
 		local charges, maxCharges, chargeStart, chargeDuration = self:GetCharges()
-		if charges and maxCharges and maxCharges > 0 then
+		if charges and (charges > 0) then
 			self.stack:SetText(charges)
 		else
 			self.stack:SetText("")
@@ -1122,7 +1122,7 @@ Button.GetLossOfControlCooldown 		= function(self) return 0, 0 end
 ActionButton.HasAction					= function(self) return HasAction(self.action_by_state) end
 ActionButton.GetActionText				= function(self) return GetActionText(self.action_by_state) end
 ActionButton.GetTexture					= function(self) return GetActionTexture(self.action_by_state) end
-ActionButton.GetCharges					= function(self) return (ENGINE_MOP and GetActionCharges(self.action_by_state)) end
+ActionButton.GetCharges					= function(self) return ENGINE_MOP and GetActionCharges(self.action_by_state) end
 ActionButton.GetCount					= function(self) return GetActionCount(self.action_by_state) end
 ActionButton.GetCooldown				= function(self) return GetActionCooldown(self.action_by_state) end
 ActionButton.IsAttack					= function(self) return IsAttackAction(self.action_by_state) end
@@ -1278,7 +1278,7 @@ Handler.OnEvent = function(self, event, ...)
 	-- elseif event == "ACTIONBAR_PAGE_CHANGED" or event == "UPDATE_BONUS_ACTIONBAR" then
 	elseif (event == "ACTIONBAR_SHOWGRID") then
 		for button in next, ButtonRegistry do
-			if (button:IsShown()) and (button.type_by_state ~= "pet") and (button:IsShown()) then
+			if (button:IsShown()) and (button.type_by_state ~= "pet") then
 				button:ShowGrid()
 			end
 		end
@@ -1295,7 +1295,7 @@ Handler.OnEvent = function(self, event, ...)
 			if (not MODIFIERS_DOWN) then
 				MODIFIERS_DOWN = true
 				for button in next, ButtonRegistry do
-					if button:IsShown() then
+					if (button:IsShown()) then
 						button:ShowGrid()
 					end
 				end
@@ -1407,7 +1407,7 @@ Handler.OnEvent = function(self, event, ...)
 	
 	elseif (event == "PET_STABLE_UPDATE") or (event == "PET_STABLE_SHOW") then
 		for button in next, ButtonRegistry do
-			if button:IsShown() then
+			if (button:IsShown()) then
 				button:Update()
 			end
 		end
@@ -1469,7 +1469,7 @@ Handler.OnEvent = function(self, event, ...)
 	
 	elseif (event == "PET_BAR_SHOWGRID") then
 		for button in next, ButtonRegistry do
-			if button:IsShown() and (button.type_by_state == "pet") then
+			if (button:IsShown()) and (button.type_by_state == "pet") then
 				button:ShowGrid()
 			end
 		end
@@ -1909,6 +1909,7 @@ Handler.New = function(self, buttonType, id, header, buttonTemplate, ...)
 	button:SetScript("OnMouseUp", button.OnMouseUp)
 	button:SetScript("PreClick", button.PreClick)
 	button:SetScript("PostClick", button.PostClick)
+
 
 	-- This solves the checking for our custom textures
 	hooksecurefunc(button, "SetChecked", function(self)

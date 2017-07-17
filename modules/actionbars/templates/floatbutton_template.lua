@@ -304,11 +304,11 @@ FloatButtonWidget.Build = function(self, button, parent)
 	if cooldown then
 		button.Cooldown = cooldown
 		button.Cooldown:ClearAllPoints()
-		button.Cooldown:SetAllPoints(button.icon)
+		button.Cooldown:SetAllPoints(button.Icon)
 		button.Cooldown:SetFrameLevel(button:GetFrameLevel() + 2)
 	else
 		button.Cooldown = button:CreateFrame("Cooldown", nil, "CooldownFrameTemplate")
-		button.Cooldown:SetAllPoints(button.icon)
+		button.Cooldown:SetAllPoints(button.Icon)
 		button.Cooldown:SetFrameLevel(button:GetFrameLevel() + 2)
 	end
 

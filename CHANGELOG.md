@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- New round Minimap.
+- The UI should no longer enforce no rotation on the Minimap, since the new round one easily can be rotated.
+- The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
+- Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
+
+## [1.2.48] 2017-07-17
+### Fixed
+- Fixed a bug with the zone ability buttons that would make the cooldown spiral fill the entire screen. 
+- Fixed an issue that would keep available spell charges hidden from the actionbuttons. 
+
 ## [1.2.47] 2017-07-15
 ### Changed
 - Added the combat resource tracking addon Engraved as a recommended addon in the README file.

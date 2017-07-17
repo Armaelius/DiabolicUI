@@ -538,7 +538,7 @@ Engine:NewStaticConfig("ActionBars", {
 					points = { { "TOPRIGHT", -7, -6 } }
 				},
 				stacksize = {
-					normalFont = DiabolicFont_SansBold10,
+					normalFont = DiabolicFont_SansBold12,
 					points = { { "BOTTOMRIGHT", -7, 6 } }
 				}
 			},
@@ -641,7 +641,7 @@ Engine:NewStaticConfig("ActionBars", {
 					points = { { "TOPRIGHT", -7, -6 } }
 				},
 				stacksize = {
-					normalFont = DiabolicFont_SansBold10,
+					normalFont = DiabolicFont_SansBold12,
 					points = { { "BOTTOMRIGHT", -7, 6 } }
 				}
 			},

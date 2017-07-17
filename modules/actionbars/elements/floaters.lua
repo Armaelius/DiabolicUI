@@ -90,7 +90,7 @@ BarWidget.OnEnable = function(self)
 	self.ExtraActionButton = self:StyleExtraActionButton()
 
 	-- Zone ability buttons
-	self.DraenorZoneAbilityButton = self:StyleZoneButton(_G.DraenorZoneAbilityFrame)
+	self.DraenorZoneAbilityButton = self:StyleZoneButton(_G.DraenorZoneAbilityFrame) -- this was removed at some point
 	self.LegionZoneAbilityButton = self:StyleZoneButton(_G.ZoneAbilityFrame)
 
 end
