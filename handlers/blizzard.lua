@@ -238,6 +238,7 @@ local elements = {
 			end
 			if option_shrink then
 				option:SetHeight(0.00001)
+				option:SetScale(0.00001) -- needed for the options to shrink properly. Watch out for side effects(?)
 			end
 			option.cvar = ""
 			option.uvar = ""

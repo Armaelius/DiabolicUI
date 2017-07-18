@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
 - Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
 
+## [1.2.49] 2017-07-18
+### Added
+- Added the PlaySoundKitID() API call to WoW client versions prior to Cata, to keep the coding consist between client versions. 
+- Added back the Blizzard cooldown numbers to the actionbuttons for WoD clients and higher.
+- Added back the Blizzard interface option to show cooldown numbers on the actionbars for WoD clients and higher. 
+
+### Changed
+- Changed how cooldowns are displayed on the action buttons. Should be more similar to the default Blizzard UI now, and easier to understand. 
+- Changed how removed Blizzard interface options were shrunk down, as they would sometimes leave a huge empty space in the interface menu.
+
+### Fixed
+- Fixed an issue where buttons on the action bar that had their spell changed after a cast wouldn't update their icons properly. 
+- Fixed how charges were displayed on the action buttons, as this would sometimes be wrong.
+- Fixed an issue in WotLK clients where the PlaySoundKitID API call would cause a nil error as it technically didn't exist until Cata. 
+
 ## [1.2.48] 2017-07-17
 ### Fixed
 - Fixed a bug with the zone ability buttons that would make the cooldown spiral fill the entire screen. 
@@ -26,7 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [1.2.46] 2017-07-13
 ### Changed
 - Some code cleanup.
-- Added the "Already looted" error message to a new blacklist in the objective module's warnings element. This is mainly a workaround for a known bug in TrinityCore based realms.
+- Added the "Already looted" error message to a new blacklist in the objective module's warnings element. This is mainly a workaround for a known bug on TrinityCore based realms.
 
 ### Fixed
 - Added in some extra event checks to fix an issue where new quest items needed the world map to be toggled before working properly in our tracker.

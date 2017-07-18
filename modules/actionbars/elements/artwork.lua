@@ -303,7 +303,7 @@ Button.PostCreate = function(self, buttonType)
 	-- overlay frame holding border, gloss and texts
 	local border = self:CreateFrame("Frame")
 	border:SetAllPoints()
-	border:SetFrameLevel(self:GetFrameLevel() + 3)
+	border:SetFrameLevel(self:GetFrameLevel() + 4)
 
 	-- normal border
 	border.normal = border:CreateTexture(nil, "BORDER")
@@ -349,7 +349,14 @@ Button.PostCreate = function(self, buttonType)
 		self.autocast = autocast
 		self.autocast:SetParent(border)
 		self.autocast:SetAllPoints(icon)
-		self.autocast:SetFrameLevel(border:GetFrameLevel() + 3)
+		self.autocast:SetFrameLevel(border:GetFrameLevel() + 4)
+	end
+
+	local chargeCooldown = self.chargeCooldown
+	if chargeCooldown then
+		--chargeCooldown:ClearAllPoints()
+		--chargeCooldown:SetPoint("TOPLEFT", self.icon, 2, -2)
+		--chargeCooldown:SetPoint("BOTTOMRIGHT", self.icon, -2, 2)
 	end
 
 	-- Reparent existing texts to our border frame

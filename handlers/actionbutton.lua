@@ -74,8 +74,13 @@ local GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
 
 -- Cache the client version constants we need
 local ENGINE_LEGION = Engine:IsBuild("Legion")
+local ENGINE_WOD = Engine:IsBuild("WoD")
 local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_CATA = Engine:IsBuild("Cata")
+
+-- Cooldown type constants
+local COOLDOWN_TYPE_LOSS_OF_CONTROL = _G.COOLDOWN_TYPE_LOSS_OF_CONTROL
+local COOLDOWN_TYPE_NORMAL = _G.COOLDOWN_TYPE_NORMAL
 
 -- Registries
 local ButtonRegistry = {} -- all buttons
@@ -85,13 +90,13 @@ local NonActionButtons = {} -- buttons that don't hold an action (spell, macro, 
 
 -- Blizzard textures needed
 local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]]
-local BLING_TEXTURE = [[Interface\Cooldown\star4]]
 local EMPTY_SLOT = [[Interface\Buttons\UI-Quickslot]]
 local FILLED_SLOT = [[Interface\Buttons\UI-Quickslot2]]
 
 -- these exist in WoD and beyond
 local EDGE_LOC_TEXTURE = [[Interface\Cooldown\edge-LoC]]
 local EDGE_NORMAL_TEXTURE = [[Interface\Cooldown\edge]]
+local BLING_TEXTURE = [[Interface\Cooldown\star4]]
 
 -- Timer values for range and flash updates
 local FLASH_TIMER = 0
@@ -301,6 +306,21 @@ Button.HideGrid = function(self)
 	self:UpdateGrid()
 end
 
+Button.UpdateTexture = function(self)
+	local texture = self:GetTexture()
+	if texture then
+		if (texture ~= self.icon:GetTexture()) then
+			self.icon:SetTexture(texture)
+			self.icon:Show()
+			self.keybind:SetVertexColor(unpack(colors.keyText))
+		end
+	else
+		self.icon:Hide()
+		self.cooldown:Hide()
+		self.keybind:SetVertexColor(unpack(colors.keyTextDisabled))
+	end
+end
+
 Button.Update = function(self)
 	if self:HasAction() then
 		ActiveButtons[self] = true
@@ -382,6 +402,7 @@ Button.Update = function(self)
 		self.keybind:SetVertexColor(unpack(colors.keyTextDisabled))
 	end
 	
+	self:UpdateTexture()
 	self:UpdateBindings()
 	self:UpdateGrid()
 	self:UpdateCount()
@@ -554,6 +575,7 @@ Button.UpdateUsable = function(self, forced)
 
 	local isUsable, notEnoughMana = self:IsUsable()
 	local previousUsableState = self.usableState
+	local cooldown = self:GetCooldown() 
 
 	-- Values we pass on to PostUpdate
 	local canDesaturate, usableState
@@ -623,83 +645,107 @@ Button.UpdateUsable = function(self, forced)
 	end	
 end
 
--- Our own little stable proxy function to initiate button cooldowns, 
--- since the wow function for it keeps changing. 
-Button.SetCooldownTimer = function(self, start, duration, enable, charges, maxCharges, isLocCooldown)
-	if enable then
-		-- Cooldown frames ignore alpha changes, 
-		-- so we need to manually check whether or not we should
-		-- draw the edge and bling textures.
-		local effectiveAlpha = self:GetEffectiveAlpha()
-		local draw = effectiveAlpha > .5
-		local hasBling = self.cooldown.SetSwipeColor and true or false
-		
-		-- color loss of control cooldowns red
-		if hasBling then 
-			if isLocCooldown then
-				self.cooldown:SetSwipeColor(.17, 0, 0, effectiveAlpha * .75)
-			else
-				self.cooldown:SetSwipeColor(0, 0, 0, effectiveAlpha * .75)
-			end
-		end
+Button.OnSecondaryCooldownDone = function(self)
+	self:SetScript("OnCooldownDone", nil)
+	self:GetParent():UpdateCooldown()
+end
 
-		-- When this is 0, it means a cooldown will initiate later, but cannot yet.
-		-- An example is the cooldown of stealth when you're currently in stealth. 
-		if enable == 0 then
-			self.cooldown:Hide()
-			--self.cooldown:SetCooldown(0, 0)
-		else
-			if hasBling then
-				-- If charges still remain on the spell, 
-				-- don't draw the swipe texture, just the edge,
-				-- as the swipe should always indicate that a spell is unusable!
-				local drawEdge = false
-				if duration > 2 and charges and maxCharges and charges ~= 0 then
-					drawEdge = true
-				end
-				self.cooldown:SetDrawEdge(draw and drawEdge)
-				self.cooldown:SetDrawBling(false)
-				self.cooldown:SetDrawSwipe(not drawEdge)
-			end
-			-- Try to prevent the strange WotLK bug where the end shine effect
-			-- constantly pops up for a random period of time. 
-			if duration > .5 then
-				self.cooldown:SetCooldown(start, duration)
-				self.cooldown:Show()
-			else
-				self.cooldown:Hide()
-				--self.cooldown:SetCooldown(0, 0)
-			end
-		end
+Button.OnCooldownDone = function(self)
+	self:SetScript("OnCooldownDone", nil)
+
+	-- Avoid the shine effect for very short cooldowns (global cooldown, etc)
+	if (self.cooldownDuration) and (self.cooldownDuration >= 2) then
+		self.shine:Start()
 	end
 end
 
 -- Updates the cooldown of a button
-Button.UpdateCooldown = function(self)
+Button.UpdateCooldown = ENGINE_WOD and function(self)
+
+	-- Gather data
 	local locStart, locDuration = self:GetLossOfControlCooldown()
-	local start, duration, enable, charges, maxCharges = self:GetCooldown()
+	local start, duration, enable, modRate = self:GetCooldown()
+	local charges, maxCharges, chargeStart, chargeDuration = self:GetCharges()
 
-	-- COOLDOWN_TYPE_LOSS_OF_CONTROL and COOLDOWN_TYPE_NORMAL doesn't exit in WotLK
-
-	if (locStart + locDuration) > (start + duration) then
-		if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_LOSS_OF_CONTROL then
-			self.cooldown:SetHideCountdownNumbers(true)
+	-- This is a loss of control cooldown, as any normal cooldown is shorter
+	if ( (locStart + locDuration) > (start + duration) ) then
+		if (self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_LOSS_OF_CONTROL) then
 			self.cooldown.currentCooldownType = COOLDOWN_TYPE_LOSS_OF_CONTROL
+			self.cooldown:SetSwipeColor(.17, 0, 0, .75)
+
 		end
-		self.cooldown.locQueued = nil
-		
-		-- Hide the duration from the shine script, 
-		-- to avoid shines being run after loss of control cooldowns.
-		self.cooldown.duration = nil 
-		self:SetCooldownTimer(locStart, locDuration, 1, nil, nil, true) 
+
+		-- Remove charge cooldown
+		self.chargeCooldown:Hide()
+
+		-- Update cooldown to be a loss of control cooldown
+		self.cooldown.cooldownDuration = nil
+		self.cooldown:SetCooldown(locStart, locDuration)
+		self.cooldown:Show()
+		self.cooldown:SetScript("OnCooldownDone", Button.OnSecondaryCooldownDone)
+
 	else
-		if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL then
-			self.cooldown:SetHideCountdownNumbers(true)
+		if (self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL) then
 			self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL
+			self.cooldown:SetSwipeColor(0, 0, 0, .75)
 		end
-		self.cooldown.locQueued = locStart > 0
-		self.cooldown.duration = duration
-		self:SetCooldownTimer(start, duration, enable, charges, maxCharges, false)
+
+		-- Is this a charge cooldown?
+		if (charges and maxCharges and (maxCharges > 1) and (charges < maxCharges) and (charges > 0)) then
+			self.chargeCooldown:Show()
+			self.chargeCooldown:SetCooldown(chargeStart, chargeDuration)
+			self.chargeCooldown:SetScript("OnCooldownDone", Button.OnSecondaryCooldownDone)
+
+		else
+			-- Remove charge cooldown
+			self.chargeCooldown:Hide()
+		end
+
+		-- Start the regular cooldown
+		if (enable ~= 0) and (duration > .5) then
+			self.cooldown.cooldownDuration = duration
+			self.cooldown:SetCooldown(start, duration)
+			self.cooldown:Show()
+			self.cooldown:SetScript("OnCooldownDone", Button.OnCooldownDone)
+		else
+			self.cooldown.cooldownDuration = nil
+			self.cooldown:Hide()
+			self.cooldown:SetScript("OnCooldownDone", nil)
+		end
+
+	end
+
+end or ENGINE_MOP and function(self)
+	-- Gather data
+	local start, duration, enable, modRate = self:GetCooldown()
+	local charges, maxCharges, chargeStart, chargeDuration = self:GetCharges()
+
+	-- Is this a charge cooldown?
+	if (charges and maxCharges and (maxCharges > 1) and (charges < maxCharges) and (charges > 0)) then
+		self.chargeCooldown:Show()
+		self.chargeCooldown:SetCooldown(chargeStart, chargeDuration)
+
+		self.cooldown:Hide()
+	else
+		-- Remove charge cooldown
+		self.chargeCooldown:Hide()
+	end
+
+	-- Start the regular cooldown
+	if (enable ~= 0) and (duration > .5) then
+		self.cooldown:SetCooldown(start, duration)
+		self.cooldown:Show()
+	else
+		self.cooldown:Hide()
+	end
+
+end or function(self)
+	local start, duration, enable = self:GetCooldown()
+	if (enable ~= 0) and (duration > .5) then
+		self.cooldown:SetCooldown(start, duration)
+		self.cooldown:Show()
+	else
+		self.cooldown:Hide()
 	end
 end
 
@@ -727,7 +773,7 @@ Button.IsFlashing = function(self)
 end
 
 Button.UpdateCount = function(self)
-	if not self:HasAction() then
+	if (not self:HasAction()) then
 		self.stack:SetText("")
 		return
 	end
@@ -740,7 +786,7 @@ Button.UpdateCount = function(self)
 		end
 	else
 		local charges, maxCharges, chargeStart, chargeDuration = self:GetCharges()
-		if charges and (charges > 0) then
+		if charges and maxCharges and (maxCharges > 1) and (charges > 0) then
 			self.stack:SetText(charges)
 		else
 			self.stack:SetText("")
@@ -926,7 +972,7 @@ Button.ShowOverlayGlow = function(self)
 		local overlay = GetOverlayGlow()
 		local frameWidth, frameHeight = self:GetSize()
 		overlay:SetParent(self)
-		overlay:SetFrameLevel(self:GetFrameLevel() + 5)
+		overlay:SetFrameLevel(self:GetFrameLevel() + 6)
 		overlay:ClearAllPoints()
 		--Make the height/width available before the next frame:
 		overlay:SetSize(frameWidth * 1.4, frameHeight * 1.4)
@@ -1117,12 +1163,15 @@ Button.SetTooltip						= function(self) return nil end
 Button.GetSpellId						= function(self) return nil end
 Button.GetLossOfControlCooldown 		= function(self) return 0, 0 end
 
-
 -- Action Button API mapping
 ActionButton.HasAction					= function(self) return HasAction(self.action_by_state) end
 ActionButton.GetActionText				= function(self) return GetActionText(self.action_by_state) end
 ActionButton.GetTexture					= function(self) return GetActionTexture(self.action_by_state) end
-ActionButton.GetCharges					= function(self) return ENGINE_MOP and GetActionCharges(self.action_by_state) end
+ActionButton.GetCharges					= ENGINE_WOD and function(self) return GetActionCharges(self.action_by_state) end 
+										or ENGINE_MOP and function(self)
+											local start, duration, enable, charges, maxCharges = GetActionCooldown(self.action_by_state)
+											return charges, maxCharges, start, duration
+										end or function(self) return nil end
 ActionButton.GetCount					= function(self) return GetActionCount(self.action_by_state) end
 ActionButton.GetCooldown				= function(self) return GetActionCooldown(self.action_by_state) end
 ActionButton.IsAttack					= function(self) return IsAttackAction(self.action_by_state) end
@@ -1267,7 +1316,18 @@ Handler.OnEvent = function(self, event, ...)
 			end
 		end
 		
-	-- removing (event == "UPDATE_SHAPESHIFT_FORM")
+	elseif (event == "UPDATE_SHAPESHIFT_FORM") then
+		for button in next, ButtonRegistry do
+			if (button:IsShown()) then
+				button:UpdateTexture()
+			end
+		end
+	elseif (event == "CURRENT_SPELL_CAST_CHANGED") then
+		for button in next, ButtonRegistry do
+			if (button:IsShown()) then
+				button:UpdateTexture()
+			end
+		end
 	elseif (event == "PLAYER_ENTERING_WORLD") or (event == "UPDATE_VEHICLE_ACTIONBAR") then
 		for button in next, ButtonRegistry do
 			if (button:IsShown()) then
@@ -1564,7 +1624,8 @@ Handler.LoadEvents = function(self)
 
 	self:RegisterEvent("UPDATE_BINDINGS", "OnEvent")
 	
-	--self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "OnEvent")
+	self:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", "OnEvent")
+	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "OnEvent")
 	self:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN", "OnEvent")
 	self:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR", "OnEvent")
 
@@ -1833,16 +1894,48 @@ Handler.New = function(self, buttonType, id, header, buttonTemplate, ...)
 
 	-- cooldown frame
 	-- stance and pet buttons have this in their template, I think
-	local oldCooldown = _G[button:GetName().."Cooldown"]
+	local oldCooldown = _G[button:GetName().."Cooldown"] 
 	if oldCooldown then
-		button.cooldown = oldCooldown
-		button.cooldown:ClearAllPoints()
-		button.cooldown:SetAllPoints(button.icon)
-		button.cooldown:SetFrameLevel(button:GetFrameLevel() + 2)
+		oldCooldown:SetParent(UIHider)
+		oldCooldown:SetAlpha(0)
+		oldCooldown:Hide()
+	end
+
+	button.cooldown = button:CreateFrame("Cooldown", nil, "CooldownFrameTemplate")
+	button.cooldown:SetAllPoints(button.icon)
+	button.cooldown:SetFrameLevel(button:GetFrameLevel() + 3)
+
+
+	if ENGINE_MOP then
+		button.chargeCooldown = button:CreateFrame("Cooldown", nil, "CooldownFrameTemplate")
+		button.chargeCooldown:SetAllPoints(button.icon)
+		button.chargeCooldown:SetFrameLevel(button:GetFrameLevel() + 2)
+	end
+	
+	if ENGINE_WOD then
+		button.cooldown:SetSwipeColor(0, 0, 0, .75)
+		button.cooldown:SetDrawSwipe(true)
+		button.cooldown:SetEdgeTexture(EDGE_NORMAL_TEXTURE)
+		button.cooldown:SetDrawEdge(false)
+		button.cooldown:SetHideCountdownNumbers(false) -- just until we can make a better one ourselves
+		button.cooldown:SetBlingTexture(BLANK_TEXTURE, 0, 0, 0, 0) 
+		button.cooldown:SetDrawBling(false)
+
+		button.cooldown.shine = Engine:GetHandler("Shine"):ApplyShine(button, .5, .5, 3) -- alpha, duration, scale
+		button.cooldown.shine:SetFrameLevel(button:GetFrameLevel() + 4)
+
+		button.chargeCooldown:SetSwipeColor(0, 0, 0, .75)
+		button.chargeCooldown:SetDrawSwipe(true)
+		button.chargeCooldown:SetEdgeTexture(EDGE_NORMAL_TEXTURE)
+		button.chargeCooldown:SetDrawEdge(true)
+		button.chargeCooldown:SetHideCountdownNumbers(true) 
+		button.chargeCooldown:SetBlingTexture(BLANK_TEXTURE, 0, 0, 0, 0) 
+		button.chargeCooldown:SetDrawBling(false)
 	else
-		button.cooldown = button:CreateFrame("Cooldown", nil, "CooldownFrameTemplate")
-		button.cooldown:SetAllPoints(button.icon)
-		button.cooldown:SetFrameLevel(button:GetFrameLevel() + 2)
+		button.cooldown:SetAlpha(.75)
+		if ENGINE_MOP then
+			button.chargeCooldown:SetAlpha(.75)
+		end
 	end
 	
 	-- let blizz handle this one
@@ -1857,34 +1950,6 @@ Handler.New = function(self, buttonType, id, header, buttonTemplate, ...)
 	-- or Blizzard will set it to ARTWORK which can lead 
 	-- to it randomly being drawn behind the icon texture. 
 	button:GetPushedTexture():SetDrawLayer("OVERLAY") 
-	
-	-- cooldown finished effect (WoD and up)
-	if button.cooldown.SetSwipeColor then
-		button.cooldown:SetSwipeColor(0, 0, 0, .75)
-		button.cooldown:SetBlingTexture(BLING_TEXTURE, .3, .6, 1, .75) -- what wow uses, only with slightly lower alpha
-		button.cooldown:SetEdgeTexture(EDGE_NORMAL_TEXTURE)
-		button.cooldown:SetDrawSwipe(true)
-		button.cooldown:SetDrawBling(true)
-		button.cooldown:SetDrawEdge(false)
-		button.cooldown:SetHideCountdownNumbers(true) -- todo: add better numbering
-
-		button.cooldown.shine = Engine:GetHandler("Shine"):ApplyShine(button, 1, .75, 3) -- alpha, duration, scale
-		button.cooldown.shine:SetFrameLevel(button:GetFrameLevel() + 4)
-		button.cooldown:SetScript("OnCooldownDone", function(self)
-			if self.locQueued then
-				-- This was just a loss of control cooldown, 
-				-- so return to the cooldown update function in case
-				-- an actual cooldown should be running for the button!
-				self:GetParent():UpdateCooldown()
-			else
-				-- Avoid the shine effect for very short cooldowns (global cooldown, etc)
-				if self.duration and self.duration >= 2 then
-					self.shine:Start()
-				end
-			end
-		end)
-	end
-
 		
 	-- cooldown numbers
 	button.cooldowncount = button:CreateFontString(nil, "OVERLAY")
@@ -1899,7 +1964,7 @@ Handler.New = function(self, buttonType, id, header, buttonTemplate, ...)
 		
 		button.autocast = _G[button:GetName() .. "Shine"]
 		button.autocast:SetAllPoints(button.icon)
-		button.autocast:SetFrameLevel(button:GetFrameLevel() + 3)
+		button.autocast:SetFrameLevel(button:GetFrameLevel() + 4)
 	end
 
 	-- assign our own scripts

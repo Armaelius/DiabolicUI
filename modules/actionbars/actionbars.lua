@@ -230,7 +230,16 @@ Module.OnEnable = function(self, event, ...)
 	BlizzardUI:GetElement("Tutorials"):Disable()
 	
 	if ENGINE_LEGION then
-		BlizzardUI:GetElement("Menu_Panel"):Remove(5, "InterfaceOptionsActionBarsPanel")
+		--BlizzardUI:GetElement("Menu_Panel"):Remove(5, "InterfaceOptionsActionBarsPanel")
+
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelBottomLeft")
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelBottomRight")
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelRight")
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelRightTwo")
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelLockActionBars")
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelPickupActionKeyDropDown")
+		BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsActionBarsPanelAlwaysShowActionBars")
+
 	elseif ENGINE_WOD then
 		BlizzardUI:GetElement("Menu_Panel"):Remove(6, "InterfaceOptionsActionBarsPanel")
 	elseif ENGINE_MOP then

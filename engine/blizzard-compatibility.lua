@@ -436,6 +436,23 @@ if not ENGINE_CATA then
 	-- Adding the new names as aliases for compatibility.
 	addGlobal("SetGuildBankWithdrawGoldLimit", _G.SetGuildBankWithdrawLimit)
 	addGlobal("GetGuildBankWithdrawGoldLimit", _G.GetGuildBankWithdrawLimit)
+
+	--local reverseSoundKit
+	--local playSound = function(ID, channel, forceNoDuplicates)
+	--	if (not reverseSoundKit) then
+	--		for key,id in pairs(SOUNDKIT) do
+	--			reverseSoundKit[id] = key
+	--		end
+	--	end
+	--	local willPlay, soundHandle = PlaySound(reverseSoundKit[ID], channel, forceNoDuplicates)
+	--	return willPlay, soundHandle
+	--end
+	--
+	-- This was added in Cata
+	-- The normal PlaySound API call does however accept soundkitIDs, 
+	-- so we're simply making an alias here instead of the suggested translation table above. 
+	addGlobal("PlaySoundKitID", _G.PlaySound)
+	
 end
 
 
@@ -512,6 +529,12 @@ if not ENGINE_MOP then
 end
 
 
+-- Stuff added in WoD that we want in older versions
+------------------------------------------------------------------------------------
+if not ENGINE_WOD then
+	addGlobal("COOLDOWN_TYPE_LOSS_OF_CONTROL", 1)
+	addGlobal("COOLDOWN_TYPE_NORMAL", 2)
+end
 
 -- Stuff added in Legion that we want in older versions
 ------------------------------------------------------------------------------------
