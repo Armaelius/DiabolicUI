@@ -18,15 +18,15 @@ Also, make sure the game is closed when moving new files into the addon director
 
 ## Recommended addons with DiabolicUI
 
-The following addons will either enhance the functionality of DiabolicUI, or help style other addons to match the look and feel of it.
+The following addons will either enhance the functionality of DiabolicUI, or help style other addons to match the look and feel of it. The links below are to the Legion version of the addons.
 
-* [AdvancedInterfaceOptions](https://mods.curse.com/addons/wow/advancedinterfaceoptions) - (Legion) Adds back missing Blizzard options to the interface menu.
+* [AdvancedInterfaceOptions](https://mods.curse.com/addons/wow/advancedinterfaceoptions) - _Adds back missing Blizzard options to the interface menu._
 * [Bagnon](https://mods.curse.com/addons/wow/bagnon) - _All-in-one bag and bank addon._
 * [Bagnon Facade](https://mods.curse.com/addons/wow/bagnon-facade) - _Adds Masque support to Bagnon._
 * [Masque](https://mods.curse.com/addons/wow/masque) - _Provides a skinning engine for buttons._
 * [Masque: Goldpaw](http://www.curse.com/addons/wow/masque_goldpaw) - _Button skin pack that can be configured to match DiabolicUI._
-* [Engraved](https://mods.curse.com/addons/wow/engraved) - Adds combo points, holy power, soul shards etc. 
-
+* [Engraved](https://mods.curse.com/addons/wow/engraved) - _Adds combo points, holy power, soul shards etc._ 
+* [MythicPlusTimer](https://mods.curse.com/addons/wow/mythicplustimer) - _Adds mythic+ timer and affix information._ 
 
 ## Report bugs, suggest features, development progress
 

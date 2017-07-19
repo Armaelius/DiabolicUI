@@ -26,7 +26,7 @@ local UnitGUID = _G.UnitGUID
 local UnitIsUnit = _G.UnitIsUnit
 
 -- Shortcuts to identify client versions
-local CATA 			= Engine:IsBuild("Cata") -- 4.0.1 "Cataclysm Systems"
+local CATA = Engine:IsBuild("Cata") -- 4.0.1 "Cataclysm Systems"
 
 local globalElements = {} -- registry of global functions and elements
 local metaMethods = {} -- registry of meta methods

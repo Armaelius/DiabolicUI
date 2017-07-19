@@ -77,10 +77,12 @@ local C = {
 
 	-- Unit Class Coloring (slightly different from Blizzard's)
 	Class = {
-		DEATHKNIGHT 	= prepare( 196/255,  31/255,  59/255 ),
+		--DEATHKNIGHT 	= prepare( 196/255,  31/255,  59/255 ),
+		DEATHKNIGHT 	= prepare( 176/255,  31/255,  79/255 ), -- slightly more blue, less red, to stand out from angry mobs better
 		DEMONHUNTER 	= prepare( 163/255,  48/255, 201/255 ),
 		DRUID 			= prepare( 255/255, 125/255,  10/255 ),
-		HUNTER 			= prepare( 171/255, 212/255, 115/255 ),
+		--HUNTER 			= prepare( 171/255, 212/255, 115/255 ),
+		HUNTER 			= prepare( 191/255, 232/255, 115/255 ), -- slightly more green and yellow, to stand more out from friendly players/npcs
 		MAGE 			= prepare( 105/255, 204/255, 240/255 ),
 		MONK 			= prepare(   0/255, 255/255, 150/255 ),
 		PALADIN 		= prepare( 245/255, 140/255, 186/255 ),
@@ -171,6 +173,13 @@ local C = {
 			{ 102/255,  34/255, 204/255, .5, "smoke" },
 			{  10/255,   3/255,  23/255,  1, "shade" }
 		},
+		LUNAR_POWER = {	
+			{  31/255,  38/255,  48/255,  1, "bar" },
+			{  61/255,  76/255,  96/255, .9, "moon" },
+			{ 121/255, 152/255, 192/255, .5, "smoke" },
+			{   1/255,   5/255,  19/255,  1, "shade" }
+		},
+		
 		MAELSTROM = {
 			{  24/255,  40/255,  64/255,  1, "bar" },
 			{  48/255,  80/255, 127/255, .9, "moon" },
@@ -404,15 +413,18 @@ local C = {
 
 	-- Unit Reactions
 	Reaction = {
-		[1] 					= prepare( 175/255,  76/255,  56/255 ), -- hated
-		[2] 					= prepare( 175/255,  76/255,  56/255 ), -- hostile
-		[3] 					= prepare( 192/255,  68/255,   0/255 ), -- unfriendly
-		[4] 					= prepare( 249/255, 158/255,  35/255 ), -- neutral 
-		[5] 					= prepare(  64/255, 131/255,  38/255 ), -- friendly
-		[6] 					= prepare(  64/255, 131/255,  38/255 ), -- honored
-		[7] 					= prepare(  64/255, 131/255,  38/255 ), -- revered
-		[8] 					= prepare(  64/255, 131/255,  38/255 ), -- exalted
-		civilian 				= prepare(  38/255,  96/255, 229/255 )  -- used for friendly player nameplates
+		--[1] 			= prepare( 175/255,  76/255,  56/255 ), -- hated
+		--[2] 			= prepare( 175/255,  76/255,  56/255 ), -- hostile
+		[1] 			= prepare( 205/255,  46/255,  36/255 ), -- hated
+		[2] 			= prepare( 205/255,  46/255,  36/255 ), -- hostile
+		[3] 			= prepare( 192/255,  68/255,   0/255 ), -- unfriendly
+		[4] 			= prepare( 249/255, 158/255,  35/255 ), -- neutral 
+		[5] 			= prepare(  64/255, 131/255,  38/255 ), -- friendly
+		[6] 			= prepare(  64/255, 131/255,  38/255 ), -- honored
+		[7] 			= prepare(  64/255, 131/255,  38/255 ), -- revered
+		[8] 			= prepare(  64/255, 131/255,  38/255 ), -- exalted
+		civilian 		= prepare(  64/255, 131/255,  38/255 )  -- used for friendly player nameplates
+		--civilian 		= prepare(  38/255,  96/255, 229/255 )  -- used for friendly player nameplates
 	},
 
 	-- Various Unit statuses

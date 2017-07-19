@@ -57,6 +57,7 @@ local IsCurrentSpell = _G.IsCurrentSpell
 local IsEquippedAction = _G.IsEquippedAction
 local IsEquippedItem = _G.IsEquippedItem
 local IsFlying = _G.IsFlying
+local IsInInstance = _G.IsInInstance
 local IsItemAction = _G.IsItemAction
 local IsItemInRange = _G.IsItemInRange
 local IsSpellInRange = _G.IsSpellInRange
@@ -109,6 +110,9 @@ local MODIFIERS_DOWN = false
 
 -- Tracking whether or not the player is currently flying
 local IS_FLYING = nil
+
+-- Tracking whether or not the player is in an instance
+local INSTANCE = IsInInstance()
 
 
 -- Button Prototypes
@@ -183,32 +187,33 @@ local OnUpdate = function(self, elapsed)
 	
 	if (RANGE_TIMER <= 0) or (FLASH_TIMER <= 0) then
 		for button in next, ActiveButtons do
+			if button:IsShown() then
 
-			-- Put the flash check before the range timer check
-			if (button.flashing == 1) and (FLASH_TIMER <= 0) then
-				if button.flash:IsShown() then
-					button.flash:Hide()
-				else
-					button.flash:Show()
+				-- Put the flash check before the range timer check
+				if (button.flashing == 1) and (FLASH_TIMER <= 0) then
+					if button.flash:IsShown() then
+						button.flash:Hide()
+					else
+						button.flash:Show()
+					end
 				end
-			end
 
-			if (RANGE_TIMER <= 0) then
-				local inRange = button:IsInRange()
-				local oldRange = button.outOfRange
-				button.outOfRange = not inRange
-				if (oldRange ~= button.outOfRange) then
-					button:UpdateUsable()
+				if (RANGE_TIMER <= 0) then
+					local outOfRange = not button:IsInRange()
+					if (outOfRange ~= button.outOfRange) then
+						button.outOfRange = outOfRange
+						button:UpdateUsable("range")
+					end
 				end
 			end
 		end
 
 		if (FLASH_TIMER <= 0) then
-			FLASH_TIMER = FLASH_TIMER + .4 -- ATTACK_BUTTON_FLASH_TIME (0.4)
+			FLASH_TIMER = .4 -- FLASH_TIMER + .4 -- ATTACK_BUTTON_FLASH_TIME (0.4)
 		end
 
 		if (RANGE_TIMER <= 0) then
-			RANGE_TIMER = .05 -- TOOLTIP_UPDATE_TIME (0.2)
+			RANGE_TIMER = .2 -- .05 -- TOOLTIP_UPDATE_TIME (0.2)
 		end
 	end
 end
@@ -227,7 +232,7 @@ local WaitForUpdates = function(self, elapsed)
 	self.scheduleUpdate = (self.scheduleUpdate or 1) - elapsed
 	if self.scheduleUpdate <= 0 then
 		for button in next, ActiveButtons do
-			button:UpdateUsable(true)
+			button:UpdateUsable("forced")
 		end	
 		self:SetScript("OnUpdate", OnUpdate)
 		self.scheduleUpdate = nil
@@ -564,9 +569,9 @@ Button.SetBindingAction = function(self, keybindAction)
 end
 
 -- updates whether or not the button is usable
-Button.UpdateUsable = function(self, forced)
+Button.UpdateUsable = function(self, updateType, ...)
 	if self.OverrideUsable then
-		return self:OverrideUsable()
+		return self:OverrideUsable(updateType, ...)
 	end
 
 	-- Speed!
@@ -581,10 +586,10 @@ Button.UpdateUsable = function(self, forced)
 	local canDesaturate, usableState
 	if UnitIsDeadOrGhost("player") then
 		usableState = "taxi"
-	elseif UnitOnTaxi("player") then 
-		usableState = "taxi"
-	elseif IsFlying() and (not UnitAffectingCombat("player") and (not IsInInstance())) then 
-		usableState = "taxi"
+	--elseif UnitOnTaxi("player") then 
+	--	usableState = "taxi"
+	--elseif IsFlying() and (not UnitAffectingCombat("player") and (not INSTANCE)) then 
+	--	usableState = "taxi"
 	elseif (not isUsable) then
 		usableState = "unusable"
 	elseif (self.outOfRange or not(self:IsInRange())) then
@@ -1302,14 +1307,14 @@ end
 Handler.OnEvent = function(self, event, ...)
 	local arg1 = ...
 
-	if (event == "UNIT_INVENTORY_CHANGED" and arg1 == "player") 
-	or (event == "LEARNED_SPELL_IN_TAB") then
+	--if (event == "UNIT_INVENTORY_CHANGED" and arg1 == "player") 
+	--or (event == "LEARNED_SPELL_IN_TAB") then
 		-- local tooltipOwner = GameTooltip:GetOwner()
 		-- if ButtonRegistry[tooltipOwner] then
 			-- tooltipOwner:SetTooltip()
 		-- end
-		
-	elseif (event == "ACTIONBAR_SLOT_CHANGED") then
+
+	if (event == "ACTIONBAR_SLOT_CHANGED") then
 		for button in next, ButtonRegistry do
 			if (button:IsShown()) and (button.type_by_state == "action") and ((arg1 == 0) or (arg1 == tonumber(button.action_by_state))) then
 				button:Update()
@@ -1329,6 +1334,8 @@ Handler.OnEvent = function(self, event, ...)
 			end
 		end
 	elseif (event == "PLAYER_ENTERING_WORLD") or (event == "UPDATE_VEHICLE_ACTIONBAR") then
+		local INSTANCE = IsInInstance()
+
 		for button in next, ButtonRegistry do
 			if (button:IsShown()) then
 				button:Update()
@@ -1390,15 +1397,6 @@ Handler.OnEvent = function(self, event, ...)
 		for button in next, ActionButtons do
 			button:UpdateUsable()
 		end
-		
-	elseif (event == "PLAYER_STARTED_MOVING") or (event == "PLAYER_STOPPED_MOVING") then
-		local isFlying = IsFlying()
-		if isFlying ~= IS_FLYING then
-			for button in next, ActiveButtons do
-				button:UpdateUsable()
-			end
-			IS_FLYING = isFlying
-		end
 
 	elseif (event == "ACTIONBAR_UPDATE_USABLE") then
 		for button in next, ActionButtons do
@@ -1411,9 +1409,9 @@ Handler.OnEvent = function(self, event, ...)
 		end
 
 		-- for taxis?
-		for button in next, ActionButtons do
-			button:UpdateUsable()
-		end
+		--for button in next, ActionButtons do
+		--	button:UpdateUsable()
+		--end
 		
 	elseif (event == "UPDATE_SHAPESHIFT_COOLDOWN")
 	or (event == "ACTIONBAR_UPDATE_COOLDOWN") then
@@ -1607,88 +1605,66 @@ Handler.OnEvent = function(self, event, ...)
 end
 
 Handler.LoadEvents = function(self)
-	-- To easier grab when flying
-	self:RegisterEvent("PLAYER_STARTED_MOVING", "OnEvent")
-	self:RegisterEvent("PLAYER_STOPPED_MOVING", "OnEvent")
+	-- Ordering them by the alphabet, because my brain turns to mush here.
 
-	--self:RegisterEvent("UNIT_FLAGS", "OnEvent")
-	self:RegisterEvent("BAG_UPDATE_COOLDOWN", "OnEvent")
-	
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
-
-	self:RegisterEvent("ACTIONBAR_SHOWGRID", "OnEvent")
 	self:RegisterEvent("ACTIONBAR_HIDEGRID", "OnEvent")
 	--self:RegisterEvent("ACTIONBAR_PAGE_CHANGED", "OnEvent")
-	--self:RegisterEvent("UPDATE_BONUS_ACTIONBAR", "OnEvent")
+	self:RegisterEvent("ACTIONBAR_SHOWGRID", "OnEvent")
 	self:RegisterEvent("ACTIONBAR_SLOT_CHANGED", "OnEvent")
-
-	self:RegisterEvent("UPDATE_BINDINGS", "OnEvent")
-	
-	self:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", "OnEvent")
-	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "OnEvent")
-	self:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN", "OnEvent")
-	self:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR", "OnEvent")
-
+	self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "OnEvent")
 	self:RegisterEvent("ACTIONBAR_UPDATE_STATE", "OnEvent")
 	self:RegisterEvent("ACTIONBAR_UPDATE_USABLE", "OnEvent")
-	self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "OnEvent")
-	self:RegisterEvent("PLAYER_TARGET_CHANGED", "OnEvent")
-	self:RegisterEvent("TRADE_SKILL_SHOW", "OnEvent")
-	self:RegisterEvent("TRADE_SKILL_CLOSE", "OnEvent")
 	self:RegisterEvent("ARCHAEOLOGY_CLOSED", "OnEvent")
-	self:RegisterEvent("PLAYER_ENTER_COMBAT", "OnEvent")
-	self:RegisterEvent("PLAYER_LEAVE_COMBAT", "OnEvent")
-	self:RegisterEvent("START_AUTOREPEAT_SPELL", "OnEvent")
-	self:RegisterEvent("STOP_AUTOREPEAT_SPELL", "OnEvent")
-	self:RegisterEvent("UNIT_ENTERED_VEHICLE", "OnEvent")
-	self:RegisterEvent("UNIT_EXITED_VEHICLE", "OnEvent")
+	self:RegisterEvent("BAG_UPDATE", "OnEvent") 
+	self:RegisterEvent("BAG_UPDATE_COOLDOWN", "OnEvent")
 	self:RegisterEvent("COMPANION_UPDATE", "OnEvent")
-	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "OnEvent")
+	self:RegisterEvent("CURRENT_SPELL_CAST_CHANGED", "OnEvent")
+	self:RegisterEvent("CVAR_UPDATE", "OnEvent") -- cast on up/down
 	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnEvent")
-	self:RegisterEvent("PET_STABLE_UPDATE", "OnEvent")
-	self:RegisterEvent("PET_STABLE_SHOW", "OnEvent")
-
-	if ENGINE_CATA then 
-		self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "OnEvent")
-		self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE", "OnEvent")
-	end
-
-	self:RegisterEvent("SPELL_UPDATE_CHARGES", "OnEvent")
-	self:RegisterEvent("UPDATE_SUMMONPETS_ACTION", "OnEvent")
-
-	-- With those two, do we still need the ACTIONBAR equivalents of them?
-	self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "OnEvent")
-	self:RegisterEvent("SPELL_UPDATE_USABLE", "OnEvent")
-	self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", "OnEvent")
-
 	self:RegisterEvent("LOSS_OF_CONTROL_ADDED", "OnEvent")
 	self:RegisterEvent("LOSS_OF_CONTROL_UPDATE", "OnEvent")
-	
-	self:RegisterEvent("PET_BAR_UPDATE", "OnEvent")
-	self:RegisterEvent("PET_BAR_SHOWGRID", "OnEvent")
+	self:RegisterEvent("MODIFIER_STATE_CHANGED", "OnEvent") -- to track modifier / grid display
 	self:RegisterEvent("PET_BAR_HIDEGRID", "OnEvent")
+	self:RegisterEvent("PET_BAR_SHOWGRID", "OnEvent")
+	self:RegisterEvent("PET_BAR_UPDATE", "OnEvent")
 	self:RegisterEvent("PET_BAR_UPDATE_USABLE", "OnEvent")
-	self:RegisterEvent("UNIT_PET", "OnEvent")
-	self:RegisterEvent("UNIT_AURA", "OnEvent")
-	self:RegisterEvent("UNIT_FLAGS", "OnEvent")
-	self:RegisterEvent("PLAYER_CONTROL_LOST", "OnEvent")
+	self:RegisterEvent("PET_STABLE_SHOW", "OnEvent")
+	self:RegisterEvent("PET_STABLE_UPDATE", "OnEvent")
 	self:RegisterEvent("PLAYER_CONTROL_GAINED", "OnEvent")
+	self:RegisterEvent("PLAYER_CONTROL_LOST", "OnEvent")
+	self:RegisterEvent("PLAYER_ENTER_COMBAT", "OnEvent")
+	self:RegisterEvent("PLAYER_LEAVE_COMBAT", "OnEvent")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
+	self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", "OnEvent")
 	self:RegisterEvent("PLAYER_FARSIGHT_FOCUS_CHANGED", "OnEvent")
+	self:RegisterEvent("PLAYER_TARGET_CHANGED", "OnEvent")
+	self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE", "OnEvent") -- Cata
+	self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "OnEvent") -- Cata
+	self:RegisterEvent("SPELL_UPDATE_CHARGES", "OnEvent")
+	self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "OnEvent")
+	self:RegisterEvent("SPELL_UPDATE_USABLE", "OnEvent")
+	self:RegisterEvent("START_AUTOREPEAT_SPELL", "OnEvent")
+	self:RegisterEvent("STOP_AUTOREPEAT_SPELL", "OnEvent")
+	self:RegisterEvent("TRADE_SKILL_CLOSE", "OnEvent")
+	self:RegisterEvent("TRADE_SKILL_SHOW", "OnEvent")
+	self:RegisterEvent("UNIT_ENTERED_VEHICLE", "OnEvent")
+	self:RegisterEvent("UNIT_EXITED_VEHICLE", "OnEvent")
+	self:RegisterEvent("UNIT_AURA", "OnEvent")
+	--self:RegisterEvent("UNIT_FLAGS", "OnEvent")
+	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "OnEvent")
+	self:RegisterEvent("UNIT_PET", "OnEvent")
+	self:RegisterEvent("UPDATE_BINDINGS", "OnEvent")
+	--self:RegisterEvent("UPDATE_BONUS_ACTIONBAR", "OnEvent")
+	self:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN", "OnEvent")
+	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "OnEvent")
+	self:RegisterEvent("UPDATE_SUMMONPETS_ACTION", "OnEvent")
+	self:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR", "OnEvent")
 
-	self:RegisterEvent("CVAR_UPDATE", "OnEvent") -- cast on up/down
-
-	-- since items can be dragged with all 3 modifiers, 
-	-- we want to show the grid when this happens too.
-	self:RegisterEvent("MODIFIER_STATE_CHANGED", "OnEvent")
-
-	-- for items, as we want the count and similar updated!
-	self:RegisterEvent("BAG_UPDATE", "OnEvent")
-	
-	hooksecurefunc("TakeTaxiNode", function() 
-		for button in next, ActionButtons do
-			button:UpdateUsable()
-		end
-	end) 
+	--hooksecurefunc("TakeTaxiNode", function() 
+	--	for button in next, ActionButtons do
+	--		button:UpdateUsable("taxi")
+	--	end
+	--end) 
 	
 end
 

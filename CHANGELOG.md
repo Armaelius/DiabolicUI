@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
 - Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
 
+## [1.2.50] 2017-07-19
+### Added 
+- Added a Lunar Power color for the orbs. We didn't have one. 
+
+### Changed
+- Reduced the action button range checker update frequency to 1/5 of a second, down from 1/20 of a second to gain some performance. 
+- Reduced the nameplate health update frequency from 1/120 to 1/60 of a second. 
+- Reduced the nameplate opacity update frequency from 1/120 to 1/30 of a second. 
+- Removed flight coloring from the actionbuttons, as this was unreliable anyway. This applies to taxis and normal flight. 
+- Made the angry red NPC color a lot angrier and more red, to stand out more from other mobs and from Death Knights.
+- Made the Death Knight color slightly more tilted towards blue to stand out more from angry mobs, even though most Death Knight in truth are fairly angry people too.
+- Made the Hunter color slightly brighter, to stand out more from NPCs. 
+- Made the friendly player color green, same as friendly NPCs which is easier to separate from hostile players than the blue which either would look like Mage blue or Shaman blue. Also chose to NOT use the same purple as the default Blizzard nameplates, as this just makes everybody look like Warlocks. 
+
 ## [1.2.49] 2017-07-18
 ### Added
 - Added the PlaySoundKitID() API call to WoW client versions prior to Cata, to keep the coding consist between client versions. 
