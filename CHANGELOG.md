@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
 - Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
 
+## [1.2.51] 2017-07-20
+### Changed
+- Reduced all nameplate update cycles to 1/30 of a second.
+
+### Fixed
+- Fixed a bug in the nameplate update cycle that could cause nameplates to instantly fade out instead of in.
+
 ## [1.2.50] 2017-07-19
 ### Added 
 - Added a Lunar Power color for the orbs. We didn't have one. 

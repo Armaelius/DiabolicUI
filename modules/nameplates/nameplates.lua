@@ -25,6 +25,7 @@ local unpack = unpack
 
 -- WoW API
 local C_NamePlate = _G.C_NamePlate 
+local C_NamePlate_GetNamePlateForUnit = C_NamePlate and C_NamePlate.GetNamePlateForUnit
 local CreateFrame = _G.CreateFrame
 local GetLocale = _G.GetLocale
 local GetRaidTargetIndex = _G.GetRaidTargetIndex
@@ -59,7 +60,7 @@ local WorldFrame = WorldFrame
 local RAID_CLASS_COLORS = RAID_CLASS_COLORS
 
 -- Plate Registries
-local AllPlates, VisiblePlates, FadingPlates = {}, {}, {}
+local AllPlates, VisiblePlates = {}, {}
 local GUID, UID = {}, {}
 
 -- WorldFrame child registry to rule out elements already checked faster
@@ -79,19 +80,13 @@ local SCALE = 768/1080
 -- All plates will be updated in the next frame cycle 
 local FORCEUPDATE = false
 
--- This will be true when plates are shown, hidden or moved, 
--- and their frame levels need to be updated. 
---local UPDATELEVELS = true
-
 -- Frame level constants and counters
 local FRAMELEVEL_TARGET = 126
 local FRAMELEVEL_CURRENT, FRAMELEVEL_MIN, FRAMELEVEL_MAX, FRAMELEVEL_STEP = 21, 21, 125, 2
 local FRAMELEVEL_TRIVAL_CURRENT, FRAMELEVEL_TRIVIAL_MIN, FRAMELEVEL_TRIVIAL_MAX, FRAMELEVEL_TRIVIAL_STEP = 1, 1, 20, 2
 
 -- Update and fading frequencies
-local SCAN_HZ = 1/120 -- max frequency world frame scanning
-local UPDATE_HZ = 1/30 -- max frequency health updates
-local FADE_HZ = 1/60 -- max frequency of frame fade updates
+local HZ = 1/30
 local FADE_IN = 3/4 -- time in seconds to fade in
 local FADE_OUT = 1/20 -- time in seconds to fade out
 
@@ -570,14 +565,6 @@ NamePlate_WotLK.UpdateFrameLevel = function(self)
 	end	
 end
 
-NamePlate_WotLK.IsTarget = function(self)
-	return self.info.isTarget
-end
-
-NamePlate_WotLK.IsTrivial = function(self)
-	return self.info.isTrivial
-end
-
 NamePlate_WotLK.OnShow = function(self)
 	local info = self.info
 	local baseFrame = self.baseFrame
@@ -631,9 +618,6 @@ NamePlate_WotLK.OnShow = function(self)
 	-- Force an update to catch alpha changes when our target moves back into sight
 	FORCEUPDATE = true 
 
-	-- Update the frame levels of the visible plates
-	--UPDATELEVELS = true
-
 	-- setup player classbars
 	-- setup auras
 	-- setup raid targets
@@ -671,9 +655,6 @@ NamePlate_WotLK.OnHide = function(self)
 
 	-- Force an update to catch alpha changes when our target moves out of sight
 	FORCEUPDATE = true 
-
-	-- Update the frame levels of the still visible plates
-	--UPDATELEVELS = true
 end
 
 
@@ -947,16 +928,6 @@ NamePlate_Legion.UpdateAll = function(self)
 	self:UpdateAuras()
 end
 
-NamePlate_Legion.IsTarget = function(self)
-	local unit = self.unit
-	return UnitExists(unit) and UnitIsUnit(unit, "target")
-end
-
-NamePlate_Legion.IsTrivial = function(self)
-	local unit = self.unit
-	return UnitExists(unit) and UnitIsTrivial(unit)
-end
-
 NamePlate_Legion.OnShow = function(self)
 	local unit = self.unit
 	if not UnitExists(unit) then
@@ -979,24 +950,17 @@ NamePlate_Legion.OnShow = function(self)
 	self.visiblePlates[self] = self.baseFrame -- this will trigger the fadein 
 
 	self:UpdateFrameLevel() -- must be called after the plate has been added to VisiblePlates
-
-	-- Update the frame levels of all the visible plates
-	UPDATELEVELS = true	
 end
 
 NamePlate_Legion.OnHide = function(self)
 	self.visiblePlates[self] = false -- this will trigger the fadeout and hiding
-
-	-- Update the frame levels of the remaining visible plates
-	UPDATELEVELS = true	
 end
 
 NamePlate_Legion.HandleBaseFrame = function(self, baseFrame)
 	local unitframe = baseFrame.UnitFrame
 	if unitframe then
 		unitframe:Hide()
-		unitframe:HookScript("OnShow", function(self) self:Hide() end) -- avoid replacing methods
-		--unitframe.Show = unitframe.Hide -- only the parent should be secure, still, this is risky
+		unitframe:HookScript("OnShow", function(unitframe) unitframe:Hide() end) 
 	end
 	self.baseFrame = baseFrame
 end
@@ -1004,8 +968,6 @@ end
 NamePlate_Legion.HookScripts = function(self, baseFrame)
 	baseFrame:HookScript("OnHide", function(baseFrame) self:OnHide() end)
 end
-
-
 
 -- WoD Plates
 ----------------------------------------------------------
@@ -1113,8 +1075,6 @@ NamePlate_WoD.HandleBaseFrame = function(self, baseFrame)
 	return old
 end
 
-
-
 -- MoP Plates
 ----------------------------------------------------------
 NamePlate_MoP.HandleBaseFrame = function(self, baseFrame)
@@ -1180,8 +1140,6 @@ NamePlate_MoP.HandleBaseFrame = function(self, baseFrame)
 	return old
 end
 
-
-
 -- Cata Plates
 ----------------------------------------------------------
 NamePlate_Cata.HandleBaseFrame = function(self, baseFrame)
@@ -1235,8 +1193,6 @@ NamePlate_Cata.HandleBaseFrame = function(self, baseFrame)
 
 	return old
 end
-
-
 
 -- General Plates
 ----------------------------------------------------------
@@ -1520,75 +1476,7 @@ end
 -- NamePlate Handling
 ----------------------------------------------------------
 
--- This is called when Legion plates are shown
-Module.OnNamePlateAdded = function(self, unit)
-	local plate = self:GetNamePlateForUnit(unit)
-	if plate then
-		plate.unit = unit
-		plate:OnShow(unit)
-	end
-end
-
--- This is called when Legion plates are hidden
-Module.OnNamePlateRemoved = function(self, unit)
-	local plate = self:GetNamePlateForUnit(unit)
-	if plate then
-		plate.unit = nil
-		plate:OnHide()
-	end
-end
-
--- Called when the player target has changed (Legion)
-Module.OnTargetChanged = function(self)
-	--self:OnUnitAuraUpdate("target")
-	self:ForAllPlates("UpdateAlpha")
-	self:ForAllPlates("UpdateFrameLevel")
-	self:ForAllPlates("UpdateHealth")
-
-end
-
 Module.UpdateNamePlateOptions = function(self)
-end
-
-Module.OnUnitAuraUpdate = function(self, unit)
-	local plate = self:GetNamePlateForUnit(unit)
-end
-
-Module.OnRaidTargetUpdate = function(self)
-	for baseFrame, plate in self:GetNamePlates() do
-	end
-end
-
-Module.OnUnitFactionChanged = function(self, unit)
-	local plate = self:GetNamePlateForUnit(unit)
-	if plate then
-		plate:UpdateFaction()
-	end
-end
-
--- Return a nameplate object based on its unit (Legion)
-Module.GetNamePlateForUnit = function(self, unit)
-	local baseFrame = C_NamePlate.GetNamePlateForUnit(unit)
-	if baseFrame then
-		return self.allPlates[baseFrame]
-	end
-end 
-	
-Module.GetNamePlates = function(self)
-	return pairs(self.allPlates)
-end
-
--- Target updates (WotLK - WoD)
-Module.UpdateWotLKTarget = function(self)
-	local name, realm = UnitName("target")
-	if name and realm then
-		TARGET = name..realm
-	elseif name then
-		TARGET = name
-	else
-		TARGET = false
-	end
-	FORCEUPDATE = "TARGET" -- initiate alpha changes
 end
 
 Module.UpdateCombat = function(self)
@@ -1623,16 +1511,15 @@ Module.UpdateAllScales = function(self)
 	self:ForAllPlates("SetScale", SCALE)
 end
 
--- Couldn't we just schedule a FORCEUPDATE...?
 Module.UpdateAllPlates = function(self)
-	for baseFrame, plate in self:GetNamePlates() do
+	for baseFrame, plate in pairs(self.allPlates) do
 		plate:UpdateAll()
 	end	
 end
 
 -- Apply a nameplate method or separate function to all NamePlates 
 Module.ForAllPlates = function(self, methodOrFunction, ...)
-	for baseFrame, plate in self:GetNamePlates() do
+	for baseFrame, plate in pairs(self.allPlates) do
 		if type(methodOrFunction) == "string" then
 			plate[methodOrFunction](plate, ...)
 		else
@@ -1646,38 +1533,67 @@ end
 ----------------------------------------------------------
 local hasSetBlizzardSettings
 Module.OnEvent = ENGINE_LEGION and function(self, event, ...)
-	if event == "NAME_PLATE_CREATED" then
-		local namePlateFrameBase = ...
-		self:CreateNamePlate(namePlateFrameBase)
-	elseif event == "NAME_PLATE_UNIT_ADDED" then
-		local namePlateUnitToken = ...
-		self:OnNamePlateAdded(namePlateUnitToken)
-	elseif event == "NAME_PLATE_UNIT_REMOVED" then
-		local namePlateUnitToken = ...
-		self:OnNamePlateRemoved(namePlateUnitToken)
-	elseif event == "PLAYER_TARGET_CHANGED" then
-		self:OnTargetChanged()
-	elseif event == "DISPLAY_SIZE_CHANGED" then
-		self:UpdateNamePlateOptions()
-		self:UpdateAllScales()
-	elseif event == "UNIT_AURA" then
-		self:OnUnitAuraUpdate(...)
-	--elseif event == "VARIABLES_LOADED" then
+
+	-- This is called when new Legion plates are spawned
+	if (event == "NAME_PLATE_CREATED") then
+		self:CreateNamePlate((...)) -- local namePlateFrameBase = ...
+
+	-- This is called when Legion plates are shown
+	elseif (event == "NAME_PLATE_UNIT_ADDED") then
+		local unit = ...
+		local baseFrame = C_NamePlate_GetNamePlateForUnit(unit)
+		local plate = baseFrame and self.allPlates[baseFrame] 
+		if plate then
+			plate.unit = unit
+			plate:OnShow(unit)
+		end
+
+	-- This is called when Legion plates are hidden
+	elseif (event == "NAME_PLATE_UNIT_REMOVED") then
+		local unit = ...
+		local baseFrame = C_NamePlate_GetNamePlateForUnit(unit)
+		local plate = baseFrame and self.allPlates[baseFrame] 
+		if plate then
+			plate.unit = nil
+			plate:OnHide()
+		end
+
+	elseif (event == "PLAYER_TARGET_CHANGED") then
+		for baseFrame, plate in pairs(self.allPlates) do
+			plate:UpdateAlpha()
+			plate:UpdateFrameLevel()
+		end	
+		
+	elseif (event == "UNIT_AURA") then
+		
+	--elseif (event == "VARIABLES_LOADED") then
 	--	self:UpdateNamePlateOptions()
+	
 	--elseif event == "CVAR_UPDATE" then
 	--	local name = ...
 	--	if name == "SHOW_CLASS_COLOR_IN_V_KEY" or name == "SHOW_NAMEPLATE_LOSE_AGGRO_FLASH" then
 	--		self:UpdateNamePlateOptions()
 	--	end
-	elseif event == "RAID_TARGET_UPDATE" then
-		self:OnRaidTargetUpdate()
-	elseif event == "UNIT_FACTION" then
-		self:OnUnitFactionChanged(...)
-	elseif event == "UNIT_THREAT_SITUATION_UPDATE" then
-		self:ForAllPlates("UpdateThreat")
-	elseif event == "UI_SCALE_CHANGED" then
-		self:UpdateAllScales()
-	elseif event == "PLAYER_ENTERING_WORLD" then
+
+	elseif (event == "UNIT_FACTION") then
+		local unit = ...
+		local baseFrame = C_NamePlate_GetNamePlateForUnit(unit)
+		local plate = baseFrame and self.allPlates[baseFrame] 
+		if plate then
+			plate:UpdateFaction()
+		end
+
+	elseif (event == "UNIT_THREAT_SITUATION_UPDATE") then
+		for baseFrame, plate in pairs(self.allPlates) do
+			plate:UpdateThreat()
+		end	
+
+
+	elseif (event == "RAID_TARGET_UPDATE") then
+		for baseFrame, plate in pairs(self.allPlates) do
+		end
+
+	elseif (event == "PLAYER_ENTERING_WORLD") then
 		if (not hasSetBlizzardSettings) then
 			if _G.C_NamePlate then
 				self:UpdateBlizzardSettings()
@@ -1688,14 +1604,21 @@ Module.OnEvent = ENGINE_LEGION and function(self, event, ...)
 		end
 		self:UpdateAllScales()
 		self.Updater:SetScript("OnUpdate", function(_, ...) self:OnUpdate(...) end)
-	elseif event == "PLAYER_LEAVING_WORLD" then
-		self.Updater:SetScript("OnUpdate", nil)
+
+	elseif (event == "DISPLAY_SIZE_CHANGED") then
+		self:UpdateNamePlateOptions()
+		self:UpdateAllScales()
+
+	elseif (event == "UI_SCALE_CHANGED") then
+		self:UpdateAllScales()
+
 	elseif event == "ADDON_LOADED" then
 		local addon = ...
 		if addon == "Blizzard_NamePlates" then
 			self:UpdateBlizzardSettings()
 			self:UnregisterEvent("ADDON_LOADED")
 		end
+
 	end
 end
 
@@ -1707,14 +1630,27 @@ or ENGINE_WOTLK and function(self, event, ...)
 		end
 		self:UpdateAllScales()
 		self.Updater:SetScript("OnUpdate", function(_, ...) self:OnUpdate(...) end)
-	elseif event == "PLAYER_LEAVING_WORLD" then
-		self.Updater:SetScript("OnUpdate", nil)
+
 	elseif event == "PLAYER_CONTROL_GAINED" then
 		self:UpdateAllPlates()
+
 	elseif event == "PLAYER_CONTROL_LOST" then
 		self:UpdateAllPlates()
+
 	elseif event == "PLAYER_TARGET_CHANGED" then
-		self:UpdateWotLKTarget()
+		local oldTarget = TARGET
+		local name, realm = UnitName("target")
+		if name and realm then
+			TARGET = name..realm
+		elseif name then
+			TARGET = name
+		else
+			TARGET = false
+		end
+		if (oldTarget ~= TARGET) then
+			FORCEUPDATE = "TARGET" -- initiate alpha changes
+		end
+
 	elseif (event == "PLAYER_REGEN_ENABLED") or (event == "PLAYER_REGEN_DISABLED") then
 		self:UpdateCombat()
 	--elseif event == "RAID_TARGET_UPDATE" then
@@ -1741,150 +1677,125 @@ end
 
 Module.OnUpdate = ENGINE_LEGION and function(self, elapsed)
 	self.elapsed = (self.elapsed or 0) + elapsed
-	self.elapsedFading = (self.elapsedFading or 0) + elapsed
-
-	-- Upddate health values and target alpha
-	if (self.elapsed > UPDATE_HZ) then
-		for plate, baseFrame in pairs(self.visiblePlates) do
-			if baseFrame then
-				plate:UpdateAlpha()
-				--plate:UpdateFrameLevel()
-				plate:UpdateHealth()
-			end
-		end
-		FORCEUPDATE = false
-		self.elapsed = 0
+	if self.elapsed < HZ then
+		return
 	end
 
-	if (self.elapsedFading > FADE_HZ) then
-		for plate, baseFrame in pairs(self.visiblePlates) do
-			if (not baseFrame) then
-				plate.targetAlpha = 0
+	for plate, baseFrame in pairs(self.visiblePlates) do
+		if baseFrame then
+			plate:UpdateAlpha()
+			plate:UpdateHealth()
+		else
+			plate.targetAlpha = 0
+		end
+
+		if plate.currentAlpha ~= plate.targetAlpha then
+
+			local difference
+			if plate.targetAlpha > plate.currentAlpha then
+				difference = plate.targetAlpha - plate.currentAlpha
+			else
+				difference = plate.currentAlpha - plate.targetAlpha
 			end
 
-			if plate.currentAlpha ~= plate.targetAlpha then
-				local difference
-				if plate.targetAlpha > plate.currentAlpha then
-					difference = plate.targetAlpha - plate.currentAlpha
-				else
-					difference = plate.currentAlpha - plate.targetAlpha
-				end
-			
-				local step_in = elapsed/(FADE_IN * difference)
-				local step_out = elapsed/(FADE_OUT * difference)
+			local step_in = elapsed/(FADE_IN * difference)
+			local step_out = elapsed/(FADE_OUT * difference)
 
-				FadingPlates[plate] = true
-
-				if plate.targetAlpha > plate.currentAlpha then
-					if plate.targetAlpha > plate.currentAlpha + step_in then
-						plate.currentAlpha = plate.currentAlpha + step_in -- fade in
-					else
-						plate.currentAlpha = plate.targetAlpha -- fading done
-						FadingPlates[plate] = false
-					end
-				elseif plate.targetAlpha < plate.currentAlpha then
-					if plate.targetAlpha < plate.currentAlpha - step_out then
-						plate.currentAlpha = plate.currentAlpha - step_out -- fade out
-					else
-						plate.currentAlpha = plate.targetAlpha -- fading done
-						FadingPlates[plate] = false
-					end
+			if plate.targetAlpha > plate.currentAlpha then
+				if plate.targetAlpha > plate.currentAlpha + step_in then
+					plate.currentAlpha = plate.currentAlpha + step_in -- fade in
 				else
 					plate.currentAlpha = plate.targetAlpha -- fading done
-					FadingPlates[plate] = false
 				end
-				plate:SetAlpha(plate.currentAlpha)
+			elseif plate.targetAlpha < plate.currentAlpha then
+				if plate.targetAlpha < plate.currentAlpha - step_out then
+					plate.currentAlpha = plate.currentAlpha - step_out -- fade out
+				else
+					plate.currentAlpha = plate.targetAlpha -- fading done
+				end
 			else
-				FadingPlates[plate] = false
+				plate.currentAlpha = plate.targetAlpha -- fading done
 			end
+			plate:SetAlpha(plate.currentAlpha)
+		end
 
-			if (plate.currentAlpha == 0) and (plate.targetAlpha == 0) then
-				plate.visiblePlates[plate] = nil
-				plate:Hide()
-			end
-		end	
-		self.elapsedFading = 0
-	end
+		if (plate.currentAlpha == 0) and (plate.targetAlpha == 0) then
+			plate.visiblePlates[plate] = nil
+			plate:Hide()
+		end
+	end	
+	self.elapsed = 0
 
 end or function(self, elapsed)
-
-	self.elapsedScanning = (self.elapsedScanning or 0) + elapsed
 	self.elapsed = (self.elapsed or 0) + elapsed
-	self.elapsedFading = (self.elapsedFading or 0) + elapsed
-
-	-- Scan the WorldFrame for possible NamePlates
-	if (self.elapsedScanning > SCAN_HZ) then
-
-		-- If the number of children in the WorldFrame 
-		--  is different from the number we have stored, 
-		-- we parse the children to check for new NamePlates.
-		local numChildren = select("#", self.worldFrame:GetChildren())
-		if WORLDFRAME_CHILDREN ~= numChildren then
-			-- Localizing even more to reduce the load when entering large scale raids
-			local select = select
-			local allPlates = self.allPlates
-			local allChildren = self.allChildren
-			local worldFrame = self.worldFrame
-			local isNamePlate = self.IsNamePlate 
-			local createNamePlate = self.CreateNamePlate
-
-			for i = 1, numChildren do
-				local object = select(i, worldFrame:GetChildren())
-				if not(allChildren[object]) then 
-					local isPlate = isNamePlate(_, object)
-					if isPlate and not(allPlates[object]) then
-						-- Update our NamePlate counter
-						WORLDFRAME_PLATES = WORLDFRAME_PLATES + 1
-
-						-- Create and show the nameplate
-						-- The constructor function returns the plate, 
-						-- so we can chain the OnShow method in the same call.
-						createNamePlate(self, object, "NamePlate"..WORLDFRAME_PLATES):OnShow()
-					elseif not isPlate then
-						allChildren[object] = true
-					end
-				end
-			end
-
-			-- Update our WorldFrame subframe counter to the current number of frames
-			WORLDFRAME_CHILDREN = numChildren
-
-			-- Debugging the performance drops in AV and Wintergrasp
-			-- by printing out number of new plates and comparing it to when the spikes occur.
-			-- *verified that nameplate creation is NOT a reason for the spikes. 
-			--if WORLDFRAME_PLATES ~= oldNumPlates then
-			--	print(("Total plates: %d - New this cycle: %d"):format(WORLDFRAME_PLATES, WORLDFRAME_PLATES - oldNumPlates))
-			--end
-		end
-		self.elapsedScanning = 0
+	if self.elapsed < HZ then
+		return
 	end
 
-	if (self.elapsed > UPDATE_HZ) then
-		-- Update visibility, health values and target alpha
-		for plate, baseFrame in pairs(self.visiblePlates) do
-			if baseFrame then
-				local force = FORCEUPDATE or plate.FORCEUPDATE
-				if force then
-					if (force == "TARGET") then
-						plate:UpdateTargetData()
-						plate:UpdateAlpha()
-						plate:UpdateFrameLevel()
-					else
-						plate:UpdateAll()
-					end
-					plate.FORCEUPDATE = false
-				else
+	-- If the number of children in the WorldFrame 
+	--  is different from the number we have stored, 
+	-- we parse the children to check for new NamePlates.
+	local numChildren = select("#", self.worldFrame:GetChildren())
+	if WORLDFRAME_CHILDREN ~= numChildren then
+		-- Localizing even more to reduce the load when entering large scale raids
+		local select = select
+		local allPlates = self.allPlates
+		local allChildren = self.allChildren
+		local worldFrame = self.worldFrame
+		local isNamePlate = self.IsNamePlate 
+		local createNamePlate = self.CreateNamePlate
+
+		for i = 1, numChildren do
+			local object = select(i, worldFrame:GetChildren())
+			if not(allChildren[object]) then 
+				local isPlate = isNamePlate(_, object)
+				if isPlate and not(allPlates[object]) then
+					-- Update our NamePlate counter
+					WORLDFRAME_PLATES = WORLDFRAME_PLATES + 1
+
+					-- Create and show the nameplate
+					-- The constructor function returns the plate, 
+					-- so we can chain the OnShow method in the same call.
+					createNamePlate(self, object, "NamePlate"..WORLDFRAME_PLATES):OnShow()
+				elseif not isPlate then
+					allChildren[object] = true
+				end
+			end
+		end
+
+		-- Update our WorldFrame subframe counter to the current number of frames
+		WORLDFRAME_CHILDREN = numChildren
+
+		-- Debugging the performance drops in AV and Wintergrasp
+		-- by printing out number of new plates and comparing it to when the spikes occur.
+		-- *verified that nameplate creation is NOT a reason for the spikes. 
+		--if WORLDFRAME_PLATES ~= oldNumPlates then
+		--	print(("Total plates: %d - New this cycle: %d"):format(WORLDFRAME_PLATES, WORLDFRAME_PLATES - oldNumPlates))
+		--end
+	end
+
+	-- Update visibility, health values and target alpha
+	for plate, baseFrame in pairs(self.visiblePlates) do
+		if baseFrame then
+			local force = FORCEUPDATE or plate.FORCEUPDATE
+			if force then
+				if (force == "TARGET") then
 					plate:UpdateTargetData()
 					plate:UpdateAlpha()
-					plate:UpdateHealth()
+					plate:UpdateFrameLevel()
+				else
+					plate:UpdateAll()
 				end
+				plate.FORCEUPDATE = false
+			else
+				plate:UpdateTargetData()
+				plate:UpdateAlpha()
+				plate:UpdateHealth()
 			end
+		else
+			plate.targetAlpha = 0
 		end
-		FORCEUPDATE = false
-		self.elapsed = 0
-	end
 
-	if (self.elapsedFading > FADE_HZ) then
 		for plate, baseFrame in pairs(self.visiblePlates) do
 			if not baseFrame then
 				plate.targetAlpha = 0
@@ -1901,29 +1812,22 @@ end or function(self, elapsed)
 				local step_in = elapsed/(FADE_IN * difference)
 				local step_out = elapsed/(FADE_OUT * difference)
 
-				FadingPlates[plate] = true
-
 				if plate.targetAlpha > plate.currentAlpha then
 					if plate.targetAlpha > plate.currentAlpha + step_in then
 						plate.currentAlpha = plate.currentAlpha + step_in -- fade in
 					else
 						plate.currentAlpha = plate.targetAlpha -- fading done
-						FadingPlates[plate] = false
 					end
 				elseif plate.targetAlpha < plate.currentAlpha then
 					if plate.targetAlpha < plate.currentAlpha - step_out then
 						plate.currentAlpha = plate.currentAlpha - step_out -- fade out
 					else
 						plate.currentAlpha = plate.targetAlpha -- fading done
-						FadingPlates[plate] = false
 					end
 				else
 					plate.currentAlpha = plate.targetAlpha -- fading done
-					FadingPlates[plate] = false
 				end
 				plate:SetAlpha(plate.currentAlpha)
-			else
-				FadingPlates[plate] = false
 			end
 
 			if (plate.currentAlpha == 0) and (plate.targetAlpha == 0) then
@@ -1931,9 +1835,10 @@ end or function(self, elapsed)
 				plate:Hide()
 			end
 		end	
-		self.elapsedFading = 0
 	end
+	FORCEUPDATE = false
 
+	self.elapsed = 0
 end
 
 
@@ -2118,7 +2023,6 @@ Module.OnEnable = function(self)
 		--self:RegisterEvent("UNIT_AURA", "OnEvent")
 		--self:RegisterEvent("CVAR_UPDATE", "OnEvent")
 		--self:RegisterEvent("VARIABLES_LOADED", "OnEvent")
-		--self:RegisterEvent("PLAYER_LEAVING_WORLD", "OnEvent")
 		
 	elseif ENGINE_WOTLK then
 		self:UpdateBlizzardSettings()
@@ -2138,7 +2042,6 @@ Module.OnEnable = function(self)
 		self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
 	
 		-- NamePlate Update Cycles
-		self:RegisterEvent("PLAYER_LEAVING_WORLD", "OnEvent")
 		self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
 
 		-- Scale Changes
