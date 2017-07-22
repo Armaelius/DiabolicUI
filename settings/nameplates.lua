@@ -11,28 +11,38 @@ Engine:NewStaticConfig("NamePlates", {
 			size = { 64 + 8, 8 },
 			place = { "TOPLEFT", 0, 0 },
 			value = {
-				fontObject = DiabolicUnitFrameNumberSmall
+				fontObject = DiabolicFont_SansBold10
 			}
 		},
 		cast = {
-			size = { 64 - 8, 8 },
-			place = { "TOPLEFT", 0, -(8 + 4) }
+			size = { 64 + 8, 8 },
+			place = { "TOPLEFT", 0, -(8 + 4) },
+			color = { .5, .5, 1 }, 
+			--color = { .4, .4, .9 }, -- too dark(?)
+			icon = {
+
+			}
 		},
 		auras = {
-			place = { "TOP", 0, 4 + 12 + 4 + 28 }, -- above the name
+			place = { "BOTTOM", 0, -(4 + 28) }, -- below the frame
+			--place = { "TOP", 0, 4 + 12 + 4 + 28 }, -- above the name
 			rowsize = math_ceil((64 + 8 + 4)/(28 + 2)), -- maximum number of auras per row
 			padding = 2, -- space between auras
 			button = {
 				size = { 28, 28 },
-				anchor = "BOTTOMLEFT", 
+				--anchor = "BOTTOMLEFT", 
+				anchor = "TOPLEFT", 
+				growthY = -1,
+				growthX = 1,
 				icon = {
 					size = { 22, 22 }, -- should be main size - 6
 					texCoord = { 5/64, 59/64, 5/64, 59/64 },
-					place = { "TOPLEFT", 2, -2 } -- relative to the scaffold, which is 1px inset into the button
+					place = { "TOPLEFT", 2, -2 }, -- relative to the scaffold, which is 1px inset into the button
+					shade = path .. [[textures\DiabolicUI_Shade_64x64.tga]]
 				},
 				time = {
 					place = { "TOPLEFT", 1, -1 }, 
-					fontObject = GameFontNormalSmall,
+					fontObject = DiabolicFont_SansBold10,
 					fontStyle = "THINOUTLINE",
 					fontSize = 9,
 					shadowOffset = { 1.25, -1.25 },
@@ -40,7 +50,7 @@ Engine:NewStaticConfig("NamePlates", {
 				},
 				count = {
 					place = { "BOTTOMRIGHT", -1, 1 }, 
-					fontObject = GameFontNormalSmall,
+					fontObject = DiabolicFont_SansBold12,
 					fontStyle = "THINOUTLINE",
 					fontSize = 9,
 					shadowOffset = { 1.25, -1.25 },
@@ -80,16 +90,6 @@ Engine:NewStaticConfig("NamePlates", {
 			size = { 64 + 8, 8 },
 			position = { "TOPLEFT", 0, 0 },
 			path = path .. [[statusbars\DiabolicUI_StatusBar_64x8_Threat_Warcraft.tga]]
-		},
-		cast_border = {
-			size = {},
-			position = {},
-			path = path .. [[statusbars\]]
-		},
-		cast_shield = {
-			size = {},
-			position = {},
-			path = path .. [[statusbars\]]
 		}
 	}
 })

@@ -234,6 +234,9 @@ local buffFilter = function(self, name, rank, icon, count, debuffType, duration,
 	elseif (unitCaster == "vehicle") then
 		return true
 
+	elseif (unitCaster == unit) and duration and (duration > 0) and (duration < TIME_LIMIT) then
+		return true
+
 	elseif (not unitCaster) and (not IsInInstance()) then
 		-- EXPERIMENTAL: ignore debuffs from players outside the group, eg. world bosses
 		return

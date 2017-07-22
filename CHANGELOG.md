@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
 - Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
 
+## [1.2.52] 2017-07-22
+### Added
+- Added castbars to Legion nameplates. Protected casts are glowing, regular ones are not. 
+- Added auras to Legion nameplates. Differs slightly from the Blizzard plate auras, as we amongst other things are showing HoTs and shields also. Will expand on the filtering later.
+
+### Changed
+- Enemy NPC nameplates in Legion (unless tap denied) should now get their entire health bar colored in a color reflecting your current threat situation with them. In other words, yellow mobs will turn red when you attack them solo.
+- Elevated the framelevel of Legion rare- and boss nameplates to right below that of the target nameplate, in order to make them easier to see while standing in a swarm of other players trying to tag the same rare elite before it's dead. This change doesn't affect the actual clickable framelevel of the actual secure unitframe, it only affects the visual part. The intention is to make it an easier task to see where the rare actually is, and not waste time looking instead of clicking.
+- Optimized the Legion nameplate code more.
+
 ## [1.2.51] 2017-07-20
 ### Changed
 - Reduced all nameplate update cycles to 1/30 of a second.

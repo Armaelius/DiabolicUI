@@ -6,8 +6,20 @@ local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
 -- that several modules in the UI need access to, 
 -- without having to rely on any of those modules 
 -- to provide those values.
-
+--
+-- TODO: Add most blizzard constants into this, and our own proxy versions in the modules. 
+-- 		 This will work as an extra compatibility and control layer. 
+-- 
 Engine:NewStaticConfig("Data: Constants", {
+	-- Defined in FrameXML\BuffFrame.lua
+	BUFF_MAX_DISPLAY = BUFF_MAX_DISPLAY or 32, 
+	DEBUFF_MAX_DISPLAY = DEBUFF_MAX_DISPLAY or 16,
+
+	-- Time in seconds, used for aura modules.
+	DAY = 86400, 
+	HOUR = 3600, 
+	MINUTE = 60,
+
 	-- Maps
 	MINIMAP_SIZE = 290, -- size of the big Minimap
 
