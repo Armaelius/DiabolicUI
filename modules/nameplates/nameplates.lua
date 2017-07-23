@@ -7,6 +7,7 @@ local UICenter = Engine:GetFrame()
 
 -- Register incompatibilities
 Module:SetIncompatible("TidyPlates")
+Module:SetIncompatible("Kui_Nameplates")
 
 -- Lua API
 local _G = _G
