@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The pet frame have been changed into a small orb, located close to the player health orb.
 - The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
 
+## [1.2.54] 2017-07-23
+## Changed
+- The nameplate module will now disable itself if the addon Kui_Nameplates is enabled. 
+
+### Removed
+- Removed all Blizzard alert frames. They were excessive, unnecessary, and in the way. 
+
 ## [1.2.53] 2017-07-23
 ### Fixed
 - Worked around the Blizzard bug causing /framestack to bug out with frames that are numbered indices of their parents by removing all such frame references from the UI. Previously the unitframe and nameplate aura modules used this, but both are now using hashed keys instead. This fix of course only applies to this UI, and there is no way to prevent other addons from causing the same /framestack bug.  

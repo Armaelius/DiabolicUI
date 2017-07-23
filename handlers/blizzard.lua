@@ -504,6 +504,10 @@ local elements = {
 			self:DisableAlerts()
 		end,
 		DisableAlerts = function(self)
+			if AlertFrame then
+				AlertFrame:UnregisterAllEvents()
+				AlertFrame:SetParent(UIHider)
+			end
 		end
 	},
 	CaptureBars = {
