@@ -330,15 +330,6 @@ local NamePlate_Current_MT = ENGINE_LEGION and NamePlate_Legion_MT
 
 
 
--- Thanks to Blazeflack and Azilroka over at 
--- the TukUI forums for figuring this one out. 
--- http://www.tukui.org/forums/topic.php?id=34384
-local FixFrameStack = function(header, index)
-	-- /framestack fails when frames that are created as indices of a table are visible,
-	-- so in order for it to work we need to have hashed names for all of them. Blizzard bug. 
-	header[tostring(index)] = header[index]
-end
-
 ------------------------------------------------------------------------------
 -- 	NamePlate Aura Button Template
 ------------------------------------------------------------------------------
@@ -1171,7 +1162,8 @@ NamePlate_Legion.AddAuraButton = function(self, id)
 	local gap = config.padding
 	local width, height = unpack(auraConfig.size)
 
-	local aura = setmetatable(self.Auras:CreateFrame("Frame"), Aura_MT)
+	local auras = self.Auras
+	local aura = setmetatable(auras:CreateFrame("Frame"), Aura_MT)
 	aura:SetID(id)
 	aura:SetSize(width, height)
 	aura:ClearAllPoints()
@@ -1226,7 +1218,7 @@ end
 NamePlate_Legion.UpdateAuras = function(self)
 	local unit = self.unit
 	local auras = self.Auras
-	if (not UnitExists(unit)) then
+	if (not UnitExists(unit)) or (UnitIsUnit(unit ,"player")) then
 		auras:Hide()
 		return
 	end
@@ -1266,27 +1258,29 @@ NamePlate_Legion.UpdateAuras = function(self)
 
 			if name then
 				visible = visible + 1
+				local visibleKey = tostring(visible)
 
-				if (not auras[visible]) then
-					auras[visible] = self:AddAuraButton(visible)
-					FixFrameStack(auras, visible)
+				if (not auras[visibleKey]) then
+					auras[visibleKey] = self:AddAuraButton(visible)
 				end
+
+				local button = auras[visibleKey]
 			
 				if (duration and (duration > 0)) then
-					auras[visible].Time:Show()
+					button.Time:Show()
 				else
-					auras[visible].Time:Hide()
+					button.Time:Hide()
 				end
 				
-				auras[visible].first = true
-				auras[visible].duration = duration
-				auras[visible].timeLeft = expirationTime
-				auras[visible]:SetScript("OnUpdate", auras[visible].CreateTimer)
+				button.first = true
+				button.duration = duration
+				button.timeLeft = expirationTime
+				button:SetScript("OnUpdate", Aura.CreateTimer)
 
 				if (count > 1) then
-					auras[visible].Count:SetText(count)
+					button.Count:SetText(count)
 				else
-					auras[visible].Count:SetText("")
+					button.Count:SetText("")
 				end
 
 				if filter:find("HARMFUL") then
@@ -1294,15 +1288,15 @@ NamePlate_Legion.UpdateAuras = function(self)
 					if not(color and color.r and color.g and color.b) then
 						color = { r = 0.7, g = 0, b = 0 }
 					end
-					auras[visible].Scaffold:SetBackdropBorderColor(color.r, color.g, color.b)
+					button.Scaffold:SetBackdropBorderColor(color.r, color.g, color.b)
 				else
-					auras[visible].Scaffold:SetBackdropBorderColor(.15, .15, .15)
+					button.Scaffold:SetBackdropBorderColor(.15, .15, .15)
 				end
 
-				auras[visible].Icon:SetTexture(icon)
+				button.Icon:SetTexture(icon)
 				
-				if (not auras[visible]:IsShown()) then
-					auras[visible]:Show()
+				if (not button:IsShown()) then
+					button:Show()
 				end
 			end
 		end
@@ -1313,17 +1307,20 @@ NamePlate_Legion.UpdateAuras = function(self)
 			auras:Hide()
 		end
 	else
-		for i = visible + 1, #auras do
-			auras[i]:Hide()
-			auras[i].Time:Hide()
-			auras[i]:SetScript("OnUpdate", nil)
-		end 
-
+		local nextAura = visible + 1
+		local visibleKey = tostring(nextAura)
+		while (auras[visibleKey]) do
+			auras[visibleKey]:Hide()
+			auras[visibleKey].Time:Hide()
+			auras[visibleKey]:SetScript("OnUpdate", nil)
+			nextAura = nextAura + 1
+			visibleKey = tostring(nextAura)
+		end
 		if (not auras:IsShown()) then
 			auras:Show()
 		end
 	end
-
+			
 end
 
 NamePlate_Legion.UpdateRaidTarget = function(self)

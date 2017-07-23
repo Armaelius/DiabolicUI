@@ -515,10 +515,6 @@ local CreateAuraButton = function(self)
 end
 
 
-local Sort = function(self)
-
-end
-
 local SetPosition = function(self, visible)
 	-- arranges auras based on available space and visible auras
 	local width, height = self:GetSize()
@@ -526,23 +522,24 @@ local SetPosition = function(self, visible)
 	local spacingH = self.spacingH
 	local spacingV = self.spacingV
 	local cols, rows = math_floor((width + spacingH) / (auraWidth + spacingH)), math_floor((height + spacingV) / (auraHeight + spacingV))
-	local visibleAuras = math_min(cols * rows, visible)
+	local visibleButtons = math_min(cols * rows, visible)
 	local growthX = self.growthX
 	local growthY = self.growthY
 
-	for i = 1, visibleAuras do
-		if i == 1 then
+	local previous
+	for i = 1, visibleButtons do
+		if (i == 1) then
 			local point = ((growthY == "UP") and "BOTTOM" or (growthY == "DOWN") and "TOP") .. ((growthX == "RIGHT") and "LEFT" or (growthX == "LEFT") and "RIGHT")
-			self[i]:Place(point, self, point, 0, 0)
-		elseif (i - 1)%cols == 0 then
+			self[tostring(i)]:Place(point, self, point, 0, 0)
+		elseif ((i - 1)%cols == 0) then
 			local point = ((growthY == "UP") and "BOTTOM" or (growthY == "DOWN") and "TOP") .. ((growthX == "RIGHT") and "LEFT" or (growthX == "LEFT") and "RIGHT")
-			self[i]:Place(point, self, point, 0, (math_floor((i-1) / cols) * (auraHeight + spacingV))*(growthY == "DOWN" and -1 or 1))
+			self[tostring(i)]:Place(point, self, point, 0, (math_floor((i-1) / cols) * (auraHeight + spacingV))*(growthY == "DOWN" and -1 or 1))
 		else
-			self[i]:Place(((growthX == "RIGHT") and "LEFT" or (growthX == "LEFT") and "RIGHT"), self[i-1], growthX, (growthX == "RIGHT") and spacingH or -spacingH, 0)
+			self[tostring(i)]:Place(((growthX == "RIGHT") and "LEFT" or (growthX == "LEFT") and "RIGHT"), self[tostring(i-1)], growthX, (growthX == "RIGHT") and spacingH or -spacingH, 0)
 		end
 	end
 
-	return visibleAuras
+	return visibleButtons
 end
 
 local UpdateTooltip = function(self, event, ...)
@@ -553,13 +550,14 @@ local UpdateTooltip = function(self, event, ...)
 	end
 end
 
+
 -- Thanks to Blazeflack and Azilroka over at 
 -- the TukUI forums for figuring this one out. 
 -- http://www.tukui.org/forums/topic.php?id=34384
 local FixFrameStack = function(header, index)
 	-- /framestack fails when frames that are created as indices of a table are visible,
 	-- so in order for it to work we need to have hashed names for all of them. Blizzard bug. 
-	header[tostring(index)] = header[index]
+	--header[tostring(index)] = header[index]
 end
 
 local Update = function(self, event, ...)
@@ -622,15 +620,16 @@ local Update = function(self, event, ...)
 					visible = visible + 1
 					visibleBuffs = visibleBuffs + 1
 
-					if (not Auras[visible]) then
-						Auras[visible] = Auras.CreateButton and Auras:CreateButton() or CreateAuraButton(Auras)
+					local visibleKey = tostring(visible)
+
+					if (not Auras[visibleKey]) then
+						Auras[visibleKey] = Auras.CreateButton and Auras:CreateButton() or CreateAuraButton(Auras)
 						if Auras.PostCreateButton then
-							Auras:PostCreateButton(Auras[visible])
+							Auras:PostCreateButton(Auras[visibleKey])
 						end
-						FixFrameStack(Auras, visible)
 					end
 
-					local button = Auras[visible]
+					local button = Auras[visibleKey]
 					if button:IsShown() then
 						button:Hide() 
 					end
@@ -690,15 +689,16 @@ local Update = function(self, event, ...)
 					visible = visible + 1
 					visibleDebuffs = visibleDebuffs + 1
 
-					if not Auras[visible] then
-						Auras[visible] = Auras.CreateButton and Auras:CreateButton() or CreateAuraButton(Auras)
+					local visibleKey = tostring(visible)
+
+					if (not Auras[visibleKey]) then
+						Auras[visibleKey] = Auras.CreateButton and Auras:CreateButton() or CreateAuraButton(Auras)
 						if Auras.PostCreateButton then
-							Auras:PostCreateButton(Auras[visible])
+							Auras:PostCreateButton(Auras[visibleKey])
 						end
-						FixFrameStack(Auras, visible)
 					end
 
-					local button = Auras[visible]
+					local button = Auras[visibleKey]
 					if button:IsShown() then
 						button:Hide() 
 					end
@@ -735,19 +735,21 @@ local Update = function(self, event, ...)
 				end
 			end
 
-			if visible == 0 then
+			if (visible == 0) then
 				if Auras:IsShown() then
 					Auras:Hide()
 				end
 			else
-				local visible = SetPosition(Auras, visible)
-				for i = visible + 1, #Auras do
-					Auras[i]:Hide()
-					Auras[i]:SetScript("OnUpdate", nil)
-					Auras[i]:SetTimer(0,0)
-				end 
-
-				if not Auras:IsShown() then
+				local nextAura = SetPosition(Auras, visible) + 1
+				local visibleKey = tostring(nextAura)
+				while (Auras[visibleKey]) do
+					Auras[visibleKey]:Hide()
+					Auras[visibleKey]:SetScript("OnUpdate", nil)
+					Auras[visibleKey]:SetTimer(0,0)
+					nextAura = nextAura + 1
+					visibleKey = tostring(nextAura)
+				end
+				if (not Auras:IsShown()) then
 					Auras:Show()
 				end
 			end
@@ -770,30 +772,29 @@ local Update = function(self, event, ...)
 
 				local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer = UnitAura(unit, i, filter)
 
-				if not name then
+				if (not name) then
 					break
 				end
 
 				-- This won't replace the normal filter, but be applied after it
-				if name and Buffs.BuffFilter then
-					local show = Buffs:BuffFilter(name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
-					if not show then
+				if (name and Buffs.BuffFilter) then
+					if (not Buffs:BuffFilter(name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)) then
 						name = nil
 					end
 				end
 
 				if name then
 					visible = visible + 1
+					local visibleKey = tostring(visible)
 
-					if not Buffs[visible] then
-						Buffs[visible] = Buffs.CreateButton and Buffs:CreateButton() or CreateAuraButton(Buffs)
+					if (not Buffs[visibleKey]) then
+						Buffs[visibleKey] = Buffs.CreateButton and Buffs:CreateButton() or CreateAuraButton(Buffs)
 						if Buffs.PostCreateButton then
-							Buffs:PostCreateButton(Buffs[visible])
+							Buffs:PostCreateButton(Buffs[visibleKey])
 						end
-						FixFrameStack(Buffs, visible)
 					end
 
-					local button = Buffs[visible]
+					local button = Buffs[visibleKey]
 					if button:IsShown() then
 						button:Hide() 
 					end
@@ -823,25 +824,28 @@ local Update = function(self, event, ...)
 						Buffs:PostUpdateButton(button)
 					end
 
-					if not button:IsShown() then
+					if (not button:IsShown()) then
 						button:Show()
 					end
 
 				end
 			end
 
-			if visible == 0 then
+			if (visible == 0) then
 				if Buffs:IsShown() then
 					Buffs:Hide()
 				end
 			else
-				local visible = SetPosition(Buffs, visible)
-				for i = visible + 1, #Buffs do
-					Buffs[i]:Hide()
-					Buffs[i]:SetScript("OnUpdate", nil)
-					Buffs[i]:SetTimer(0,0)
-				end 
-				if not Buffs:IsShown() then
+				local nextBuff = SetPosition(Buffs, visible) + 1
+				local visibleKey = tostring(nextBuff)
+				while (Buffs[visibleKey]) do
+					Buffs[visibleKey]:Hide()
+					Buffs[visibleKey]:SetScript("OnUpdate", nil)
+					Buffs[visibleKey]:SetTimer(0,0)
+					nextBuff = nextBuff + 1
+					visibleKey = tostring(nextBuff)
+				end
+				if (not Buffs:IsShown()) then
 					Buffs:Show()
 				end
 			end
@@ -878,16 +882,16 @@ local Update = function(self, event, ...)
 
 				if name then
 					visible = visible + 1
+					local visibleKey = tostring(visible)
 
-					if not Debuffs[visible] then
-						Debuffs[visible] = Debuffs.CreateButton and Debuffs:CreateButton() or CreateAuraButton(Debuffs)
+					if (not Debuffs[visibleKey]) then
+						Debuffs[visibleKey] = Debuffs.CreateButton and Debuffs:CreateButton() or CreateAuraButton(Debuffs)
 						if Debuffs.PostCreateButton then
-							Debuffs:PostCreateButton(Debuffs[visible])
+							Debuffs:PostCreateButton(Debuffs[visibleKey])
 						end
-						FixFrameStack(Debuffs, visible)
 					end
 
-					local button = Debuffs[visible]
+					local button = Debuffs[visibleKey]
 					if button:IsShown() then
 						button:Hide() 
 					end
@@ -917,25 +921,28 @@ local Update = function(self, event, ...)
 						Debuffs:PostUpdateButton(button)
 					end
 
-					if not button:IsShown() then
+					if (not button:IsShown()) then
 						button:Show()
 					end
 
 				end
 			end
 
-			if visible == 0 then
+			if (visible == 0) then
 				if Debuffs:IsShown() then
 					Debuffs:Hide()
 				end
 			else
-				local visible = SetPosition(Debuffs, visible)
-				for i = visible + 1, #Debuffs do
-					Debuffs[i]:Hide()
-					Debuffs[i]:SetScript("OnUpdate", nil)
-					Debuffs[i]:SetTimer(0,0)
-				end 
-				if not Debuffs:IsShown() then
+				local nextDebuff = SetPosition(Debuffs, visible) + 1
+				local visibleKey = tostring(nextDebuff)
+				while (Debuffs[visibleKey]) do
+					Debuffs[visibleKey]:Hide()
+					Debuffs[visibleKey]:SetScript("OnUpdate", nil)
+					Debuffs[visibleKey]:SetTimer(0,0)
+					nextDebuff = nextDebuff + 1
+					visibleKey = tostring(nextDebuff)
+				end
+				if (not Debuffs:IsShown()) then
 					Debuffs:Show()
 				end
 			end

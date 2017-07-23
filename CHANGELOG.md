@@ -4,12 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [Unreleased] Coming Soon!
+### Added
+- Added primary power to the player nameplate (Personal Resource Display).
+
 ### Changed
 - New round Minimap.
 - The UI should no longer enforce no rotation on the Minimap, since the new round one easily can be rotated.
 - The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
 - Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
+- The pet frame have been changed into a small orb, located close to the player health orb.
+- The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
+
+## [1.2.53] 2017-07-23
+### Fixed
+- Worked around the Blizzard bug causing /framestack to bug out with frames that are numbered indices of their parents by removing all such frame references from the UI. Previously the unitframe and nameplate aura modules used this, but both are now using hashed keys instead. This fix of course only applies to this UI, and there is no way to prevent other addons from causing the same /framestack bug.  
+
+### Removed
+- Removed auras from the Legion Personal Resource Display (the player nameplate). 
 
 ## [1.2.52] 2017-07-22
 ### Added
