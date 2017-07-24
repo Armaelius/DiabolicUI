@@ -4,7 +4,10 @@ local L = Engine:GetLocale()
 local C = Engine:GetStaticConfig("Data: Colors")
 local F = Engine:GetStaticConfig("Data: Functions")
 
+-- Register module incompatibilities
 Module:SetIncompatible("TipTac")
+Module:SetIncompatible("TinyTip")
+Module:SetIncompatible("TinyTooltip")
 
 -- Lua API 
 local _G = _G

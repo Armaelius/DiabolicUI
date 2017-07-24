@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The pet frame have been changed into a small orb, located close to the player health orb.
 - The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
 
+## [1.2.56] 2017-07-24
+### Changed
+- Added TinyTip and TinyTooltip to the tooltip incompatibility list. This means that when one of these addons are loaded, they'll handle the tooltip, and not DiabolicUI.
+
 ## [1.2.55] 2017-07-24
 ### Changed
 - The tooltip modules will now disable themselves if TipTac is loaded.
