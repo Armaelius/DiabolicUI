@@ -505,8 +505,8 @@ local elements = {
 		end,
 		DisableAlerts = function(self)
 			if AlertFrame then
-				AlertFrame:UnregisterAllEvents()
-				AlertFrame:SetParent(UIHider)
+				--AlertFrame:UnregisterAllEvents()
+				--AlertFrame:SetParent(UIHider)
 			end
 		end
 	},

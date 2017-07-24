@@ -366,7 +366,9 @@ Engine:NewStaticConfig("Warnings", {
 			ERR_QUEST_UNKNOWN_COMPLETE, -- "Objective Complete."
 			
 			QUEST_COMPLETE, -- "Quest completed"
-			QUEST_FAILED -- "Quest completion failed."
+			QUEST_FAILED, -- "Quest completion failed."
+
+			WORLD_QUEST_COMPLETE -- "World Quest Complete!"
 		}),
 		pattern = (function(list) 
 			local pattern_list = {}

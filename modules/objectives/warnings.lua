@@ -241,6 +241,7 @@ Module.OnEnable = function(self)
 	self:RegisterEvent("SYSMSG", "OnEvent")
 	
 	if ENGINE_LEGION then
+		
 		-- copied from the Blizzard FrameXML file UIErrorsFrame.lua
 		self.blackListedMessageTypes = {
 			[LE_GAME_ERR_ABILITY_COOLDOWN] = true,
@@ -266,6 +267,7 @@ Module.OnEnable = function(self)
 			[LE_GAME_ERR_OUT_OF_FURY] = true,
 			[LE_GAME_ERR_OUT_OF_MAELSTROM] = true
 		}
+
 	end
 
 	self.player:SetScript("OnUpdate", OnUpdate)

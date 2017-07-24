@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The pet frame have been changed into a small orb, located close to the player health orb.
 - The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
 
+## [1.2.57] 2017-07-24
+### Added
+- Added back most of the Blizzard alert frames, except some too spammy loot and currency alerts. Also moved the alert frames slightly higher up on the screen. Note that this is a temporary solution, and custom alerts will be added at a later point. The Blizzard alerts can easily grow too much upwards and prevent us from clicking players and NPCs in the game world, and we simply need a better system than that. 
+
 ## [1.2.56] 2017-07-24
 ### Changed
 - Added TinyTip and TinyTooltip to the tooltip incompatibility list. This means that when one of these addons are loaded, they'll handle the tooltip, and not DiabolicUI.
