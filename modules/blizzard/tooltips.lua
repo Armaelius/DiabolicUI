@@ -4,6 +4,8 @@ local L = Engine:GetLocale()
 local C = Engine:GetStaticConfig("Data: Colors")
 local F = Engine:GetStaticConfig("Data: Functions")
 
+Module:SetIncompatible("TipTac")
+
 -- Lua API 
 local _G = _G
 local ipairs = ipairs

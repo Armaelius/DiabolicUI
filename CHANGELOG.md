@@ -16,8 +16,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The pet frame have been changed into a small orb, located close to the player health orb.
 - The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
 
+## [1.2.55] 2017-07-24
+### Changed
+- The tooltip modules will now disable themselves if TipTac is loaded.
+
 ## [1.2.54] 2017-07-23
-## Changed
+### Changed
 - The nameplate module will now disable itself if the addon Kui_Nameplates is enabled. 
 
 ### Removed
