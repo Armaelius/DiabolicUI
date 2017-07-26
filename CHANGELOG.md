@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The pet frame have been changed into a small orb, located close to the player health orb.
 - The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
 
+## [1.2.58] 2017-07-26
+### Added
+- Added some performance tweaks to prevent other addons misusing or overusing garbage collection and memory usage queries. 
+
+### Fixed
+- Already visible chat bubbles will now be hidden upon entering an instance, instead of remaing visible on the screen.
+
 ## [1.2.57] 2017-07-24
 ### Added
 - Added back most of the Blizzard alert frames, except some too spammy loot and currency alerts. Also moved the alert frames slightly higher up on the screen. Note that this is a temporary solution, and custom alerts will be added at a later point. The Blizzard alerts can easily grow too much upwards and prevent us from clicking players and NPCs in the game world, and we simply need a better system than that. 
