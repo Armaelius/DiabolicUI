@@ -249,7 +249,10 @@ Module.UpdateBubbleDisplay = function(self)
 		self.Updater:SetScript("OnUpdate", self.Updater.OnUpdate)
 	else
 		self.Updater:SetScript("OnUpdate", nil)
-		SetCVar("chatBubbles", 0) 
+		SetCVar("chatBubbles", 0)
+		for bubble in pairs(bubbles) do
+			bubbles[bubble]:Hide()
+		end
 	end
 end
 
