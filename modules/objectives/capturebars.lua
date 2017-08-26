@@ -16,7 +16,6 @@ local unpack = unpack
 -- WoW API
 local GetNumWorldStateUI = _G.GetNumWorldStateUI
 local GetWorldStateUIInfo = _G.GetWorldStateUIInfo
-local UnitAffectingCombat = _G.UnitAffectingCombat
 
 -- Client constants
 local ENGINE_CATA = Engine:IsBuild("Cata")

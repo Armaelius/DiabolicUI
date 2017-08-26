@@ -1715,27 +1715,6 @@ do
 		self:SetPixelSize(self:GetScreenSize())
 	end
 
-	UICenter.GetSizeOfPixel = function(self)
-		local screenWidth, screenHeight = self:GetScreenSize()
-		local perfectEffectiveScale = 768/screenHeight
-		local parentEffectiveScale = self:GetParent():GetEffectiveScale()
-		local pixelPerfectScale = perfectEffectiveScale / parentEffectiveScale
-
-		-- Not really accurate, as it will be 
-		-- more than a single pixel on 4K or 8K displays.
-		-- The goal however is to avoid a virtual pixel 
-		-- being smaller than a physical one, 
-		-- while larger isn't a problem as long as 
-		-- it fills a full set of pixels. 
-		-- We're avoiding a visuabl bug with downscaling,
-		-- not trying to get the thinnest line ever on upscaling. 
-		if HD_MODIFIER > 1 then
-			return pixelPerfectScale
-		else
-			return pixelPerfectScale
-		end
-	end
-
 	UICenter:SetAttribute("_onattributechanged", [=[
 		if name == "currentPixelScale" then
 			local scale = tonumber(value);

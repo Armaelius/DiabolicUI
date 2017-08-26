@@ -383,16 +383,17 @@ Module.StyleFrame = function(self, frame)
 	_G[name.."EditBox"]:HookScript("OnEditFocusGained", function(self) self:Show() end)
 	_G[name.."EditBox"]:HookScript("OnEditFocusLost", function(self) self:Hide() end)
 
-
 	-- hook editbox updates to our coloring method
 	--hooksecurefunc("ChatEdit_UpdateHeader", function(...) self:UpdateEditBox(...) end)
+
+	-- Avoid dying from having the editbox open in combat
 	_G[name.."EditBox"]:HookScript("OnTextChanged", function(self)
 		local msg = self:GetText()
-		local min_repeat_chars = UnitAffectingCombat("player") and 5 or 10
-		if strlen(msg) > min_repeat_chars then
+		local maxRepeats = UnitAffectingCombat("player") and 5 or 10
+		if (strlen(msg) > maxRepeats) then
 			local stuck = true
-			for i = 1, min_repeat_chars, 1 do 
-				if strsub(msg,0-i, 0-i) ~= strsub(msg,(-1-i),(-1-i)) then
+			for i = 1, maxRepeats, 1 do 
+				if (strsub(msg,0-i, 0-i) ~= strsub(msg,(-1-i),(-1-i))) then
 					stuck = false
 					break
 				end
@@ -406,12 +407,12 @@ Module.StyleFrame = function(self, frame)
 	end)
 
 	local UICenter = Engine:GetFrame()
-	if _G[name.."EditBox"]:GetParent() == UIParent then
+	if (_G[name.."EditBox"]:GetParent() == UIParent) then
 		_G[name.."EditBox"]:SetParent(UICenter)
 	end
 
 	hooksecurefunc(_G[name.."EditBox"], "SetParent", function(self, parent) 
-		if parent == UIParent then
+		if (parent == UIParent) then
 			self:SetParent(UICenter)
 		end
 	end)

@@ -102,8 +102,8 @@ Engine:NewStaticConfig("UnitFrames", {
 					}
 				},
 				auras = {
-					position = { "TOPRIGHT", "Minimap", "TOPLEFT", -10, -10 },
-					positionWithoutMinimap = { "TOPRIGHT", "UICenter", "TOPRIGHT", -20, -64 }, -- same pos as the minimap
+					position = { "TOPRIGHT", "Minimap", "TOPLEFT", -20, 0 }, 
+					positionWithoutMinimap = { "TOPRIGHT", "UICenter", "TOPRIGHT", -30, -74 }, 
 					size = { 200, 200 },
 					spacingH = 4, 
 					spacingV = 4, 

@@ -1,5 +1,5 @@
 local _, Engine = ...
-local Module = Engine:NewModule("GameMenu")
+local Module = Engine:NewModule("Blizzard: GameMenu")
 
 -- Lua API
 local ipairs = ipairs

@@ -4,22 +4,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] Coming Soon!
+## [1.3.60] 2017-08-26
 ### Added
-- Added primary power to the player nameplate (Personal Resource Display).
-
-### Changed
 - New round Minimap.
-- The UI should no longer enforce no rotation on the Minimap, since the new round one easily can be rotated.
-- The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
-- Adjusted the layout of the tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
-- The pet frame have been changed into a small orb, located close to the player health orb.
-- The focus frame have been changed to resemble the target of target (ToT) frame, and placed at a more visible position. 
-
-## [1.2.58] 2017-07-26
-### Added
+- Legion Nameplates now have a large crowd control icon displayed above themselves!
+- Added in proper seamless MBB(MinimapButtonBag) support. 
+- Added in some minor styling of the character frame, talent frame, group finder frame, spellbook, worldmap and containers. 
+- Added in itemlevel display to the character frame and container frame.
 - Added some performance tweaks to prevent other addons misusing or overusing garbage collection and memory usage queries. 
 
+### Changed
+- The Minimap module will disable itself if the addons Mappy or SexyMap are enabled.
+- The UI should no longer enforce no rotation on the Minimap, since the new round one easily can be rotated.
+- The Minimap will no longer forcefully change the WorldMap to the current zone when moving between zones when the WorldMap is open. It will instead hide the player coordinates until the WorldMap is closed, and then resume the updates. This will not prevent other third party addons from calling commands that forcefully change the WorldMap zone, though.
+- Minimap buttons will now be hidden unless the addon MBB(MinimapButtonBag) is installed and enabled. A built-in button bag for Minimap buttons will be added at a later date, but for now we're letting MBB handle this. It's good at it. 
+- Changed the layout of the quest tracker to match the new Minimap, and moved usable quest items to the left side of it instead.
+- Legion nameplates had their maximum visible distance adjusted to 45 yards while inside an instance, and 30 yards while not.
+- Auras displayed in the new Legion nameplate CC display will not be displayed amongst the normal auras below the nameplate.
+- Auras displayed anywhere on the Legion nameplates should not be visible on the target unitframe if a nameplate is currently visible for your target. This is a work in progress.
+- Changed how auras are displayed on the target frame. A lot of new filters were added, and the old ones optimized. This is a work in progress, and in no way finished. 
+- Toned down the new item flash texture in the default Blizzard bags for client versions supporting this. It was just too much.
+- The player castbar will now be disabled if the addon Quartz is enabled.
+- Seriously optimized the performance of the quest tracker. Pimped that Lada of a module into a Lamborghini Sesto Elemento!
+- Optimized the Blizzard vehicleseat, durability, ghostframe and player alt power modules to better utilize the Engine methods and systems.
+- Prefixed most modules that only slightly modified the look of Blizzard elements with "Blizzard: " in order to reflect their nature better. Most of this UI is custom and built from scratch, but some elements can't be changed, or isn't practical or compatible to change. These modules should now be easier to identify in the code. 
+
+### Fixed
+- Fixed a tracker issue in WoW clients Cata or higher where quest item buttons would get the wrong quest log index assigned, and either end up being unusable or use the wrong item. 
+- Fixed a tracker issue in WotLK where the tracker sometimes wouldn't start an no quests were displayed at all.
+- Fixed an issue with the micro menu (mostly) in WotLK that would cause taint on every combat ending as a result of a micro button update wrongfully being called upon UnitAffectingCombat("player") returning false instead of InCombatLockdown(). (UnitAffectingCombat returns false until an attack has landed when proximity aggroing creatures, and thus is unreliable when it comes to figuring out if it's safe to move or change protected items, as these are forbidden as long as we're engaged in combat in any shape or form.)
+- Fixed a tracker issue where item cooldowns didn't show up.
+- Fixed an issue with the tracker's world quest proximity filtering which would assume all zones were perfect squares, and thus end up sorting world quests in a consistent but totally wrong ord. We could go by the aspect ratio of the WorldMapDetailFrame, but choosing to use the Legion API call C_TaskQuest.GetDistanceSqToQuest(questID) instead, since we're only tracking proximity of Legion world quests anyway. 
+
+### Removed
+- Removed the ability to manually track quests from the Blizzard (WoD and Legion) QuestLog, as our quest tracker overrides this anyway. The ability to manually track specific quests will be added into our own tracker at a later date. For now, though, it was more important to remove useless remnants of non existing functionality to avoid confusion. 
+
+## [1.2.59] 2017-07-29
+### Changed
+- Reduced the maximum visible Legion nameplate distance from 100yd to 30yd, as nameplates of mobs outside buildings were visible through the walls and floors, causing major confusion when trying to target something. An example was when killing Captain Volo'ren in Val'Sharah. 
+
+## [1.2.58] 2017-07-26
 ### Fixed
 - Already visible chat bubbles will now be hidden upon entering an instance, instead of remaing visible on the screen.
 

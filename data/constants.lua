@@ -20,6 +20,12 @@ Engine:NewStaticConfig("Data: Constants", {
 	HOUR = 3600, 
 	MINUTE = 60,
 
+	AURA_TIME_LIMIT = 300,
+	AURA_TIME_LIMIT_LOW = 60,
+
+	-- Quest that needs to be completed for world quests to be available
+	WORLD_QUESTS_AVAILABLE_QUEST_ID = WORLD_QUESTS_AVAILABLE_QUEST_ID or 43341,
+
 	-- Maps
 	MINIMAP_SIZE = 290, -- size of the big Minimap
 

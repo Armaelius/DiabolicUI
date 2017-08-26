@@ -1,5 +1,5 @@
 local _, Engine = ...
-local Module = Engine:NewModule("TotemBar")
+local Module = Engine:NewModule("Blizzard: TotemBar")
 
 Module.OnInit = function(self)
 	if not MultiCastActionBarFrame then

@@ -2,33 +2,45 @@ local Addon, Engine = ...
 
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
-local AuraData = Engine:GetStaticConfig("Data: Auras").whitelist
+local AuraData = Engine:GetStaticConfig("Data: Auras")
 local C = Engine:GetStaticConfig("Data: Colors")
 
 local Module = Engine:GetModule("UnitFrames")
 local UnitFrameWidget = Module:SetWidget("Unit: Target")
-
 
 -- Lua API
 local _G = _G
 local unpack = unpack
 
 -- WoW API
+local GetCVarBool = _G.GetCVarBool
 local IsInInstance = _G.IsInInstance
 local PlaySoundKitID = _G.PlaySoundKitID
+local UnitAffectingCombat = _G.UnitAffectingCombat
 local UnitCanAttack = _G.UnitCanAttack
+local UnitClass = _G.UnitClass
 local UnitClassification = _G.UnitClassification
 local UnitPlayerControlled = _G.UnitPlayerControlled
 local UnitExists = _G.UnitExists
+local UnitLevel = _G.UnitLevel
 local UnitPowerType = _G.UnitPowerType
 local UnitPower = _G.UnitPower
 local UnitPowerMax = _G.UnitPowerMax
 local UnitIsEnemy = _G.UnitIsEnemy
 local UnitIsFriend = _G.UnitIsFriend
 local UnitIsPlayer = _G.UnitIsPlayer
+local UnitIsTapDenied = _G.UnitIsTapDenied
+local UnitIsUnit = _G.UnitIsUnit
 
 -- Time limit in seconds where we separate between short and long buffs
-local TIME_LIMIT = 300
+local TIME_LIMIT = Engine:GetConstant("AURA_TIME_LIMIT")
+local TIME_LIMIT_LOW = Engine:GetConstant("AURA_TIME_LIMIT_LOW")
+
+-- Client Constants
+local ENGINE_LEGION = Engine:IsBuild("Legion")
+
+-- Constant tracking Legion nameplate visibility
+local ENEMY_PLATES = ENGINE_LEGION and GetCVarBool("nameplateShowEnemies") 
 
 
 -- Utility Functions
@@ -221,20 +233,29 @@ local postCreateAuraButton = function(self, button)
 	button:SetBorderColor(r * 4/5, g * 4/5, b * 4/5)
 end
 
--- TODO: Add PvP relevant buffs to a whitelist here 
+
+-- TODO: Add PvP relevant buffs to a whitelist in these filters 
+-- TODO: Optimize the code once we're happy with the functionality
+
+local Filter = Engine:GetStaticConfig("Library: AuraFilters")
+local Filter_UnitIsHostileNPC = Filter.UnitIsHostileNPC
+
 local buffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
 
 	local unit = self.unit
 	if isBossDebuff then
 		return true
+
 	elseif isStealable then
 		return true
+
 	elseif isCastByPlayer then
 		return true
+
 	elseif (unitCaster == "vehicle") then
 		return true
 
-	elseif (unitCaster == unit) and duration and (duration > 0) and (duration < TIME_LIMIT) then
+	elseif (unitCaster and UnitIsUnit(unit, unitCaster)) and duration and (duration > 0) and (duration < TIME_LIMIT) then
 		return true
 
 	elseif (not unitCaster) and (not IsInInstance()) then
@@ -265,20 +286,54 @@ end
 
 local debuffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
 
+	-- The unitframe's unitID
 	local unit = self.unit
+
+	-- Info about the unitframe's unit (the unit the auras are applied to)
+	local unitLevel = UnitLevel(unit)
+	local unitClassificiation = UnitClassification(unit)
+	local unitIsHostilePlayer = UnitIsPlayer(unit) and UnitIsEnemy("player", unit)
+	local unitIsHostileNPC = UnitCanAttack("player", unit) and (not UnitPlayerControlled(unit))
+	local unitIsImportant = (unitClassificiation == "worldboss") or (unitClassificiation == "rare") or (unitClassificiation == "rareelite") or (level and level < 1) 
+
+	-- Info about the caster of the auras 
+	local casterIsUnit = unitCaster and ((unitCaster == unit) or UnitIsUnit(unit, unitCaster))
+	local casterIsVehicle = unitCaster and ((unitCaster == "vehicle") or UnitIsUnit("vehicle", unitCaster))
+
+	-- Info about the auras themselves
+	local isShortDuration = duration and (duration > 0) and (duration < TIME_LIMIT)
+	local isLongDuration = duration and (duration > TIME_LIMIT)
+	local isStatic = (not duration) or (duration == 0)
+	local isCC = ENGINE_LEGION and spellId and AuraData.cc[spellId] -- Any CC 
+	local isLoC = ENGINE_LEGION and spellId and AuraData.loc[spellId] -- Loss of Control CC
+
+	-- Always show boss debuffs on your target
 	if isBossDebuff then
 		return true
+
+	-- Always show debuffs cast by your vehicle 
+	elseif casterIsVehicle then
+		return true
+
+	-- Hide Loss of Control CC from the target when enemy plates are visible
+	elseif ENEMY_PLATES and isLoC then
+		return false
+
+	-- Show debuffs cast by the player, unless it's currently visible on a nameplate
 	elseif isCastByPlayer then
+
+		-- Enemy plates are visible (implies Legion)and the target is hostile.
+		-- Filter out debuffs shown on the nameplates. This must match the nameplate filter.
+		if ENEMY_PLATES and (unitIsHostilePlayer or unitIsHostileNPC) and isShortDuration then 
+			return false
+		end
 		return true
-	elseif (unitCaster == "vehicle") then
-		return true
+
 	elseif (not unitCaster) and (not IsInInstance()) then
 		-- EXPERIMENTAL: ignore debuffs from players outside the group, eg. world bosses
 		return
 
-	elseif (UnitCanAttack("player", unit)) and (not UnitPlayerControlled(unit)) then
-		-- Hostile NPC.
-		-- Show auras cast by the unit, and auras of unknown origin.
+	elseif unitIsHostileNPC then
 		return (not unitCaster) or (unitCaster == unit)
 
 	elseif (not isCastByPlayer) then
@@ -685,6 +740,8 @@ UnitFrameWidget.OnEvent = function(self, event, ...)
 		else
 			PlaySoundKitID(SOUNDKIT.INTERFACE_SOUND_LOST_TARGET_UNIT, "SFX")
 		end
+	elseif (event == "PLAYER_ENTERING_WORLD") or (event == "VARIABLES_LOADED") or (event == "CVAR_UPDATE") then
+		ENEMY_PLATES = GetCVarBool("nameplateShowEnemies")
 	end
 end
 
@@ -692,6 +749,12 @@ UnitFrameWidget.OnEnable = function(self)
 	self.UnitFrame = UnitFrame:New("target", Engine:GetFrame(), Style)
 
 	self:RegisterEvent("PLAYER_TARGET_CHANGED", "OnEvent")
+
+	if ENGINE_LEGION then
+		self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
+		self:RegisterEvent("CVAR_UPDATE", "OnEvent")
+		self:RegisterEvent("VARIABLES_LOADED", "OnEvent")
+	end
 end
 
 UnitFrameWidget.GetFrame = function(self)

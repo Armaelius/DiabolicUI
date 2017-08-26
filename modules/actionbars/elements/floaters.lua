@@ -12,9 +12,9 @@ local unpack = unpack
 -- WoW API
 local GetNumShapeshiftForms = _G.GetNumShapeshiftForms
 local HasExtraActionBar = _G.HasExtraActionBar
+local InCombatLockdown = _G.InCombatLockdown
 local RegisterStateDriver = _G.RegisterStateDriver
 local TaxiRequestEarlyLanding = _G.TaxiRequestEarlyLanding
-local UnitAffectingCombat = _G.UnitAffectingCombat
 local UnitOnTaxi = _G.UnitOnTaxi
 local UnregisterStateDriver = _G.UnregisterStateDriver
 
@@ -29,7 +29,7 @@ local ENGINE_LEGION = Engine:IsBuild("Legion")
 local NUM_FORMS = 0
 
 BarWidget.UpdateTaxiExitButtonVisibility = Engine:Wrap(function(self, event, ...)
-	if UnitAffectingCombat("player") then
+	if InCombatLockdown() then
 		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "UpdateTaxiExitButtonVisibility")
 	end
 	if (event == "PLAYER_REGEN_ENABLED") then
@@ -51,7 +51,7 @@ BarWidget.UpdateStanceButtonVisibility = function(self, event, ...)
 	if (numForms == NUM_FORMS) then
 		return
 	end
-	if UnitAffectingCombat("player") then
+	if InCombatLockdown() then
 		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "UpdateStanceButtonVisibility")
 	end
 	if (event == "PLAYER_REGEN_ENABLED") then
@@ -256,7 +256,7 @@ BarWidget.SpawnTaxiExitButton = function(self)
 	end
 
 	TaxiExitButton.PostClick = function(self, button)
-		if UnitOnTaxi("player") and (not UnitAffectingCombat("player")) then
+		if UnitOnTaxi("player") and (not InCombatLockdown()) then
 			TaxiRequestEarlyLanding()
 		end
 	end

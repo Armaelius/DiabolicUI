@@ -1,5 +1,5 @@
 local _, Engine = ...
-local Module = Engine:NewModule("PopUps")
+local Module = Engine:NewModule("Blizzard: PopUps")
 
 -- Lua API
 local _G = _G

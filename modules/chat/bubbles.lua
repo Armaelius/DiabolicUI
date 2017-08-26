@@ -1,6 +1,5 @@
 local Addon, Engine = ...
 local Module = Engine:NewModule("ChatBubbles")
-local UICenter = Engine:GetFrame()
 
 -- Allow the user to use the stand-alone instead
 Module:SetIncompatible("NiceBubbles")
@@ -28,7 +27,7 @@ local ENGINE_LEGION_725 = Engine:IsBuild("7.2.5")
 
 -- Bubble Data
 local bubbles = {} -- local bubble registry
-local fontsize = 12
+local fontsize = 14
 local numChildren, numBubbles = -1, 0 -- bubble counters
 
 local minsize, maxsize, fontsize = 12, 16, 12 -- bubble font size
@@ -107,7 +106,7 @@ Updater.OnUpdate = function(self, elapsed)
 	
 	-- bubble, bubble.text = original bubble and message
 	-- bubbles[bubble], bubbles[bubble].text = our custom bubble and message
-	local scale = WorldFrame:GetHeight()/UICenter:GetHeight()
+	local scale = WorldFrame:GetHeight()/UIParent:GetHeight()
 	for bubble in pairs(bubbles) do
 		if bubble:IsShown() then
 			-- continuing the fight against overlaps blending into each other! 
@@ -121,10 +120,8 @@ Updater.OnUpdate = function(self, elapsed)
 			bubbles[bubble].color[2] = g
 			bubbles[bubble].color[3] = b
 			if blizzTextWidth and blizzTextHeight and point and rpoint and blizzX and blizzY then
-				if not bubbles[bubble]:IsShown() then
-					--bubbles[bubble]:SetAlpha(0)
+				if (not bubbles[bubble]:IsShown()) then
 					bubbles[bubble]:Show()
-					--bubbles[bubble]:StartFadeIn(.25, 1)
 				end
 				local msg = bubble.text:GetText()
 				if msg and (bubbles[bubble].last ~= msg) then
@@ -240,19 +237,27 @@ Module.OnInit = function(self, event, ...)
 	if ENGINE_LEGION_725 then
 		self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateBubbleDisplay")
 	end
+
+	-- Enforcing this now
+	SetCVar("chatBubbles", 1)
 end
 
 Module.UpdateBubbleDisplay = function(self)
 	local _, instanceType = IsInInstance()
-	if (instanceType == "none") then
+	if ENGINE_LEGION_720 then 
+		if (instanceType == "none") then
+			SetCVar("chatBubbles", 1)
+			self.Updater:SetScript("OnUpdate", self.Updater.OnUpdate)
+		else
+			self.Updater:SetScript("OnUpdate", nil)
+			SetCVar("chatBubbles", 0)
+			for bubble in pairs(bubbles) do
+				bubbles[bubble]:Hide()
+			end
+		end
+	else
 		SetCVar("chatBubbles", 1)
 		self.Updater:SetScript("OnUpdate", self.Updater.OnUpdate)
-	else
-		self.Updater:SetScript("OnUpdate", nil)
-		SetCVar("chatBubbles", 0)
-		for bubble in pairs(bubbles) do
-			bubbles[bubble]:Hide()
-		end
 	end
 end
 

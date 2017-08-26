@@ -43,6 +43,7 @@ local GetSpellCooldown = _G.GetSpellCooldown
 local GetSpellCount = _G.GetSpellCount
 local GetSpellTexture = _G.GetSpellTexture
 local HasAction = _G.HasAction
+local InCombatLockdown = _G.InCombatLockdown
 local IsActionInRange = _G.IsActionInRange
 local IsAttackAction = _G.IsAttackAction
 local IsAttackSpell = _G.IsAttackSpell
@@ -65,7 +66,6 @@ local IsStackableAction = _G.IsStackableAction
 local IsUsableAction = _G.IsUsableAction
 local IsUsableItem = _G.IsUsableItem
 local IsUsableSpell = _G.IsUsableSpell
-local UnitAffectingCombat = _G.UnitAffectingCombat
 local UnitIsDeadOrGhost = _G.UnitIsDeadOrGhost
 local UnitOnTaxi = _G.UnitOnTaxi
 
@@ -586,10 +586,6 @@ Button.UpdateUsable = function(self, updateType, ...)
 	local canDesaturate, usableState
 	if UnitIsDeadOrGhost("player") then
 		usableState = "taxi"
-	--elseif UnitOnTaxi("player") then 
-	--	usableState = "taxi"
-	--elseif IsFlying() and (not UnitAffectingCombat("player") and (not INSTANCE)) then 
-	--	usableState = "taxi"
 	elseif (not isUsable) then
 		usableState = "unusable"
 	elseif (self.outOfRange or not(self:IsInRange())) then
@@ -1577,7 +1573,7 @@ Handler.OnEvent = function(self, event, ...)
 	
 	-- In most cases this won't happen in combat, but better to be safe than sorry
 	elseif ((event == "CVAR_UPDATE") and ((arg1 == "ACTION_BUTTON_USE_KEY_DOWN") or (arg1 == "LOCK_ACTIONBAR_TEXT"))) then
-		if UnitAffectingCombat("player") then
+		if InCombatLockdown() then
 			return self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
 		end 
 

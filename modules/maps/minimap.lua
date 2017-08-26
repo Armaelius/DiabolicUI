@@ -5,8 +5,12 @@ local _, Engine = ...
 local Module = Engine:NewModule("Minimap", "HIGH")
 local BlizzardUI = Engine:GetHandler("BlizzardUI")
 local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Data: Functions")
+local F = Engine:GetStaticConfig("Library: Format")
 local L = Engine:GetLocale()
+
+-- Some constants needed later on
+local MBB = Engine:IsAddOnEnabled("MBB") 
+local MBF = Engine:IsAddOnEnabled("MinimapButtonFrame")
 
 -- If carbonite is loaded, 
 -- and the setting to move the minimap into the carbonite map is enabled, 
@@ -17,10 +21,17 @@ Module:SetIncompatible("Carbonite", function(self)
 	end
 end)
 
+-- Complete Minimap replacements
+Module:SetIncompatible("Mappy")
+Module:SetIncompatible("SexyMap")
+
 -- Lua API
 local _G = _G
 local date = date
+local ipairs = ipairs
+local math_floor = math.floor
 local math_sqrt = math.sqrt
+local pairs = pairs
 local select = select
 local string_format = string.format
 local table_insert = table.insert
@@ -38,6 +49,7 @@ local GetPlayerMapPosition = _G.GetPlayerMapPosition
 local GetSubZoneText = _G.GetSubZoneText
 local GetZonePVPInfo = _G.GetZonePVPInfo
 local GetZoneText = _G.GetZoneText
+local IsAddOnLoaded = _G.IsAddOnLoaded
 local IsInInstance = _G.IsInInstance
 local RegisterStateDriver = _G.RegisterStateDriver
 local SetMapToCurrentZone = _G.SetMapToCurrentZone
@@ -57,12 +69,6 @@ local WorldMapFrame = _G.WorldMapFrame
 
 -- WoW strings
 ------------------------------------------------------------------
--- Garrison
-local GARRISON_ALERT_CONTEXT_BUILDING = _G.GARRISON_ALERT_CONTEXT_BUILDING
-local GARRISON_ALERT_CONTEXT_INVASION = _G.GARRISON_ALERT_CONTEXT_INVASION
-local GARRISON_ALERT_CONTEXT_MISSION = _G.GARRISON_ALERT_CONTEXT_MISSION
-local GARRISON_LANDING_PAGE_TITLE = _G.GARRISON_LANDING_PAGE_TITLE
-local MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP = _G.MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP
 
 -- Zonetext
 local DUNGEON_DIFFICULTY1 = _G.DUNGEON_DIFFICULTY1
@@ -87,9 +93,11 @@ local GROUP = GROUP
 
 -- Speed constants, because we can never get enough
 ------------------------------------------------------------------
-local WOD 	= Engine:IsBuild("WoD")
-local MOP 	= Engine:IsBuild("MoP")
-local CATA 	= Engine:IsBuild("Cata")
+local ENGINE_LEGION_725 	= Engine:IsBuild("7.2.5")
+local ENGINE_LEGION_715 	= Engine:IsBuild("7.1.5")
+local ENGINE_WOD 			= Engine:IsBuild("WoD")
+local ENGINE_MOP 			= Engine:IsBuild("MoP")
+local ENGINE_CATA 			= Engine:IsBuild("Cata")
 
 
 -- Map functions
@@ -123,6 +131,7 @@ local onMouseUp = function(self, button)
 end
 
 local onUpdate = function(self, elapsed)
+	-- Update clock
 	self.elapsedTime = (self.elapsedTime or 0) + elapsed
 	if self.elapsedTime > 1 then 
 
@@ -153,6 +162,7 @@ local onUpdate = function(self, elapsed)
 		self.elapsedTime = 0
 	end
 
+	-- Update player coordinates
 	self.elapsedCoords = (self.elapsedCoords or 0) + elapsed
 	if self.elapsedCoords > .1 then 
 
@@ -176,12 +186,52 @@ local onUpdate = function(self, elapsed)
 		
 		self.elapsedCoords = 0
 	end
+
+	local buttonBag = self.widgets.buttonBag
+	if buttonBag then
+		self.elapsedButtonBag = (self.elapsedButtonBag or 0) - elapsed
+		if (self.elapsedButtonBag < 0)  then
+			local hiddenButtons = buttonBag.buttons
+			local checkedButtons = buttonBag.checkedButtons
+			local oldMap = self.old.map
+			local numChildren = oldMap:GetNumChildren()
+			if (buttonBag.numButtons ~= numChildren) then
+				local child
+				for i = 1, numChildren do
+					child = select(i, oldMap:GetChildren())
+					if (child and not(checkedButtons[child]) and (child.HasScript and child:HasScript("OnClick")) and (child.GetName and child:GetName())) then 
+						local ignore
+						local childName = child:GetName()
+						for name in pairs(buttonBag.ignoredButtons) do
+							if childName:find(name) then
+								ignore = true
+								checkedButtons[child] = true
+								break
+							end
+						end
+						if (not ignore) then
+							buttonBag.add(child)
+						end
+					end
+				end
+				self.numButtons = numChildren
+			end
+			self.elapsedButtonBag = 3
+		end	
+	end
+
 end
 
-
-Module.UpdateZoneData = function(self)
+Module.UpdateZoneData = function(self, event, ...)
 	
-	SetMapToCurrentZone() -- required for coordinates to function too
+	if (event == "PLAYER_ENTERING_WORLD") or (event == "ZONE_CHANGED_INDDORS") or (event == "ZONE_CHANGED_NEW_AREA") or (event == "WORLD_MAP_CLOSED") then
+		-- Don't force this anymore, we don't want to mess with the WorldMap, 
+		-- as zone changing when looking at things when taking a taxi is super annoying. 
+		-- We're queueing all updates until the world map is closed now, like with the tracker.
+		if (not WorldMapFrame:IsShown()) then
+			SetMapToCurrentZone() -- required for coordinates to function too
+		end
+	end
 
 	local mapID, isContinent = GetCurrentMapAreaID()
 	local minimapZoneName = GetMinimapZoneText()
@@ -190,7 +240,7 @@ Module.UpdateZoneData = function(self)
 	local subzoneName = GetSubZoneText()
 	local instance = IsInInstance()
 
-	if subzoneName == zoneName then 
+	if (subzoneName == zoneName) then 
 		subzoneName = "" 
 	end
 
@@ -210,53 +260,12 @@ Module.UpdateZoneData = function(self)
 		territory = COMBAT_ZONE
 	end
 
-
 	if instance then
-		-- instanceType: 
-		-- 	"none" if the player is not in an instance
-		-- 	"scenario" for scenarios
-		-- 	"party" for dungeons, 
-		-- 	"raid" for raids
-		-- 	"arena" for arenas
-		-- 	"pvp" for battlegrounds
-		--
-		-- difficultyID:
-		-- 	1	"Normal" (Dungeons)
-		-- 	2	"Heroic" (Dungeons)
-		-- 	3	"10 Player"
-		-- 	4	"25 Player"
-		-- 	5	"10 Player (Heroic)"
-		-- 	6	"25 Player (Heroic)"
-		-- 	7	"Looking For Raid" (Legacy LFRs; everything prior to Siege of Orgrimmar)
-		-- 	8	"Challenge Mode"
-		-- 	9	"40 Player"
-		-- 	10	nil
-		-- 	11	"Heroic Scenario"
-		-- 	12	"Normal Scenario"
-		-- 	13	nil
-		-- 	14	"Normal" (Raids)
-		-- 	15	"Heroic" (Raids)
-		-- 	16	"Mythic" (Raids)
-		-- 	17	"Looking For Raid"
-		-- 	18	"Event"
-		-- 	19	"Event"
-		-- 	20	"Event Scenario"
-		-- 	21	nil
-		-- 	22	nil
-		-- 	23	"Mythic" (Dungeons)
-		-- 	24	"Timewalker"
-		-- 	25	"PvP Scenario" -- added in Legion
-
-		-- MoP changes:
-		-- 	- Now returns an instanceGroupSize. Also added a new possible difficultyID (14) for Flexible Raids.
-		-- 	- Now returns a mapID, allowing addons to identify the current instance/continent without relying on localized names.
-		-- 	- dynamicDifficulty now always returns 0, while difficultyID is updated to reflect the selected dynamic difficulty (previously, dynamicDifficulty reflected the normal/heroic switch and difficultyID the 10/25 player switch for dynamic instances).
-		
 		local _
 		local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapID, instanceGroupSize
 		local groupType, isHeroic, isChallengeMode, toggleDifficultyID
 
-		if MOP then
+		if ENGINE_MOP then
 			name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapID, instanceGroupSize = GetInstanceInfo()
 			_, groupType, isHeroic, isChallengeMode, toggleDifficultyID = GetDifficultyInfo(difficultyID)
 		else
@@ -374,29 +383,13 @@ Module.UpdateZoneText = function(self)
 	self.frame.widgets.difficulty:SetText(self.data.difficulty .. " ")
 end
 
--- This should only be used for square maps. 
--- When we add the new large round one, this will need to check for the current map type. 
-Module.EnforceRotation = Engine:Wrap(function(self)
-	SetCVar("rotateMinimap", 0)
-end)
-
 Module.GetFrame = function(self)
 	return self.frame
 end
 
 Module.OnEvent = function(self, event, ...)
-	if event == "PLAYER_ENTERING_WORLD" then
-		self:EnforceRotation()
-		self:AlignMinimap()
-		self:UpdateZoneData()
-	elseif event == "ZONE_CHANGED" 
-	or event == "ZONE_CHANGED_INDOORS" 
-	or event == "ZONE_CHANGED_NEW_AREA" then	
-		self:UpdateZoneData()
-	elseif event == "VARIABLES_LOADED" then 
-		self:EnforceRotation()
-		self:AlignMinimap()
-	end
+	self:AlignMinimap(event, ...)
+	self:UpdateZoneData(event, ...)
 end
 
 Module.AlignMinimap = function(self)
@@ -428,13 +421,92 @@ Module.AlignMinimap = function(self)
 	-- It might be that the map isn't fully loaded 
 	-- or not properly reacting to sizing events too early
 	-- in the loading process. So we have to delay all of this. (?) 
-	mapContent.SetSize = function() end
-	mapContent.SetWidth = function() end
-	mapContent.SetHeight = function() end
-	mapContent.SetParent = function() end
-	mapContent.SetPoint = function() end
-	mapContent.SetAllPoints = function() end
-	mapContent.ClearAllPoints = function() end
+	--mapContent.SetSize = function() end
+	--mapContent.SetWidth = function() end
+	--mapContent.SetHeight = function() end
+	--mapContent.SetParent = function() end
+	--mapContent.SetPoint = function() end
+	--mapContent.SetAllPoints = function() end
+	--mapContent.ClearAllPoints = function() end
+end
+
+Module.InitMap = function(self)
+	local config = self:GetStaticConfig("Minimap")
+end
+
+Module.InitMBB = function(self)
+	local config = self:GetStaticConfig("Minimap")
+	local mapContent = self.frame.custom.map.content
+
+	local mbbFrame = _G.MBB_MinimapButtonFrame
+	mbbFrame:SetParent(self.frame.scaffold.border)
+	mbbFrame:RegisterForDrag()
+	mbbFrame:SetSize(unpack(config.widgets.buttonBag.size)) 
+	mbbFrame:ClearAllPoints()
+	mbbFrame:SetPoint(unpack(config.widgets.buttonBag.point))
+	mbbFrame:SetHighlightTexture("") 
+	mbbFrame:DisableDrawLayer("OVERLAY") 
+
+	mbbFrame.ClearAllPoints = function() end
+	mbbFrame.SetPoint = function() end
+	mbbFrame.SetAllPoints = function() end
+
+	local mbbIcon = _G.MBB_MinimapButtonFrame_Texture
+	mbbIcon:ClearAllPoints()
+	mbbIcon:SetPoint("CENTER", 0, 0)
+	mbbIcon:SetSize(unpack(config.widgets.buttonBag.size))
+	mbbIcon:SetTexture(config.widgets.buttonBag.texture)
+	mbbIcon:SetTexCoord(0,1,0,1)
+	mbbIcon:SetAlpha(.85)
+	
+	local down, over
+	local setalpha = function()
+		if (down and over) then
+			mbbIcon:SetAlpha(1)
+		elseif (down or over) then
+			mbbIcon:SetAlpha(.95)
+		else
+			mbbIcon:SetAlpha(.85)
+		end
+	end
+
+	mbbFrame:SetScript("OnMouseDown", function(self) 
+		down = true
+		setalpha()
+	end)
+
+	mbbFrame:SetScript("OnMouseUp", function(self) 
+		down = false
+		setalpha()
+	end)
+
+	mbbFrame:SetScript("OnEnter", function(self) 
+		over = true
+		_G.MBB_ShowTimeout = -1
+
+		GameTooltip:SetOwner(mapContent, "ANCHOR_PRESERVE")
+		GameTooltip:ClearAllPoints()
+		GameTooltip:SetPoint("TOPRIGHT", mapContent, "TOPLEFT", -10, -10)
+		GameTooltip:AddLine("MinimapButtonBag v" .. MBB_Version)
+		GameTooltip:AddLine(MBB_TOOLTIP1, 0, 1, 0)
+		GameTooltip:Show()
+		setalpha()
+	end)
+
+	mbbFrame:SetScript("OnLeave", function(self) 
+		over = false
+		_G.MBB_ShowTimeout = 0
+		GameTooltip:Hide()
+		setalpha()
+	end)
+
+end
+
+Module.WaitForMBB = function(self, event, addon)
+	if (addon == "MBB") then
+		self:InitMBB()
+		self:UnregisterEvent("ADDON_LOADED", "WaitForMBB")
+	end
 end
 
 Module.OnInit = function(self)
@@ -527,7 +599,7 @@ Module.OnInit = function(self)
 	-- In Cata and again in WoD the blob textures turned butt fugly, 
 	-- so we change the settings to something far easier on the eye, 
 	-- and also a lot easier to navigate with.
-	if CATA then
+	if ENGINE_CATA then
 		-- These "alpha" values range from 0 to 255, for some obscure reason,
 		-- so a value of 127 would be 127/255 ≃ 0.5ish in the normal API.
 		oldMinimap:SetQuestBlobInsideAlpha(0) -- "blue" areas with quest mobs/items in them
@@ -540,7 +612,7 @@ Module.OnInit = function(self)
 		oldMinimap:SetArchBlobRingAlpha(0) -- the big fugly edge ring texture!
 		oldMinimap:SetArchBlobRingScalar(0) -- ring texture inside quest areas?
 
-		if WOD then
+		if ENGINE_WOD then
 			oldMinimap:SetTaskBlobInsideAlpha(0) -- "blue" areas with quest mobs/items in them
 			oldMinimap:SetTaskBlobOutsideAlpha(127) -- borders around the "blue" areas 
 			oldMinimap:SetTaskBlobRingAlpha(0) -- the big fugly edge ring texture!
@@ -559,6 +631,7 @@ Module.OnInit = function(self)
 	mapContent:SetFrameStrata("LOW") 
 	mapContent:SetFrameLevel(2)
 	mapContent:SetMaskTexture(config.map.mask)
+	mapContent:SetBlipTexture(config.map.blips)
 	mapContent:EnableMouseWheel(true)
 	mapContent:SetScript("OnMouseWheel", onMouseWheel)
 	mapContent:SetScript("OnMouseUp", onMouseUp)
@@ -572,7 +645,7 @@ Module.OnInit = function(self)
 
 	-- Add a dark backdrop using the mask texture
 	local mapBackdrop = visibility:CreateTexture()
-	mapBackdrop:SetDrawLayer("BORDER", 0)
+	mapBackdrop:SetDrawLayer("BACKGROUND")
 	mapBackdrop:SetPoint("CENTER", map, "CENTER", 0, 0)
 	mapBackdrop:SetSize(map:GetWidth(), map:GetHeight())
 	mapBackdrop:SetTexture(config.map.mask)
@@ -582,14 +655,21 @@ Module.OnInit = function(self)
 	local mapOverlayHolder = visibility:CreateFrame()
 	mapOverlayHolder:SetFrameLevel(3)
 	--mapOverlayHolder:SetAllPoints()
-
-	--local mapOverlay = mapContent:CreateTexture()
-	local mapOverlay = mapOverlayHolder:CreateTexture()
-	mapOverlay:SetDrawLayer("BORDER", 0)
+	
+	local mapOverlay = mapContent:CreateTexture()
+	--local mapOverlay = mapOverlayHolder:CreateTexture()
+	mapOverlay:SetDrawLayer("BORDER")
 	mapOverlay:SetPoint("CENTER", map, "CENTER", 0, 0)
 	mapOverlay:SetSize(map:GetWidth(), map:GetHeight())
 	mapOverlay:SetTexture(config.map.mask)
 	mapOverlay:SetVertexColor(0, 0, 0, .25)
+
+	local mapBorder = border:CreateTexture()
+	mapBorder:SetDrawLayer("BACKGROUND")
+	mapBorder:SetPoint(unpack(config.border.point))
+	mapBorder:SetSize(unpack(config.border.size))
+	mapBorder:SetTexture(config.border.path)
+
 
 	-- player coordinates
 	local playerCoordinates = border:CreateFontString()
@@ -679,153 +759,135 @@ Module.OnInit = function(self)
 	zoneDifficulty:SetPoint("BOTTOMRIGHT", time, "BOTTOMLEFT", 0, 0)
 	zoneDifficulty:SetJustifyV("BOTTOM")
 
-	local finderMessagePvE = _G.CHANNEL_CATEGORY_GROUP -- _G.LOOKING
-	local finderMessagePvP = _G.PVP
 
-	if MOP then
-		-- MoP Dungeon Finder Eye
-		if _G.QueueStatusMinimapButton then
-			local groupConfig = config.widgets.group
+	-- group finder button(s)
 
-			local group = _G.QueueStatusMinimapButton 
-			group:SetParent(border)
-			group:SetFrameLevel(5)
-			group:ClearAllPoints()
-			group:SetPoint(unpack(groupConfig.point))
-			group:SetSize(groupConfig.size[1], groupConfig.size[2])
+	--local groupConfig = config.widgets.group
+	if ENGINE_MOP then
+		local queueButton = _G.QueueStatusMinimapButton
+		if queueButton then
+			local button = border:CreateFrame()
+			button:SetPoint(unpack(config.widgets.group.point))
+			button:SetSize(unpack(config.widgets.group.size))
 
-			local groupText = border:CreateFontString(nil, "OVERLAY")
-			groupText:SetParent(group)
-			groupText:Place(unpack(groupConfig.fontAnchor))
-			groupText:SetFontObject(groupConfig.normalFont)
-			groupText:SetTextColor(groupConfig.fontColor[1], groupConfig.fontColor[2], groupConfig.fontColor[3])
-			groupText:SetText(finderMessagePvE) 
-			groupText:SetJustifyV("BOTTOM")
+			queueButton:SetParent(button)
+			--queueButton:SetFrameLevel(5)
+			queueButton:ClearAllPoints()
+			queueButton:SetPoint("CENTER", 0, 0)
+			queueButton:SetSize(unpack(config.widgets.group.size))
 
-			-- Need a separate frame for the updater, 
-			-- as the icon frame's OnUpdate is reset on mouseover, 
-			-- thus cancelling our script as well. 
-			local total, dots = 0, 0
-			local updater = CreateFrame("Frame", nil, group)
-			updater:SetScript("OnUpdate", function(self, elapsed) 
-				total = total + elapsed
-				if total > 1 then
-					dots = dots + 1
-					if dots > 3 then 
-						dots = 0
-					end
-					if dots == 0 then
-						groupText:SetText(finderMessagePvE) 
-					elseif dots == 1 then
-						groupText:SetFormattedText("%s.", finderMessagePvE) 
-					elseif dots == 2 then
-						groupText:SetFormattedText("%s..", finderMessagePvE) 
-					elseif dots == 3 then
-						groupText:SetFormattedText("%s...", finderMessagePvE) 
-					end
-					total = 0
-				end 
-			end)
+			local borderTexture = queueButton:CreateTexture()
+			borderTexture:SetDrawLayer("BORDER")
+			borderTexture:SetPoint(unpack(config.widgets.group.border_point))
+			borderTexture:SetSize(unpack(config.widgets.group.border_size))
+			borderTexture:SetTexture(config.widgets.group.border_texture)
+			borderTexture:SetTexCoord(unpack(config.widgets.group.border_texcoord))
+
+			local iconTexture = queueButton:CreateTexture()
+			iconTexture:SetDrawLayer("ARTWORK")
+			iconTexture:SetPoint(unpack(config.widgets.group.icon_point))
+			iconTexture:SetSize(unpack(config.widgets.group.icon_size))
+			iconTexture:SetTexture(config.widgets.group.icon_texture)
+			iconTexture:SetTexCoord(unpack(config.widgets.group.icon_texcoord))
+		end
+	else
+		local lfgButton = _G.MiniMapLFGFrame
+		if lfgButton then
+			local button = border:CreateFrame()
+			button:SetPoint(unpack(config.widgets.group.point))
+			button:SetSize(unpack(config.widgets.group.size))
+
+			lfgButton:SetParent(button)
+			--lfgButton:SetFrameLevel(5)
+			lfgButton:ClearAllPoints()
+			lfgButton:SetPoint("CENTER", 0, 0)
+			lfgButton:SetSize(unpack(config.widgets.group.size))
+
+			local borderTexture = lfgButton:CreateTexture()
+			borderTexture:SetDrawLayer("BORDER")
+			borderTexture:SetPoint(unpack(config.widgets.group.border_point))
+			borderTexture:SetSize(unpack(config.widgets.group.border_size))
+			borderTexture:SetTexture(config.widgets.group.border_texture)
+			borderTexture:SetTexCoord(unpack(config.widgets.group.border_texcoord))
+
+			local iconTexture = lfgButton:CreateTexture()
+			iconTexture:SetDrawLayer("ARTWORK")
+			iconTexture:SetPoint(unpack(config.widgets.group.icon_point))
+			iconTexture:SetSize(unpack(config.widgets.group.icon_size))
+			iconTexture:SetTexture(config.widgets.group.icon_texture)
+			iconTexture:SetTexCoord(unpack(config.widgets.group.icon_texcoord))
+		end
+
+		local pvpButton = _G.MiniMapBattlefieldFrame
+		if pvpButton then
+			local button = border:CreateFrame()
+			button:SetPoint(unpack(config.widgets.group.point))
+			button:SetSize(unpack(config.widgets.group.size))
+
+			pvpButton:SetParent(button)
+			--pvpButton:SetFrameLevel(5)
+			pvpButton:ClearAllPoints()
+			pvpButton:SetPoint("CENTER", 0, 0)
+			pvpButton:SetSize(unpack(config.widgets.group.size))
+
+			local borderTexture = pvpButton:CreateTexture()
+			borderTexture:SetDrawLayer("BORDER")
+			borderTexture:SetPoint(unpack(config.widgets.group.border_point))
+			borderTexture:SetSize(unpack(config.widgets.group.border_size))
+			borderTexture:SetTexture(config.widgets.group.border_texture)
+			borderTexture:SetTexCoord(unpack(config.widgets.group.border_texcoord))
+
+			local iconTexture = pvpButton:CreateTexture()
+			iconTexture:SetDrawLayer("ARTWORK")
+			iconTexture:SetPoint(unpack(config.widgets.group.icon_point))
+			iconTexture:SetSize(unpack(config.widgets.group.icon_size))
+			iconTexture:SetTexture(config.widgets.group.icon_texture)
+			iconTexture:SetTexCoord(unpack(config.widgets.group.icon_texcoord))
 		end
 	end
 
-	if (not MOP) then
-		-- WotLK and Cata Dungeon Finder Eye
-		if _G.MiniMapLFGFrame then
-			local groupConfig = config.widgets.group
-
-			local group = _G.MiniMapLFGFrame 
-			group:SetParent(border)
-			group:SetFrameLevel(5)
-			group:ClearAllPoints()
-			group:SetPoint(unpack(groupConfig.point))
-			group:SetSize(groupConfig.size[1], groupConfig.size[2])
-
-			local groupText = border:CreateFontString(nil, "OVERLAY")
-			groupText:SetParent(group)
-			groupText:Place(unpack(groupConfig.fontAnchor))
-			groupText:SetFontObject(groupConfig.normalFont)
-			groupText:SetTextColor(groupConfig.fontColor[1], groupConfig.fontColor[2], groupConfig.fontColor[3])
-			groupText:SetText(finderMessagePvE) 
-			groupText:SetJustifyV("BOTTOM")
-
-			-- Need a separate frame for the updater, 
-			-- as the icon frame's OnUpdate is reset on mouseover, 
-			-- thus cancelling our script as well. 
-			local total, dots = 0, 0
-			local updater = CreateFrame("Frame", nil, group)
-			updater:SetScript("OnUpdate", function(self, elapsed) 
-				total = total + elapsed
-				if total > 1 then
-					dots = dots + 1
-					if dots > 3 then 
-						dots = 0
-					end
-					if dots == 0 then
-						groupText:SetText(finderMessagePvE) 
-					elseif dots == 1 then
-						groupText:SetFormattedText("%s.", finderMessagePvE) 
-					elseif dots == 2 then
-						groupText:SetFormattedText("%s..", finderMessagePvE) 
-					elseif dots == 3 then
-						groupText:SetFormattedText("%s...", finderMessagePvE) 
-					end
-					total = 0
-				end 
-			end)
-		end
-
-		-- WotLK and Cata PvP battleground and Wintergrasp queue
-		if _G.MiniMapBattlefieldFrame then
-			local groupConfig = config.widgets.group
-
-			local pvp = _G.MiniMapBattlefieldFrame 
-			pvp:SetParent(border)
-			pvp:SetFrameLevel(5)
-			pvp:ClearAllPoints()
-			pvp:SetPoint(unpack(groupConfig.point))
-			pvp:SetSize(groupConfig.size[1], groupConfig.size[2])
-
-			local pvpText = border:CreateFontString(nil, "OVERLAY")
-			pvpText:SetParent(pvp)
-			pvpText:Place(unpack(groupConfig.fontAnchor))
-			pvpText:SetFontObject(groupConfig.normalFont)
-			pvpText:SetTextColor(groupConfig.fontColor[1], groupConfig.fontColor[2], groupConfig.fontColor[3])
-			pvpText:SetText(finderMessagePvP) 
-			pvpText:SetJustifyV("BOTTOM")
-			
-			-- Need a separate frame for the updater, 
-			-- as the icon frame's OnUpdate is reset on mouseover, 
-			-- thus cancelling our script as well. 
-			local total, dots = 0, 0
-			local updater = CreateFrame("Frame", nil, pvp)
-			updater:SetScript("OnUpdate", function(self, elapsed) 
-				total = total + elapsed
-				if total > 1 then
-					local pvp = GetZonePVPInfo()
-					local _, instanceType = GetInstanceInfo()
-					if pvp == "combat" or pvp == "arena" or instanceType == "pvp" or instanceType == "arena" then
-						pvpText:SetText(PVP) 
-					else
-						dots = dots + 1
-						if dots > 3 then 
-							dots = 0
-						end
-						if dots == 0 then
-							pvpText:SetText(finderMessagePvP) 
-						elseif dots == 1 then
-							pvpText:SetFormattedText("%s.", finderMessagePvP) 
-						elseif dots == 2 then
-							pvpText:SetFormattedText("%s..", finderMessagePvP) 
-						elseif dots == 3 then
-							pvpText:SetFormattedText("%s...", finderMessagePvP) 
-						end
-						total = 0
-					end
-				end 
-			end)
+	-- buttonbags
+	-- Style the MBB button
+	if (not MBF) and MBB then
+		if IsAddOnLoaded("MBB") then 
+			self:InitMBB("MBB")
+		else
+			self:RegisterEvent("ADDON_LOADED", "WaitForMBB")
 		end
 	end
+
+	-- Initiate or own button grabber
+	if not(MBB or MBF) then
+
+		-- Use an extra layer to hide it
+		local buttonBagHider = frame:CreateFrame("Frame")
+		buttonBagHider:Hide() 
+
+		-- The actual bag that captures all buttons
+		local buttonBag = buttonBagHider:CreateFrame("Frame")
+		buttonBag.numButtons = 0
+		buttonBag.hiddenButtons = {}
+		buttonBag.checkedButtons = {}
+		buttonBag.ignoredButtons = {
+			--FishingExtravaganzaMini = true,
+			MBB_MinimapButtonFrame = true,
+			MinimapButtonFrame = true,
+			--MiniMapPing = true,
+			ZGVMarker = true
+		}
+		buttonBag.add = function(button)
+			buttonBag.numButtons = buttonBag.numButtons + 1
+			buttonBag.hiddenButtons[button] = true
+			button:SetParent(buttonBag)
+			button:SetSize(24,24)
+			button:ClearAllPoints() 
+			button:SetPoint("TOPLEFT", 0, 0)
+			button:SetPoint("BOTTOMRIGHT", 0, 0)
+		end
+		widgets.buttonBag = buttonBag
+	end
+
+
 
 	-- Mapping
 	---------------------------------------------------------------
@@ -864,21 +926,17 @@ end
 Module.OnEnable = function(self)
 	BlizzardUI:GetElement("Minimap"):Disable()
 	BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsDisplayPanelShowClock")
-	BlizzardUI:GetElement("Menu_Option"):Remove(true, "InterfaceOptionsDisplayPanelRotateMinimap")
+
+	-- Faking an event here
+	WorldMapFrame:HookScript("OnHide", function() self:OnEvent("WORLD_MAP_CLOSED") end)	
 
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
 	self:RegisterEvent("ZONE_CHANGED", "OnEvent")
 	self:RegisterEvent("ZONE_CHANGED_INDOORS", "OnEvent")
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
 	self:RegisterEvent("VARIABLES_LOADED", "OnEvent")
-	self:UpdateZoneData()
 
-	-- Don't do thiw! 
-	-- We don't want to overwrite the minimap methods too early in the loading process,
-	-- or the map will lock itself to the tiny wrong size instead. 
-	-- Have to add a failsafe for this that'll make sure it isn't locked 
-	-- before it's fully loaded and correctly sized.
-	--self:AlignMinimap() 
+	self:UpdateZoneData()
 
 	-- Initiate updates for time, coordinates, etc
 	self.frame:SetScript("OnUpdate", onUpdate)
@@ -887,5 +945,5 @@ Module.OnEnable = function(self)
 	-- *Note that I plan to make minimap visibility save between sessions, so strictly speaking this is not redundant, 
 	--  event though the minimap technically always is visible at /reload. 
 	self:SendMessage("ENGINE_MINIMAP_VISIBLE_CHANGED", not not(self.frame.visibility:IsShown()))
-	
+
 end

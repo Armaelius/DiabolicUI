@@ -349,8 +349,8 @@ local HOUR = 3600
 local DAY = 86400
 
 -- Time limit where we separate between short and long buffs
-local TIME_LIMIT = MINUTE * 5
-local TIME_LIMIT_LOW = MINUTE
+local TIME_LIMIT = Engine:GetConstant("AURA_TIME_LIMIT")
+local TIME_LIMIT_LOW = Engine:GetConstant("AURA_TIME_LIMIT_LOW")
 
 -- Move to the general aura lists later
 local whiteList = {
@@ -462,55 +462,61 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	
 	-- CastBar
 	-------------------------------------------------------------------
-	local CastBar = self:CreateStatusBar()
-	CastBar:Hide()
-	CastBar:SetSize(unpack(config.castbar.size))
-	CastBar:SetStatusBarTexture(config.castbar.texture)
-	CastBar:SetStatusBarColor(unpack(config.castbar.color))
-	CastBar:SetSparkTexture(config.castbar.spark.texture)
-	CastBar:SetSparkSize(unpack(config.castbar.spark.size))
-	CastBar:SetSparkFlash(unpack(config.castbar.spark.flash))
-	CastBar:DisableSmoothing(true)
-	CastBar:Place(unpack(hasPet and config.castbar.positionPet or config.castbar.position))
-	
-	CastBar.Backdrop = CastBar:CreateTexture(nil, "BACKGROUND")
-	CastBar.Backdrop:SetSize(unpack(config.castbar.backdrop.size))
-	CastBar.Backdrop:SetPoint(unpack(config.castbar.backdrop.position))
-	CastBar.Backdrop:SetTexture(config.castbar.backdrop.texture)
+	if (not Engine:IsAddOnEnabled("Quartz")) then
+		local CastBar = self:CreateStatusBar()
+		CastBar:Hide()
+		CastBar:SetSize(unpack(config.castbar.size))
+		CastBar:SetStatusBarTexture(config.castbar.texture)
+		CastBar:SetStatusBarColor(unpack(config.castbar.color))
+		CastBar:SetSparkTexture(config.castbar.spark.texture)
+		CastBar:SetSparkSize(unpack(config.castbar.spark.size))
+		CastBar:SetSparkFlash(unpack(config.castbar.spark.flash))
+		CastBar:DisableSmoothing(true)
+		CastBar:Place(unpack(hasPet and config.castbar.positionPet or config.castbar.position))
+		
+		CastBar.Backdrop = CastBar:CreateTexture(nil, "BACKGROUND")
+		CastBar.Backdrop:SetSize(unpack(config.castbar.backdrop.size))
+		CastBar.Backdrop:SetPoint(unpack(config.castbar.backdrop.position))
+		CastBar.Backdrop:SetTexture(config.castbar.backdrop.texture)
 
-	CastBar.SafeZone = CastBar:CreateTexture(nil, "ARTWORK")
-	CastBar.SafeZone:SetPoint("RIGHT")
-	CastBar.SafeZone:SetPoint("TOP")
-	CastBar.SafeZone:SetPoint("BOTTOM")
-	CastBar.SafeZone:SetTexture(.7, 0, 0, .25)
-	CastBar.SafeZone:SetWidth(0.0001)
-	CastBar.SafeZone:Hide()
+		CastBar.SafeZone = CastBar:CreateTexture(nil, "ARTWORK")
+		CastBar.SafeZone:SetPoint("RIGHT")
+		CastBar.SafeZone:SetPoint("TOP")
+		CastBar.SafeZone:SetPoint("BOTTOM")
+		CastBar.SafeZone:SetTexture(.7, 0, 0, .25)
+		CastBar.SafeZone:SetWidth(0.0001)
+		CastBar.SafeZone:Hide()
 
-	CastBar.Name = CastBar:CreateFontString(nil, "OVERLAY")
-	CastBar.Name:SetFontObject(config.castbar.name.font_object)
-	CastBar.Name:SetPoint(unpack(config.castbar.name.position))
-	CastBar.Name.Shade = CastBar:CreateTexture(nil, "BACKGROUND")
-	CastBar.Name.Shade:SetPoint("CENTER", CastBar.Name, "CENTER", 0, 4)
-	CastBar.Name.Shade:SetTexture(config.castbar.shade.texture)
-	CastBar.Name.Shade:SetVertexColor(0, 0, 0)
-	CastBar.Name.Shade:SetAlpha(1/3)
+		CastBar.Name = CastBar:CreateFontString(nil, "OVERLAY")
+		CastBar.Name:SetFontObject(config.castbar.name.font_object)
+		CastBar.Name:SetPoint(unpack(config.castbar.name.position))
+		CastBar.Name.Shade = CastBar:CreateTexture(nil, "BACKGROUND")
+		CastBar.Name.Shade:SetPoint("CENTER", CastBar.Name, "CENTER", 0, 4)
+		CastBar.Name.Shade:SetTexture(config.castbar.shade.texture)
+		CastBar.Name.Shade:SetVertexColor(0, 0, 0)
+		CastBar.Name.Shade:SetAlpha(1/3)
 
-	CastBar.Overlay = CastBar:CreateFrame()
-	CastBar.Overlay:SetAllPoints()
+		CastBar.Overlay = CastBar:CreateFrame()
+		CastBar.Overlay:SetAllPoints()
 
-	CastBar.Border = CastBar.Overlay:CreateTexture(nil, "BORDER")
-	CastBar.Border:SetSize(unpack(config.castbar.border.size))
-	CastBar.Border:SetPoint(unpack(config.castbar.border.position))
-	CastBar.Border:SetTexture(config.castbar.border.texture)
+		CastBar.Border = CastBar.Overlay:CreateTexture(nil, "BORDER")
+		CastBar.Border:SetSize(unpack(config.castbar.border.size))
+		CastBar.Border:SetPoint(unpack(config.castbar.border.position))
+		CastBar.Border:SetTexture(config.castbar.border.texture)
 
-	CastBar.Value = CastBar.Overlay:CreateFontString(nil, "OVERLAY")
-	CastBar.Value:SetFontObject(config.castbar.value.font_object)
-	CastBar.Value:SetPoint(unpack(config.castbar.value.position))
-	CastBar.Value.Shade = CastBar:CreateTexture(nil, "BACKGROUND")
-	CastBar.Value.Shade:SetPoint("CENTER", CastBar.Value, "CENTER", 0, 4)
-	CastBar.Value.Shade:SetTexture(config.castbar.shade.texture)
-	CastBar.Value.Shade:SetVertexColor(0, 0, 0)
-	CastBar.Value.Shade:SetAlpha(1/3)
+		CastBar.Value = CastBar.Overlay:CreateFontString(nil, "OVERLAY")
+		CastBar.Value:SetFontObject(config.castbar.value.font_object)
+		CastBar.Value:SetPoint(unpack(config.castbar.value.position))
+		CastBar.Value.Shade = CastBar:CreateTexture(nil, "BACKGROUND")
+		CastBar.Value.Shade:SetPoint("CENTER", CastBar.Value, "CENTER", 0, 4)
+		CastBar.Value.Shade:SetTexture(config.castbar.shade.texture)
+		CastBar.Value.Shade:SetVertexColor(0, 0, 0)
+		CastBar.Value.Shade:SetAlpha(1/3)
+
+		hooksecurefunc(CastBar.Name, "SetText", function(self) self.Shade:SetSize(self:GetStringWidth() + 128, self:GetStringHeight() + 48) end)
+
+		self.CastBar = CastBar
+	end
 
 
 	-- Class Resource
@@ -565,17 +571,13 @@ local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
 	Debuffs.PostCreateButton = postCreateAuraButton
 	Debuffs.PostUpdateButton = postUpdateAuraButton
 
-	hooksecurefunc(CastBar.Name, "SetText", function(self) self.Shade:SetSize(self:GetStringWidth() + 128, self:GetStringHeight() + 48) end)
-
 	self:HookScript("OnEnter", onEnterLeft)
 	self:HookScript("OnLeave", onLeaveLeft)
 
 	self.Buffs = Buffs
 	self.Debuffs = Debuffs
 	self.Health = Health
-	self.CastBar = CastBar
 	
-
 end
 
 -- Right orb (power, minimap auras)

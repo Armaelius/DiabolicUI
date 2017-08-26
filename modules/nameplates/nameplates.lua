@@ -1,8 +1,10 @@
 local ADDON, Engine = ...
 local Module = Engine:NewModule("NamePlates")
 local StatusBar = Engine:GetHandler("StatusBar")
+local AuraData = Engine:GetStaticConfig("Data: Auras")
 local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Data: Functions")
+local F = Engine:GetStaticConfig("Library: Format")
+local AuraFunctions = Engine:GetStaticConfig("Library: AuraFunctions")
 local UICenter = Engine:GetFrame()
 
 -- Register incompatibilities
@@ -12,6 +14,7 @@ Module:SetIncompatible("Kui_Nameplates")
 -- Lua API
 local _G = _G
 local ipairs = ipairs
+local math_ceil = math.ceil
 local math_floor = math.floor
 local pairs = pairs
 local select = select
@@ -32,11 +35,8 @@ local GetLocale = _G.GetLocale
 local GetRaidTargetIndex = _G.GetRaidTargetIndex
 local GetTime = _G.GetTime
 local GetQuestGreenRange = _G.GetQuestGreenRange
-local G_UnitAura = _G.UnitAura
-local G_UnitBuff = _G.UnitBuff
-local G_UnitDebuff = _G.UnitDebuff
+local InCombatLockdown = _G.InCombatLockdown
 local SetCVar = _G.SetCVar
-local UnitAffectingCombat = _G.UnitAffectingCombat
 local UnitCastingInfo = _G.UnitCastingInfo
 local UnitChannelInfo = _G.UnitChannelInfo
 local UnitClass = _G.UnitClass
@@ -58,6 +58,9 @@ local UnitThreatSituation = _G.UnitThreatSituation
 
 -- Engine API
 local short = F.Short
+local UnitAura = AuraFunctions.UnitAura
+local UnitBuff = AuraFunctions.UnitBuff
+local UnitDebuff = AuraFunctions.UnitDebuff
 
 -- WoW Frames & Tables
 local UIParent = UIParent
@@ -105,7 +108,8 @@ local MINUTE = Engine:GetConstant("MINUTE")
 local BUFF_MAX_DISPLAY = Engine:GetConstant("BUFF_MAX_DISPLAY")
 
 -- Time limit in seconds where we separate between short and long buffs
-local TIME_LIMIT = 300
+local TIME_LIMIT = Engine:GetConstant("AURA_TIME_LIMIT")
+local TIME_LIMIT_LOW = Engine:GetConstant("AURA_TIME_LIMIT_LOW")
 
 -- Player and Target data
 local LEVEL = UnitLevel("player") -- our current level
@@ -118,7 +122,6 @@ local WOTLK_PLATE 		= [[Interface\TargetingFrame\UI-TargetingFrame-Flash]]
 local ELITE_TEXTURE 	= [[Interface\Tooltips\EliteNameplateIcon]] -- elite/rare dragon texture
 local BOSS_TEXTURE 		= [[Interface\TargetingFrame\UI-TargetingFrame-Skull]] -- skull textures
 local EMPTY_TEXTURE 	= Engine:GetConstant("EMPTY_TEXTURE") -- used to make textures invisible
-local BLANK_TEXTURE 	= Engine:GetConstant("BLANK_TEXTURE") -- not currently used (?)
 
 -- Client version constants, to avoid extra function calls and database lookups 
 -- during the rather performance intensive OnUpdate handling.
@@ -137,85 +140,6 @@ local WEAKAURAS = ENGINE_LEGION and Engine:IsAddOnEnabled("WeakAuras")
 -- So we simply parent them to this hidden frame.
 local UIHider = CreateFrame("Frame")
 UIHider:Hide()
-
-
-
--- Not really a big fan of this method, since it leads to an extra function call. 
--- It is however from a development point of view the easiest way to implement 
--- identical behavior across the various expansions and patches.  
-
--- Should be noted that the isCastByPlayer return value in Legion 
--- returns true for all auras that the player CAN cast, even when cast by other players. 
--- This makes it useless when trying to track our own damage debuffs on enemies. 
-
-local UnitAura = ENGINE_LEGION and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end 
-
-or ENGINE_MOP and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
-end
-
-or ENGINE_CATA and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-or function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
-		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-local UnitBuff = ENGINE_LEGION and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end 
-
-or ENGINE_MOP and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
-end
-
-or ENGINE_CATA and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-or function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
-		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-local UnitDebuff = ENGINE_LEGION and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end 
-
-or ENGINE_MOP and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
-end
-
-or ENGINE_CATA and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-or function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
-		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
 
 
 
@@ -323,11 +247,11 @@ local NamePlate_Legion = setmetatable({}, { __index = NamePlate })
 local NamePlate_Legion_MT = { __index = NamePlate_Legion }
 
 -- Set the nameplate metatable to whatever the current expansion is.
-local NamePlate_Current_MT = ENGINE_LEGION and NamePlate_Legion_MT 
-						  or ENGINE_WOD and NamePlate_WoD_MT 
-						  or ENGINE_MOP and NamePlate_MoP_MT 
-						  or ENGINE_CATA and NamePlate_Cata_MT
-						  or ENGINE_WOTLK and NamePlate_WotLK_MT 
+local NamePlate_Current_MT = ENGINE_LEGION and 	NamePlate_Legion_MT 
+						  or ENGINE_WOD and 	NamePlate_WoD_MT 
+						  or ENGINE_MOP and 	NamePlate_MoP_MT 
+						  or ENGINE_CATA and 	NamePlate_Cata_MT
+						  or ENGINE_WOTLK and 	NamePlate_WotLK_MT 
 
 
 
@@ -337,18 +261,6 @@ local NamePlate_Current_MT = ENGINE_LEGION and NamePlate_Legion_MT
 
 local Aura = CreateFrame("Frame")
 local Aura_MT = { __index = Aura }
-
-local auraBackdrop = {
-	bgFile = BLANK_TEXTURE,
-	edgeFile = BLANK_TEXTURE,
-	edgeSize = 1,
-	insets = { 
-		left = -1, 
-		right = -1, 
-		top = -1, 
-		bottom = -1
-	}
-}
 
 local auraFilter = function(name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
 
@@ -379,36 +291,40 @@ Aura.CreateTimer = function(self, elapsed)
 				self.first = false
 			end
 			if (self.timeLeft > 0) then
-				-- more than a day
-				if (self.timeLeft > DAY) then
-					self.Time:SetFormattedText("%1dd", math_floor(self.timeLeft / DAY))
-					
-				-- more than an hour
-				elseif (self.timeLeft > HOUR) then
-					self.Time:SetFormattedText("%1dh", math_floor(self.timeLeft / HOUR))
-				
-				-- more than a minute
-				elseif (self.timeLeft > MINUTE) then
-					self.Time:SetFormattedText("%1dm", math_floor(self.timeLeft / MINUTE))
-				
-				-- more than 10 seconds
-				elseif (self.timeLeft > 10) then 
-					self.Time:SetFormattedText("%1d", math_floor(self.timeLeft))
-				
-				-- between 6 and 10 seconds
-				elseif (self.timeLeft >= 6) then
-					self.Time:SetFormattedText("|cffff8800%1d|r", math_floor(self.timeLeft))
-					
-				-- between 3 and 5 seconds
-				elseif (self.timeLeft >= 3) then
-					self.Time:SetFormattedText("|cffff0000%1d|r", math_floor(self.timeLeft))
-					
-				-- less than 3 seconds
-				elseif (self.timeLeft > 0) then
-					self.Time:SetFormattedText("|cffff0000%.1f|r", self.timeLeft)
+				if self.currentSpellID then
+					self.Time:SetFormattedText("%1d", math_ceil(self.timeLeft))
 				else
-					self.Time:SetText("")
-				end	
+					-- more than a day
+					if (self.timeLeft > DAY) then
+						self.Time:SetFormattedText("%1dd", math_floor(self.timeLeft / DAY))
+						
+					-- more than an hour
+					elseif (self.timeLeft > HOUR) then
+						self.Time:SetFormattedText("%1dh", math_floor(self.timeLeft / HOUR))
+					
+					-- more than a minute
+					elseif (self.timeLeft > MINUTE) then
+						self.Time:SetFormattedText("%1dm", math_floor(self.timeLeft / MINUTE))
+					
+					-- more than 10 seconds
+					elseif (self.timeLeft > 10) then 
+						self.Time:SetFormattedText("%1d", math_floor(self.timeLeft))
+					
+					-- between 6 and 10 seconds
+					elseif (self.timeLeft >= 6) then
+						self.Time:SetFormattedText("|cffff8800%1d|r", math_floor(self.timeLeft))
+						
+					-- between 3 and 5 seconds
+					elseif (self.timeLeft >= 3) then
+						self.Time:SetFormattedText("|cffff0000%1d|r", math_floor(self.timeLeft))
+						
+					-- less than 3 seconds
+					elseif (self.timeLeft > 0) then
+						self.Time:SetFormattedText("|cffff0000%.1f|r", self.timeLeft)
+					else
+						self.Time:SetText("")
+					end	
+				end
 			else
 				self.Time:SetText("")
 				self.Time:Hide()
@@ -1173,7 +1089,7 @@ NamePlate_Legion.AddAuraButton = function(self, id)
 	aura.Scaffold = aura:CreateFrame("Frame")
 	aura.Scaffold:SetPoint("TOPLEFT", aura, 1, -1)
 	aura.Scaffold:SetPoint("BOTTOMRIGHT", aura, -1, 1)
-	aura.Scaffold:SetBackdrop(auraBackdrop)
+	aura.Scaffold:SetBackdrop(auraConfig.backdrop)
 	aura.Scaffold:SetBackdropColor(0, 0, 0, 1) 
 	aura.Scaffold:SetBackdropBorderColor(.15, .15, .15) 
 
@@ -1199,7 +1115,6 @@ NamePlate_Legion.AddAuraButton = function(self, id)
 	aura.Time:SetFontObject(auraConfig.time.fontObject)
 	aura.Time:SetShadowOffset(unpack(auraConfig.time.shadowOffset))
 	aura.Time:SetShadowColor(unpack(auraConfig.time.shadowColor))
-	aura.Time:ClearAllPoints()
 	aura.Time:SetPoint(unpack(auraConfig.time.place))
 
 	aura.Count = aura.Overlay:CreateFontString() 
@@ -1219,8 +1134,12 @@ end
 NamePlate_Legion.UpdateAuras = function(self)
 	local unit = self.unit
 	local auras = self.Auras
+	local cc = self.CC
+
+	-- Hide auras from hidden plates, or from the player's personal resource display.
 	if (not UnitExists(unit)) or (UnitIsUnit(unit ,"player")) then
 		auras:Hide()
+		cc:Hide()
 		return
 	end
 
@@ -1230,34 +1149,70 @@ NamePlate_Legion.UpdateAuras = function(self)
 	--	return
 	--end
 
+	local hostilePlayer = UnitIsPlayer(unit) and UnitIsEnemy("player", unit)
+	local hostileNPC = UnitCanAttack("player", unit) and (not UnitPlayerControlled(unit))
+	local hostile = hostilePlayer or hostileNPC
+
 	local filter
-	local reaction = UnitReaction(unit, "player")
-	if reaction then 
-		if (reaction <= 4) then
-			-- Reaction 4 is neutral and less than 4 becomes increasingly more hostile
-			filter = "HARMFUL|PLAYER" -- blizz use INCLUDE_NAME_PLATE_ONLY, but that sucks. So we don't.
-		else
-			filter = "HELPFUL|PLAYER" -- blizz don't show beneficial auras, but we do. 
-		end
+	if hostile then
+		--filter = "HARMFUL|PLAYER" -- blizz use INCLUDE_NAME_PLATE_ONLY, but that sucks. So we don't.
+		filter = "HARMFUL" -- blizz use INCLUDE_NAME_PLATE_ONLY, but that sucks. So we don't.
+	else
+		filter = "HELPFUL|PLAYER" -- blizz don't show beneficial auras, but we do. 
 	end
 
+	--local reaction = UnitReaction(unit, "player")
+	--if reaction then 
+	--	if (reaction <= 4) then
+	--		-- Reaction 4 is neutral and less than 4 becomes increasingly more hostile
+	--		filter = "HARMFUL|PLAYER" -- blizz use INCLUDE_NAME_PLATE_ONLY, but that sucks. So we don't.
+	--	else
+	--		filter = "HELPFUL|PLAYER" -- blizz don't show beneficial auras, but we do. 
+	--	end
+	--end
+
+	--local showLoC = (UnitIsPlayer(unit) and UnitIsEnemy("player", unit)) or (reaction and (reaction <= 4))
+
+	local locSpellPrio = -1
+	local locSpellID, locSpellIcon, locSpellCount, locDuration, locExpirationTime
 	local visible = 0
 	if filter then
 		for i = 1, BUFF_MAX_DISPLAY do
 			
 			local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer = UnitAura(unit, i, filter)
 			
-			if not name then
+			if (not name) then
 				break
 			end
 
-			if duration and (duration > 0) then
-				if (duration > TIME_LIMIT) then
+			-- Leave out auras with a long duration
+			if duration and (duration > TIME_LIMIT) then
+				name = nil
+			end
+
+			if hostile then
+
+				-- Hide Loss of Control from the plates, 
+				-- but show it on the big CC display.
+				local lossOfControlPrio = AuraData.loc[spellId]
+				if lossOfControlPrio then
+
+					-- Display the LoC with higher prio if one already exists 
+					if (lossOfControlPrio > locSpellPrio) then
+						locSpellID = spellId
+						locSpellPrio = lossOfControlPrio
+						locSpellIcon = icon
+						locSpellCount = count
+						locDuration = duration
+						locExpirationTime = expirationTime
+					end
+
+					-- Leaving all LoC effects out 
 					name = nil
 				end
 			end
 
-			if name then
+			if name and isCastByPlayer then
 				visible = visible + 1
 				local visibleKey = tostring(visible)
 
@@ -1320,6 +1275,37 @@ NamePlate_Legion.UpdateAuras = function(self)
 		if (not auras:IsShown()) then
 			auras:Show()
 		end
+	end
+
+	-- Display the big LoC icon
+	if locSpellID then
+		cc.first = true
+		cc.duration = locDuration
+		cc.timeLeft = locExpirationTime
+		cc.currentPrio = locSpellPrio
+		cc.currentSpellID = locSpellID
+
+		if (locDuration and (locDuration > 0)) then
+			cc.Time:Show()
+		else
+			cc.Time:Hide()
+		end
+		cc:SetScript("OnUpdate", Aura.CreateTimer)
+
+		cc.Icon:SetTexture(locSpellIcon)
+
+		if (not cc:IsShown()) then
+			cc:Show()
+		end
+	else
+		if cc:IsShown() then
+			cc:Hide()
+			cc.Time:Hide()
+			cc:SetScript("OnUpdate", nil)
+		end
+		cc.Icon:SetTexture("")
+		cc.currentPrio = nil
+		cc.currentSpellID = nil
 	end
 			
 end
@@ -1679,9 +1665,9 @@ NamePlate.CreateRegions = function(self)
 
 	local HealthValue = Health:CreateFontString()
 	HealthValue:SetDrawLayer("OVERLAY")
-	HealthValue:SetPoint("BOTTOM", Health, "TOP", 0, 6)
-	HealthValue:SetFontObject(DiabolicFont_SansBold10)
-	HealthValue:SetTextColor(C.General.Prefix[1], C.General.Prefix[2], C.General.Prefix[3])
+	HealthValue:SetPoint(unpack(widgetConfig.health.value.place))
+	HealthValue:SetFontObject(widgetConfig.health.value.fontObject)
+	HealthValue:SetTextColor(unpack(widgetConfig.health.value.color))
 	Health.Value = HealthValue
 
 
@@ -1742,9 +1728,9 @@ NamePlate.CreateRegions = function(self)
 	-- Cast Name
 	local CastName = Cast:CreateFontString()
 	CastName:SetDrawLayer("OVERLAY")
-	CastName:SetPoint("BOTTOM", Health, "TOP", 0, 6)
-	CastName:SetFontObject(DiabolicFont_SansBold10)
-	CastName:SetTextColor(C.General.Prefix[1], C.General.Prefix[2], C.General.Prefix[3])
+	CastName:SetPoint(unpack(widgetConfig.cast.name.place))
+	CastName:SetFontObject(widgetConfig.cast.name.fontObject)
+	CastName:SetTextColor(unpack(widgetConfig.cast.name.color))
 	Cast.Name = CastName
 
 	-- This is a total copout, but it does what we want, 
@@ -1783,7 +1769,6 @@ NamePlate.CreateRegions = function(self)
 	--SpellIconShade = Spell:CreateTexture()
 	--Spell.Icon.Shade = SpellIconShade
 
-
 	-- Mouse hover highlight
 	local Highlight = Health:CreateTexture()
 	Highlight:Hide()
@@ -1791,13 +1776,6 @@ NamePlate.CreateRegions = function(self)
 	Highlight:SetBlendMode("ADD")
 	Highlight:SetColorTexture(1, 1, 1, 1/4)
 	Highlight:SetDrawLayer("BACKGROUND", 1) 
-
-	-- Unit Name (not actually used)
-	--local Name = self:CreateFontString()
-	--Name:SetDrawLayer("OVERLAY")
-	--Name:SetFontObject(DiabolicFont_HeaderBold12)
-	--Name:SetTextColor(unpack(C.General.OffWhite))
-	--Name:SetPoint("BOTTOM", Health, "TOP", 0, 6)
 
 	-- Unit Level
 	local Level = Health:CreateFontString()
@@ -1829,18 +1807,70 @@ NamePlate.CreateRegions = function(self)
 	Auras:SetWidth(widgetConfig.auras.rowsize * widgetConfig.auras.button.size[1] + ((widgetConfig.auras.rowsize - 1) * widgetConfig.auras.padding))
 	Auras:SetHeight(widgetConfig.auras.button.size[2])
 
-	-- Combat Feedback
-	--[[
-	self.CombatFeedback = self.Health:CreateFrame()
-	self.CombatFeedback:SetSize(self.Health:GetSize())
-	for i = 1, 6 do
-		self.CombatFeedback[i] = self.CombatFeedback:CreateFontString()
-		self.CombatFeedback[i]:SetDrawLayer("OVERLAY")
-		self.CombatFeedback[i]:SetFontObject(DiabolicFont_SansBold12)
+	-- GitHub issue #62: Experimental CC highlight suggested by dualcoding.
+	-- https://github.com/cogwerkz/DiabolicUI/issues/62
+	if ENGINE_LEGION then
+		local cc = widgetConfig.cc -- adding a tiny amount of speed
+		local CC = self:CreateFrame()
+		CC:Hide() 
+		CC:SetPoint(unpack(cc.place))
+		CC:SetSize(unpack(cc.size))
 
+		CC.Glow = CC:CreateFrame()
+		CC.Glow:SetFrameLevel(CC:GetFrameLevel())
+		CC.Glow:SetSize(unpack(cc.glow.size))
+		CC.Glow:SetPoint(unpack(cc.glow.place))
+		CC.Glow:SetBackdrop(cc.glow.backdrop)
+		CC.Glow:SetBackdropColor(0, 0, 0, 0)
+		CC.Glow:SetBackdropBorderColor(unpack(cc.glow.borderColor)) 
+
+		CC.Scaffold = CC:CreateFrame()
+		CC.Scaffold:SetFrameLevel(CC:GetFrameLevel() + 1)
+		CC.Scaffold:SetAllPoints()
+
+		CC.Border = CC:CreateFrame("Frame")
+		CC.Border:SetFrameLevel(CC:GetFrameLevel() + 2)
+		CC.Border:SetSize(unpack(cc.border.size))
+		CC.Border:SetPoint(unpack(cc.border.place))
+		CC.Border:SetBackdrop(cc.border.backdrop) 
+		CC.Border:SetBackdropColor(0, 0, 0, 0)
+		CC.Border:SetBackdropBorderColor(unpack(cc.border.borderColor))
+
+		CC.Icon = CC.Scaffold:CreateTexture() 
+		CC.Icon:SetDrawLayer("BACKGROUND") 
+		CC.Icon:SetSize(unpack(cc.icon.size))
+		CC.Icon:SetPoint(unpack(cc.icon.place))
+		CC.Icon:SetTexCoord(unpack(cc.icon.texCoord))
+		
+		CC.Icon.Shade = CC.Scaffold:CreateTexture() 
+		CC.Icon.Shade:SetDrawLayer("BORDER") 
+		CC.Icon.Shade:SetSize(unpack(cc.icon.shade.size)) 
+		CC.Icon.Shade:SetPoint(unpack(cc.icon.shade.place)) 
+		CC.Icon.Shade:SetTexture(cc.icon.shade.path) 
+		CC.Icon.Shade:SetVertexColor(unpack(cc.icon.shade.color)) 
+
+		CC.Overlay = CC:CreateFrame("Frame") 
+		CC.Overlay:SetFrameLevel(CC:GetFrameLevel() + 3)
+		CC.Overlay:SetAllPoints() 
+
+		CC.Time = CC.Overlay:CreateFontString() 
+		CC.Time:SetDrawLayer("OVERLAY") 
+		CC.Time:SetTextColor(unpack(C.General.OffWhite)) 
+		CC.Time:SetFontObject(cc.time.fontObject)
+		CC.Time:SetShadowOffset(unpack(cc.time.shadowOffset))
+		CC.Time:SetShadowColor(unpack(cc.time.shadowColor))
+		CC.Time:SetPoint(unpack(cc.time.place))
+	
+		CC.Count = CC.Overlay:CreateFontString() 
+		CC.Count:SetDrawLayer("OVERLAY") 
+		CC.Count:SetTextColor(unpack(C.General.Normal)) 
+		CC.Count:SetFontObject(cc.count.fontObject)
+		CC.Count:SetShadowOffset(unpack(cc.count.shadowOffset))
+		CC.Count:SetShadowColor(unpack(cc.count.shadowColor))
+		CC.Count:SetPoint(unpack(cc.count.place))
+
+		self.CC = CC
 	end
-	]]
-
 
 	self.Health = Health
 	self.Cast = Cast
@@ -1884,7 +1914,6 @@ NamePlate.CreateSizer = function(self, baseFrame, worldFrame)
 		plate:Show()
 	end)
 end
-
 
 
 -- This is where a name plate is first created, 
@@ -1944,9 +1973,18 @@ end
 
 -- NamePlate Handling
 ----------------------------------------------------------
-
+-- Not actually something we're going to do
 Module.UpdateNamePlateOptions = function(self)
 end
+
+-- Adjust the maximum distance from which a Legion nameplate is visible.
+Module.UpdateNamePlateMaxDistance = ENGINE_LEGION and Engine:Wrap(function(self)
+	if IsInInstance() then
+		SetCVar("nameplateMaxDistance", 45)
+	else
+		SetCVar("nameplateMaxDistance", 30)
+	end
+end)
 
 Module.UpdateAllScales = function(self)
 	local oldScale = SCALE
@@ -2046,6 +2084,7 @@ Module.OnEvent = ENGINE_LEGION and function(self, event, ...)
 			hasSetBlizzardSettings = true
 		end
 		self:UpdateAllScales()
+		self:UpdateNamePlateMaxDistance() -- Only available in Legion
 		self.Updater:SetScript("OnUpdate", function(_, ...) self:OnUpdate(...) end)
 
 	elseif (event == "PLAYER_LEVEL_UP") then
@@ -2110,7 +2149,7 @@ or ENGINE_WOTLK and function(self, event, ...)
 		end
 
 	elseif ((event == "PLAYER_REGEN_ENABLED") or (event == "PLAYER_REGEN_DISABLED")) then
-		COMBAT = UnitAffectingCombat("player")
+		COMBAT = InCombatLockdown()
 
 	elseif event == "RAID_TARGET_UPDATE" then
 		for baseFrame, plate in pairs(self.allPlates) do
@@ -2556,10 +2595,6 @@ Module.OnUpdate = ENGINE_LEGION and function(self, elapsed)
 
 end 
 or ENGINE_WOTLK and function(self, elapsed)
-	self.elapsed = (self.elapsed or 0) + elapsed
-	if (self.elapsed < HZ) then
-		return
-	end
 
 	-- If the number of children in the WorldFrame 
 	--  is different from the number we have stored, 
@@ -2601,6 +2636,11 @@ or ENGINE_WOTLK and function(self, elapsed)
 		--if WORLDFRAME_PLATES ~= oldNumPlates then
 		--	print(("Total plates: %d - New this cycle: %d"):format(WORLDFRAME_PLATES, WORLDFRAME_PLATES - oldNumPlates))
 		--end
+	end
+
+	self.elapsed = (self.elapsed or 0) + elapsed
+	if (self.elapsed < HZ) then
+		return
 	end
 
 	-- Update visibility, health values and target alpha
@@ -2671,7 +2711,6 @@ or ENGINE_WOTLK and function(self, elapsed)
 end
 
 
-
 -- NamePlate Parsing (pre Legion)
 ----------------------------------------------------------
 -- Figure out if the given frame is a NamePlate
@@ -2694,60 +2733,63 @@ or ENGINE_WOTLK and function(self, baseFrame)
 	return (region and (region:GetObjectType() == "Texture") and (region:GetTexture() == WOTLK_PLATE))
 end
 
+
+-- Blizzard Settings 
+----------------------------------------------------------
+-- Note that setting CVars in Legion is protected, 
+-- and can only be done outside of combat. 
+
 -- Force some blizzard console variables to our liking
 Module.UpdateBlizzardSettings = ENGINE_LEGION and Engine:Wrap(function(self)
 	local config = self.config
-	local setCVar = SetCVar
+	local SetCVar = SetCVar
 
 	-- Because we want friendly NPC nameplates
 	-- We're toning them down a lot as it is, 
 	-- but we still prefer to have them visible, 
 	-- and not the fugly super sized names we get otherwise.
-	setCVar("nameplateShowFriendlyNPCs", 1)
+	SetCVar("nameplateShowFriendlyNPCs", 1)
 
 	-- Insets at the top and bottom of the screen 
 	-- which the target nameplate will be kept away from. 
 	-- Used to avoid the target plate being overlapped 
 	-- by the target frame or actionbars and keep it in view.
-	setCVar("nameplateLargeTopInset", .22) -- default .1
-	setCVar("nameplateOtherTopInset", .22) -- default .08
-	setCVar("nameplateLargeBottomInset", .22) -- default .15
-	setCVar("nameplateOtherBottomInset", .22) -- default .1
+	SetCVar("nameplateLargeTopInset", .22) -- default .1
+	SetCVar("nameplateOtherTopInset", .22) -- default .08
+	SetCVar("nameplateLargeBottomInset", .22) -- default .15
+	SetCVar("nameplateOtherBottomInset", .22) -- default .1
 
 
-	setCVar("nameplateClassResourceTopInset", 0)
-	setCVar("nameplateGlobalScale", 1)
-	setCVar("NamePlateHorizontalScale", 1)
-	setCVar("NamePlateVerticalScale", 1)
+	SetCVar("nameplateClassResourceTopInset", 0)
+	SetCVar("nameplateGlobalScale", 1)
+	SetCVar("NamePlateHorizontalScale", 1)
+	SetCVar("NamePlateVerticalScale", 1)
 
 	-- Scale modifier for large plates, used for important monsters
-	setCVar("nameplateLargerScale", 1) -- default 1.2
-
-	-- The maximum distance to show a nameplate at
-	setCVar("nameplateMaxDistance", 100)
+	SetCVar("nameplateLargerScale", 1) -- default 1.2
 
 	-- The minimum scale and alpha of nameplates
-	setCVar("nameplateMinScale", 1) -- .5 default .8
-	setCVar("nameplateMinAlpha", .3) -- default .5
+	SetCVar("nameplateMinScale", 1) -- .5 default .8
+	SetCVar("nameplateMinAlpha", .3) -- default .5
 
 	-- The minimum distance from the camera plates will reach their minimum scale and alpa
-	setCVar("nameplateMinScaleDistance", 30) -- default 10
-	setCVar("nameplateMinAlphaDistance", 30) -- default 10
+	SetCVar("nameplateMinScaleDistance", 30) -- default 10
+	SetCVar("nameplateMinAlphaDistance", 30) -- default 10
 
 	-- The maximum scale and alpha of nameplates
-	setCVar("nameplateMaxScale", 1) -- default 1
-	setCVar("nameplateMaxAlpha", 0.85) -- default 0.9
+	SetCVar("nameplateMaxScale", 1) -- default 1
+	SetCVar("nameplateMaxAlpha", 0.85) -- default 0.9
 	
 	-- The maximum distance from the camera where plates will still have max scale and alpa
-	setCVar("nameplateMaxScaleDistance", 10) -- default 10
-	setCVar("nameplateMaxAlphaDistance", 10) -- default 10
+	SetCVar("nameplateMaxScaleDistance", 10) -- default 10
+	SetCVar("nameplateMaxAlphaDistance", 10) -- default 10
 
 	-- Show nameplates above heads or at the base (0 or 2)
-	setCVar("nameplateOtherAtBase", 0)
+	SetCVar("nameplateOtherAtBase", 0)
 
 	-- Scale and Alpha of the selected nameplate (current target)
-	setCVar("nameplateSelectedAlpha", 1) -- default 1
-	setCVar("nameplateSelectedScale", 1) -- default 1
+	SetCVar("nameplateSelectedAlpha", 1) -- default 1
+	SetCVar("nameplateSelectedScale", 1) -- default 1
 	
 
 	-- Setting the base size involves changing the size of secure unit buttons, 
@@ -2788,20 +2830,20 @@ Module.UpdateBlizzardSettings = ENGINE_LEGION and Engine:Wrap(function(self)
 end)
 or Engine:Wrap(function(self)
 	local config = self.config
-	local setCVar = SetCVar
+	local SetCVar = SetCVar
 
 	-- These are from which expansion...? /slap myself for not commenting properly!!
 
-	-- we're forcing these from blizzard, but will give custom options through this module
-	--setCVar("bloatthreat", 0) -- sale plates based on the gained threat on a mob with multiple threat targets. weird. 
-	--setCVar("bloattest", 0) -- weird setting that shrinks plates for values > 0
-	--setCVar("bloatnameplates", 0) -- don't change frame size based on threat. it's silly.
-	--setCVar("repositionfrequency", 1) -- don't skip frames between updates
-	-- setCVar("ShowClassColorInNameplate", 1) -- display class colors -- let the user decide later
-	--setCVar("ShowVKeyCastbar", 1) -- display castbars
-	--setCVar("showVKeyCastbarSpellName", 1) -- display spell names on castbars
-	--setCVar("showVKeyCastbarOnlyOnTarget", 0) -- display castbars only on your current target
+	--SetCVar("bloatthreat", 0) -- scale plates based on the gained threat on a mob with multiple threat targets. weird. 
+	--SetCVar("bloattest", 0) -- weird setting that shrinks plates for values > 0
+	--SetCVar("bloatnameplates", 0) -- don't change frame size based on threat. it's silly.
+	--SetCVar("repositionfrequency", 1) -- don't skip frames between updates
+	--SetCVar("ShowClassColorInNameplate", 1) -- display class colors -- let the user decide later
+	--SetCVar("ShowVKeyCastbar", 1) -- display castbars
+	--SetCVar("showVKeyCastbarSpellName", 1) -- display spell names on castbars
+	--SetCVar("showVKeyCastbarOnlyOnTarget", 0) -- display castbars only on your current target
 end)
+
 
 Module.OnInit = function(self)
 	self.config = self:GetStaticConfig("NamePlates")

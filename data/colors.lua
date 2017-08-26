@@ -46,6 +46,7 @@ local C = {
 
 		Gray 			= prepare( 120/255, 120/255, 120/255 ),
 		Green 			= prepare(  38/255, 201/255,  38/255 ),
+		Gold 			= prepare( 255/255, 180/255,  64/255 ),
 		Orange 			= prepare( 255/255, 128/255,  64/255 ),
 		Blue 			= prepare(  64/255, 128/255, 255/255 ),
 
@@ -61,6 +62,7 @@ local C = {
 		XPComplimentary = prepare(  33/255,  82/255, 166/255 ),
 
 		-- UI Colors
+		UIBackdrop 		= prepare( 140/255, 118/255, 110/255 ),
 		UIBorder 		= prepare(  70/255,  59/255,  55/255 ),
 		UIOverlay 		= prepare(  51/255,  17/255,   6/255 ),
 

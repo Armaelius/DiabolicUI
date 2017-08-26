@@ -1,25 +1,20 @@
 local _, Engine = ...
-local Module = Engine:NewModule("DurabilityFrame")
+local Module = Engine:NewModule("Blizzard: DurabilityFrame")
 
 Module.OnInit = function(self)
-	local content = DurabilityFrame
-	if not content then
+	local content = _G.DurabilityFrame
+	if (not content) then
 		return
 	end
 
 	local config = self:GetStaticConfig("Blizzard").durability
 
-	local point, anchor, rpoint, x, y = unpack(config.position)
-	if anchor == "UICenter" then
-		anchor = Engine:GetFrame()
-	end
-
-	local holder = CreateFrame("Frame", nil, Engine:GetFrame())
-	holder:SetPoint(point, anchor, rpoint, x, y)
+	local holder = Engine:CreateFrame("Frame", nil, "UICenter")
+	holder:Place(unpack(config.position))
 	holder:SetWidth(content:GetWidth())
 	holder:SetHeight(content:GetHeight())
 
-	local frameMeta = getmetatable(CreateFrame("Frame")).__index
+	local frameMeta = getmetatable(holder).__index
 	local SetPoint = frameMeta.SetPoint
 	local ClearAllPoints = frameMeta.ClearAllPoints
 

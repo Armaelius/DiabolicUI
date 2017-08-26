@@ -21,8 +21,10 @@ Also, make sure the game is closed when moving new files into the addon director
 The following addons will either enhance the functionality of DiabolicUI, or help style other addons to match the look and feel of it. The links below are to the Legion version of the addons.
 
 * [AdvancedInterfaceOptions](https://mods.curse.com/addons/wow/advancedinterfaceoptions) - _Adds back missing Blizzard options to the interface menu._
+* [MBB (Minimap Button Bag)](http://www.curse.com/addons/wow/mbb) - _Gives access to minimap addon icons._
 * [Bagnon](https://mods.curse.com/addons/wow/bagnon) - _All-in-one bag and bank addon._
 * [Bagnon Facade](https://mods.curse.com/addons/wow/bagnon-facade) - _Adds Masque support to Bagnon._
+* [Bagnon ItemLevel](https://mods.curse.com/addons/wow/274607-bagnon-itemlevel) - _Adds item levels to gear and relics in Bagnon._
 * [Masque](https://mods.curse.com/addons/wow/masque) - _Provides a skinning engine for buttons._
 * [Masque: Goldpaw](http://www.curse.com/addons/wow/masque_goldpaw) - _Button skin pack that can be configured to match DiabolicUI._
 * [Engraved](https://mods.curse.com/addons/wow/engraved) - _Adds combo points, holy power, soul shards etc._ 
@@ -51,9 +53,6 @@ Donations are in no way required, since my addons always has been and always wil
 * PayPal: [paypal@cogwerkz.org](https://www.paypal.com/cgi-bin/webscr?hosted_button_id=NYTWF68FKGLL6&item_name=DiabolicUI+%28By+Lars+Norberg%29&cmd=_s-xclick) (click to go straight to PayPal)
 * PayPal Me: [www.paypal.me/larsnorberg](https://www.paypal.me/larsnorberg)
 * Patreon: [www.patreon.com/cogwerkz](https://www.patreon.com/cogwerkz)
-* Steam: [My Steam Trade URL](https://steamcommunity.com/tradeoffer/new/?partner=12981766&token=YxIjFAlT)
-* Warmane: [www.warmane.com/account/services](http://www.warmane.com/account/services) (Coins can be gifted to Goldpaw@Icecrown)
-
 
 Regards
 Lars *"Goldpaw"* Norberg

@@ -28,18 +28,21 @@ Engine:NewStaticConfig("Objectives", {
 	tracker = {
 		size = {},
 		points = {
-			{ "TOPRIGHT", "UICenter", "TOPRIGHT", -(20 + 1.5), -(64 + MINIMAP_SIZE + 10) },
-			{ "TOPLEFT", "UICenter", "TOPRIGHT", -(20 + MINIMAP_SIZE - 3), -(64 + MINIMAP_SIZE + 10) },
-			{ "BOTTOMRIGHT", "UICenter", "BOTTOMRIGHT", -(20 + 3.5), 220 } 
+			--{ "TOPRIGHT", "UICenter", "TOPRIGHT", -(20 + 1.5), -(64 + MINIMAP_SIZE + 10 + 30) },
+			--{ "TOPLEFT", "UICenter", "TOPRIGHT", -(MINIMAP_SIZE - 3), -(64 + MINIMAP_SIZE + 10 + 30) },
+			{ "TOPRIGHT", "UICenter", "TOPRIGHT", -(20 + 1.5), -(64 + MINIMAP_SIZE + 10 + 30 + 10) },
+			{ "TOPLEFT", "UICenter", "TOPRIGHT", -(MINIMAP_SIZE - 3), -(64 + MINIMAP_SIZE + 10 + 30 + 10) },
+			{ "BOTTOMRIGHT", "UICenter", "BOTTOMRIGHT", -(20 + 1.5), 220 } 
 		},
 		header = {
 			height = 25,
 			points = {
 				{ "TOPLEFT", 0, 0 },
-				{ "TOPRIGHT", 0, 0 }
+				{ "TOPRIGHT", -20, 0 } -- keeping it centered relative to the Minimap 
 			},
 			title = {
 				position = { "LEFT", 0, 0 },
+				positionMinimized = { "CENTER", 0, 0 },
 				normalFont = DiabolicFont_HeaderRegular16White
 			},
 			button = {
@@ -81,7 +84,7 @@ Engine:NewStaticConfig("Objectives", {
 					maxLines = 6,
 					lineSpacing = 7,
 					leftMargin = 0, 
-					rightMargin = 56, -- space for quest items
+					rightMargin = 0, -- 56, -- space for quest items
 					normalFont = DiabolicFont_SansRegular12Title
 				},
 				item = {
@@ -116,8 +119,8 @@ Engine:NewStaticConfig("Objectives", {
 					height = 12,
 					maxLines = 6,
 					lineSpacing = 4,
-					leftMargin = 30, -- space for dots
-					rightMargin = 56, -- space for quest items
+					leftMargin = 30, -- 30, -- space for dots
+					rightMargin = 0, 
 					topMargin = 6, -- margin before every objective
 					bottomMargin = 12, -- margin after ALL objectives are listed
 					dotAdjust = -1,
@@ -132,7 +135,7 @@ Engine:NewStaticConfig("Objectives", {
 					maxLines = 6,
 					lineSpacing = 4,
 					leftMargin = 30, -- space for dots
-					rightMargin = 56, -- space for quest items,
+					rightMargin = 0, 
 					topMargin = 6,
 					bottomMargin = 0, -- something else is being added, can't seem to figure out what :S 
 					dotAdjust = -1,

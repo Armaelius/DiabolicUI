@@ -1,8 +1,8 @@
 local _, Engine = ...
-local Module = Engine:NewModule("Tooltips")
+local Module = Engine:NewModule("Blizzard: Tooltips")
 local L = Engine:GetLocale()
 local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Data: Functions")
+local F = Engine:GetStaticConfig("Library: Format")
 
 -- Register module incompatibilities
 Module:SetIncompatible("TipTac")
@@ -36,9 +36,9 @@ local GetMouseFocus = _G.GetMouseFocus
 local GetTime = _G.GetTime
 local GetQuestGreenRange = _G.GetQuestGreenRange
 local hooksecurefunc = _G.hooksecurefunc
+local InCombatLockdown = _G.InCombatLockdown
 local IsShiftKeyDown = _G.IsShiftKeyDown
 local NotifyInspect = _G.NotifyInspect
-local UnitAffectingCombat = _G.UnitAffectingCombat
 local UnitClass = _G.UnitClass
 local UnitClassification = _G.UnitClassification
 local UnitCreatureFamily = _G.UnitCreatureFamily
@@ -734,7 +734,7 @@ Module.ScanUnit = function(self, unit, forced)
 
 		--self:SetUnitInfo(CONTINUED, cachedSpec or CONTINUED)
 
-		if UnitAffectingCombat("player") then 
+		if InCombatLockdown() then 
 			self.inspect:Hide()
 			return 
 		end

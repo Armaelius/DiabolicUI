@@ -8,10 +8,11 @@ local ipairs, unpack = ipairs, unpack
 local floor = math.floor
 
 -- WoW API
-local CreateFrame = CreateFrame
-local GetFramerate = GetFramerate
-local GetNetStats = GetNetStats
-local UnitFactionGroup = UnitFactionGroup
+local CreateFrame = _G.CreateFrame
+local GetFramerate = _G.GetFramerate
+local GetNetStats = _G.GetNetStats
+local InCombatLockdown = _G.InCombatLockdown
+local UnitFactionGroup = _G.UnitFactionGroup
 
 -- Client version constants
 local ENGINE_WOD 	= Engine:IsBuild("WoD")
@@ -250,7 +251,8 @@ MenuWidget.HookBagnon = function(self, menuButton, menuWindow)
 	if (not inventory) then
 		local bagnon = _G.Bagnon
 		if bagnon then
-			hooksecurefunc(bagnon, "OnEnable", function() 
+			-- Add in the OnInitialize method for WotLK
+			hooksecurefunc(bagnon, bagnon.OnEnable and "OnEnable" or "OnInitialize", function() 
 				self:HookBagnon(menuButton, menuWindow)
 			end)
 		end
@@ -804,36 +806,6 @@ MenuWidget.OnEnable = function(self)
 		KeyRingButton:Show()
 	end
 
-	-- initial hack of the bag position
-	local Blizz_ToggleBackpack = ToggleBackpack
-	local Blizz_ToggleBag = ToggleBag
-	local Blizz_OpenBag = OpenBag
-	local Blizz_OpenBackpack = OpenBackpack
-	local Blizz_OpenAllBags = OpenAllBags
-	
-	-- This was at one point reported as tainting the WorldMap, but after testing 
-	-- I concluded that the taint is coming from the tracker module instead.
-	local UpdateOffsets = function()
-		if InCombatLockdown() or true then -- bugs out and and can't be arsed to make it function properly with UI scaling
-			return
-		end
-		CONTAINER_OFFSET_Y = MicroMenuWindow:GetBottom() + 6 + (BagBarMenuWindow:IsShown() and bagbar_menu_config.bag_offset or 0)
-		CONTAINER_OFFSET_X = UIParent:GetRight() - MicroMenuWindow:GetRight() 
-	end
-
-	OpenBag = function(...)
-		UpdateOffsets()
-		Blizz_OpenBag(...)
-	end
-	OpenBackpack = function(...)
-		UpdateOffsets()
-		Blizz_OpenBackpack(...)
-	end
-	OpenAllBags = function(...)
-		UpdateOffsets()
-		Blizz_OpenAllBags(...)
-	end
-
 	BagBarMenuButton.OnClick = function(self, button) 
 		if button == "LeftButton" then
 			if ENGINE_CATA then
@@ -845,7 +817,6 @@ MenuWidget.OnEnable = function(self)
 			-- Bagbar was toggled by the secure environement. Put any post updates here, if needed.
 		end
 		-- toggle anchors
-		UpdateOffsets()
 		if updateContainerFrameAnchors then
 			updateContainerFrameAnchors() 
 		elseif UpdateContainerFrameAnchors then
@@ -987,7 +958,7 @@ MenuWidget.OnEnable = function(self)
 end
 
 MenuWidget.OnEvent = function(self, event, ...)
-	if UnitAffectingCombat("player") then
+	if InCombatLockdown() then
 		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
 	end
 	if (event == "PLAYER_REGEN_ENABLED") then

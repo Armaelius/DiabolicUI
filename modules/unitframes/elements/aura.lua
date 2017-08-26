@@ -2,6 +2,7 @@ local ADDON, Engine = ...
 local Handler = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
 local C = Engine:GetStaticConfig("Data: Colors")
+local AuraFunctions = Engine:GetStaticConfig("Library: AuraFunctions")
 local L = Engine:GetLocale()
 local UICenter = Engine:GetFrame()
 
@@ -17,16 +18,18 @@ local CancelUnitBuff = _G.CancelUnitBuff
 local CreateFrame = _G.CreateFrame
 local GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
 local GetTime = _G.GetTime
-local UnitAffectingCombat = _G.UnitAffectingCombat
-local G_UnitAura = _G.UnitAura
-local G_UnitBuff = _G.UnitBuff
-local G_UnitDebuff = _G.UnitDebuff
+local InCombatLockdown = _G.InCombatLockdown
 local UnitExists = _G.UnitExists
 local UnitHasVehicleUI = _G.UnitHasVehicleUI
 local UnitReaction = _G.UnitReaction
 
 -- WOW frames and objects
 local GameTooltip = _G.GameTooltip
+
+-- Engine API
+local UnitAura = AuraFunctions.UnitAura
+local UnitBuff = AuraFunctions.UnitBuff
+local UnitDebuff = AuraFunctions.UnitDebuff
 
 -- Blank texture used as a fallback for borders and bars
 local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]] 
@@ -82,160 +85,6 @@ local Elements = setmetatable({}, { __index = function(self, element)
 	return tbl
 end })
 
--- A little magic to at least attempt 
--- to keep the pixel borders locked to actual pixels. 
--- This will fail if the user has manually resized the window 
--- to a size not matching the chosen resolution, 
--- or if the window is maximized when the chosen resolution
--- does not match the actual screen resolution. 
--- There's no workaround for those cases, as WoW simply 
--- does't provide any API to retrieve the actual sizes with.
-local PIXEL_SIZE
-local backdropCache = {}
-local GetBackdrop = function()
-	local pixelSize = UICenter:GetSizeOfPixel()
-	return {
-		bgFile = BLANK_TEXTURE,
-		edgeFile = BLANK_TEXTURE,
-		edgeSize = pixelSize,
-		insets = {
-			left = -pixelSize,
-			right = -pixelSize,
-			top = -pixelSize,
-			bottom = -pixelSize
-		}
-	}
-end
-local UpdateScale = function(self, event, ...)
-	local arg = ...
-	if (event == "CVAR_UPDATE") and (arg ~= "WINDOWED_MAXIMIZED") then
-		return
-	end
-	local pixelSize = UICenter:GetSizeOfPixel()
-	if (PIXEL_SIZE ~= pixelSize) then
-		local newBackdrop = GetBackdrop()
-		for frame, backdrop in pairs(backdropCache) do
-			local r, g, b, a = frame:GetBackdropColor()
-			local r2, g2, b2, a2 = frame:GetBackdropBorderColor()
-			frame:SetBackdrop(nil)
-			frame:SetBackdrop(newBackdrop)
-			frame:SetBackdropColor(r, g, b, a)
-			frame:SetBackdropBorderColor(r2, g2, b2, a2)
-		end
-		PIXEL_SIZE = pixelSize
-	end
-end
-
-
---[[
------------------------------------------------------------------
------------------------------------------------------------------
--- 	For future reference, here are the full return values of 
--- 	the API function UnitAura for the relevant client patches. 
------------------------------------------------------------------
------------------------------------------------------------------
-
-Legion 7.0.3: 
------------------------------------------------------------------
-*note that in 7.0.3 the icon return value is a fileID, not a file path. 
-local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, canStealOrPurge, nameplateShowPersonal, spellId, canApplyAura, isBossDebuff, isCastByPlayer, nameplateShowAll, timeMod, ... = UnitAura("unit", index[, "filter"])
-
-
-MOP 5.1.0: 
------------------------------------------------------------------
-local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, canStealOrPurge, shouldConsolidate, spellId, canApplyAura, isBossDebuff, isCastByPlayer = UnitAura(unit, index, filter)
-
-
-Cata 4.2.0: 
------------------------------------------------------------------
-local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, shouldConsolidate, spellId, canApplyAura, isBossDebuff, value1, value2, value3 = UnitAura(unit, index, filter)
-
-
-WotLK 3.3.0: 
-*note that prior to this patch, the shouldConsolidate and spellId return values didn't exist,
- and auras had to be recognized by their names instead. 
------------------------------------------------------------------
-local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, shouldConsolidate, spellId = UnitAura(unit, index, filter)
-
-]]--
-
--- Not really a big fan of this method, since it leads to an extra function call. 
--- It is however from a development point of view the easiest way to implement 
--- identical behavior across the various expansions and patches.  
-
--- Should be noted that the isCastByPlayer return value in Legion 
--- returns true for all auras that the player CAN cast, even when cast by other players. 
--- This makes it useless when trying to track our own damage debuffs on enemies. 
-
-local UnitAura = ENGINE_LEGION and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end 
-
-or ENGINE_MOP and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
-end
-
-or ENGINE_CATA and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-or function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitAura(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
-		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-local UnitBuff = ENGINE_LEGION and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end 
-
-or ENGINE_MOP and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
-end
-
-or ENGINE_CATA and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-or function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitBuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
-		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-local UnitDebuff = ENGINE_LEGION and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, (unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end 
-
-or ENGINE_MOP and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff, isCastByPlayer = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer
-end
-
-or ENGINE_CATA and function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId, _, isBossDebuff = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
-or function(unit, i, filter)
-	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = G_UnitDebuff(unit, i, filter)
-	return name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, 
-		(unitCaster and unitCaster:find("boss")), 
-		(unitCaster and ((UnitHasVehicleUI("player") and unitCaster == "vehicle") or unitCaster == "player" or unitCaster == "pet"))
-end
-
 
 
 -- Aura Button Template
@@ -272,7 +121,7 @@ Aura.OnLeave = function(self)
 end
 
 Aura.OnClick = ENGINE_CATA and function(self)
-	if not UnitAffectingCombat("player") then
+	if not InCombatLockdown() then
 		local unit = self.unit
 		if not UnitExists(unit) then
 			return
@@ -404,15 +253,23 @@ local CreateAuraButton = function(self)
 	button:RegisterForClicks("RightButtonUp")
 	button._owner = self
 
-	local currentBackdrop = GetBackdrop()
+	local currentBackdrop = {
+		bgFile = BLANK_TEXTURE,
+		edgeFile = BLANK_TEXTURE,
+		edgeSize = 1,
+		insets = {
+			left = -1,
+			right = -1,
+			top = -1,
+			bottom = -1
+		}
+	}
 
 	local Scaffold = button:CreateFrame()
 	Scaffold:SetPoint("TOPLEFT", 0, 0)
 	Scaffold:SetPoint("BOTTOMRIGHT", 0, 0)
 	Scaffold:SetBackdrop(currentBackdrop)
 	Scaffold:SetFrameLevel(button:GetFrameLevel() + 1)
-
-	backdropCache[Scaffold] = currentBackdrop
 
 	local Icon = Scaffold:CreateTexture()
 	Icon:SetPoint("TOPLEFT", 2, -2)
@@ -466,9 +323,6 @@ local CreateAuraButton = function(self)
 	TimerScaffold:SetBackdrop(currentBackdrop)
 	TimerScaffold:SetFrameLevel(Timer:GetFrameLevel() + 1)
 	Timer.Scaffold = TimerScaffold
-
-	backdropCache[TimerScaffold] = currentBackdrop
-	
 
 	local TimerBarBackground = TimerScaffold:CreateTexture()
 	TimerBarBackground:SetDrawLayer("BACKGROUND")
@@ -997,11 +851,6 @@ local Enable = function(self, unit)
 			end
 		end
 
-		self:RegisterEvent("UI_SCALE_CHANGED", UpdateScale)
-		self:RegisterEvent("DISPLAY_SIZE_CHANGED", UpdateScale)
-		self:RegisterEvent("PLAYER_ENTERING_WORLD", UpdateScale)
-		self:RegisterEvent("CVAR_UPDATE", UpdateScale)
-
 		return true
 	end
 end
@@ -1033,12 +882,6 @@ local Disable = function(self, unit)
 				self:UnregisterEvent("PLAYER_TARGET_CHANGED", Update)
 			end
 		end
-
-		self:UnregisterEvent("UI_SCALE_CHANGED", UpdateScale)
-		self:UnregisterEvent("DISPLAY_SIZE_CHANGED", UpdateScale)
-		self:UnregisterEvent("PLAYER_ENTERING_WORLD", UpdateScale)
-		self:UnregisterEvent("CVAR_UPDATE", UpdateScale)
-
 	end
 end
 

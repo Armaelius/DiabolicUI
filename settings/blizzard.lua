@@ -8,6 +8,16 @@ Engine:NewStaticConfig("Blizzard", {
 	altpower = {
 		position = { "CENTER", "UICenter", "CENTER", 0, -120 }
 	},
+	character = {
+		itemLevel = {
+			point = { "TOPLEFT", 4, -4 },
+			fontObject = DiabolicFont_SansBold12ThinOutline, -- DiabolicFont_SansBold10,
+			shadeTexture = path .. [[textures\DiabolicUI_Tooltip_Header_TitleBackground.tga]]
+		}
+	},
+	containers = {
+
+	},
 	durability = {
 		position = { "CENTER", "UICenter", "CENTER", 190, 0 }
 	},
@@ -136,6 +146,7 @@ Engine:NewStaticConfig("Blizzard", {
 	},
 	tooltips = {
 		position = { "BOTTOMRIGHT", -(30 + 8), 20 + 55 + 20 + 10 }, -- relative to UICenter
+		--position = { "BOTTOMRIGHT", -8, 12 }, -- relative to UICenter
 		offsets = { 8, 8, 8, 8 + 4 },
 		backdrop = {
 			bgFile = [[Interface\ChatFrame\ChatFrameBackground]],

@@ -1,30 +1,27 @@
 local _, Engine = ...
-local Module = Engine:NewModule("PlayerPowerBarAlt")
+local Module = Engine:NewModule("Blizzard: PlayerPowerBarAlt")
 
 Module.OnInit = function(self)
-	local content = PlayerPowerBarAlt
-	if not content then
+	local content = _G.PlayerPowerBarAlt
+	if (not content) then
 		return
 	end
 
 	local config = self:GetStaticConfig("Blizzard").altpower
 
-	local point, anchor, rpoint, x, y = unpack(config.position)
-	if anchor == "UICenter" then
-		anchor = Engine:GetFrame()
-	elseif anchor == "Main" then
-		anchor = Engine:GetModule("ActionBars"):GetWidget("Controller: Main"):GetFrame()
-	end
+	local holder = Engine:CreateFrame("Frame", nil, "UICenter")
+	holder:Place(unpack(config.position))
 
-	local holder = CreateFrame("Frame", nil, Engine:GetFrame())
-	holder:SetPoint(point, anchor, rpoint, x, y)
-
+	content:SetMovable(true)
+	content:SetUserPlaced(true)
 	content:ClearAllPoints()
 	content:SetPoint("BOTTOM", holder, "BOTTOM", 0, 0)
 
+	_G.UIPARENT_MANAGED_FRAME_POSITIONS["PlayerPowerBarAlt"] = nil
+
 	local lockdown
 	hooksecurefunc(content, "SetPoint", function(self, _, anchor) 
-		if not lockdown then
+		if (not lockdown) then
 			lockdown = true
 			holder:SetWidth(self:GetWidth())
 			holder:SetHeight(self:GetHeight())

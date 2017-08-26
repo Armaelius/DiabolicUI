@@ -8,7 +8,8 @@ local setmetatable = setmetatable
 local tinsert, tconcat, twipe = table.insert, table.concat, table.wipe
 
 -- WoW API
-local RegisterStateDriver = RegisterStateDriver
+local InCombatLockdown = _G.InCombatLockdown
+local RegisterStateDriver = _G.RegisterStateDriver
 
 -- Client version constants
 local ENGINE_MOP = Engine:IsBuild("MoP")
@@ -115,7 +116,7 @@ BarWidget.OnEvent = function(self, event, ...)
 end
 
 BarWidget.UpdatePosition = function(self, event, ...)
-	if UnitAffectingCombat("player") then
+	if InCombatLockdown() then
 		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "UpdatePosition")
 	end
 	if (event == "PLAYER_REGEN_ENABLED") then

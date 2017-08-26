@@ -4,7 +4,7 @@ local BarWidget = Module:SetWidget("Bar: XP")
 local StatusBar = Engine:GetHandler("StatusBar")
 local L = Engine:GetLocale()
 local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Data: Functions")
+local F = Engine:GetStaticConfig("Library: Format")
 
 -- Lua API
 local unpack, select = unpack, select

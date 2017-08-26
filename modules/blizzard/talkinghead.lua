@@ -1,5 +1,5 @@
 local _, Engine = ...
-local Module = Engine:NewModule("TalkingHead")
+local Module = Engine:NewModule("Blizzard: TalkingHead")
 
 -- Lua API
 local _G = _G
@@ -8,23 +8,24 @@ local table_remove = table.remove
 
 -- WoW API
 local AlertFrame = _G.AlertFrame
-local TalkingHeadFrame = _G.TalkingHeadFrame
 
 -- WoW Objects
 local UIParent = _G.UIParent
 local UIPARENT_MANAGED_FRAME_POSITIONS = _G.UIPARENT_MANAGED_FRAME_POSITIONS
 
 Module.InitializeTalkingHead = function(self)
+	local content = _G.TalkingHeadFrame
+
 	-- This means the addon hasn't been loaded, 
 	-- so we register a listener and return.
-	if (not TalkingHeadFrame) then
+	if (not content) then
 		return self:RegisterEvent("ADDON_LOADED", "WaitForTalkingHead")
 	end
 
 	-- Put the actual talking head into our /glock holder
-	TalkingHeadFrame:ClearAllPoints()
-	TalkingHeadFrame:SetPoint("BOTTOM", self.frame, "BOTTOM", 0, 0)
-	TalkingHeadFrame.ignoreFramePositionManager = true
+	content:ClearAllPoints()
+	content:SetPoint("BOTTOM", self.frame, "BOTTOM", 0, 0)
+	content.ignoreFramePositionManager = true
 
 	-- Kill off Blizzard's repositioning
 	UIParent:UnregisterEvent("TALKINGHEAD_REQUESTED")
@@ -32,8 +33,9 @@ Module.InitializeTalkingHead = function(self)
 
 	-- Iterate through all alert subsystems in order to find the one created for TalkingHeadFrame, and then remove it.
 	-- We do this to prevent alerts from anchoring to this frame when it is shown.
+	local AlertFrame = _G.AlertFrame
 	for index, alertFrameSubSystem in ipairs(AlertFrame.alertFrameSubSystems) do
-		if (alertFrameSubSystem.anchorFrame and (alertFrameSubSystem.anchorFrame == TalkingHeadFrame)) then
+		if (alertFrameSubSystem.anchorFrame and (alertFrameSubSystem.anchorFrame == content)) then
 			table_remove(AlertFrame.alertFrameSubSystems, index)
 		end
 	end
@@ -45,10 +47,6 @@ Module.WaitForTalkingHead = function(self, event, ...)
 	if (addon ~= "Blizzard_TalkingHeadUI") then
 		return
 	end
-
-	-- Update pointers now that the addon is loaded
-	AlertFrame = _G.AlertFrame -- this is FrameXML
-	TalkingHeadFrame = _G.TalkingHeadFrame
 
 	self:InitializeTalkingHead()
 	self:UnregisterEvent("ADDON_LOADED", "WaitForTalkingHead")

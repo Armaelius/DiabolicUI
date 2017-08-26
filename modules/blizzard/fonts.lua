@@ -1,5 +1,5 @@
 local ADDON, Engine = ...
-local Module = Engine:NewModule("Fonts")
+local Module = Engine:NewModule("Blizzard: Fonts")
 
 local gameLocale = Engine:GetGameLocale()
 local isLatin = ({ enUS  = true, enGB = true, deDE = true, esES = true, esMX = true, frFR = true, itIT = true, ptBR = true, ptPT = true })[gameLocale]

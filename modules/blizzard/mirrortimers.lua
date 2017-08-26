@@ -1,5 +1,5 @@
 local _, Engine = ...
-local Module = Engine:NewModule("MirrorTimers")
+local Module = Engine:NewModule("Blizzard: MirrorTimers")
 local C = Engine:GetStaticConfig("Data: Colors")
 
 -- Lua API

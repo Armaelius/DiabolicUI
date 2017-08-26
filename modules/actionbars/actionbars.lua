@@ -24,7 +24,6 @@ local HasArtifactEquipped = _G.HasArtifactEquipped
 local IsXPUserDisabled = _G.IsXPUserDisabled
 local IsPossessBarVisible = _G.IsPossessBarVisible
 local SetActionBarToggles = _G.SetActionBarToggles
-local UnitAffectingCombat = _G.UnitAffectingCombat
 local UnitHasVehicleUI = _G.UnitHasVehicleUI
 local UnitHasVehiclePlayerFrameUI = _G.UnitHasVehiclePlayerFrameUI
 local UnitLevel = _G.UnitLevel

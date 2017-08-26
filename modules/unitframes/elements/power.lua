@@ -1,7 +1,7 @@
 local _, Engine = ...
 local Handler = Engine:GetHandler("UnitFrame")
 local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Data: Functions")
+local F = Engine:GetStaticConfig("Library: Format")
 
 -- Lua API
 local math_floor = math.floor
