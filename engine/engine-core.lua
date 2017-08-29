@@ -129,7 +129,7 @@ local GAME_VERSIONS_TO_BUILD = {
 																		["7.1.5"] 	= 23420, 
 																		["7.2.0"] 	= 24015,
 																		["7.2.5"] 	= 24461, -- 24367
-																		["7.3.0"] 	= 24500
+																		["7.3.0"] 	= 24500 -- 24920
 }
 
 -- Much faster lookup table to determine if we're at 
