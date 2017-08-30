@@ -4,17 +4,20 @@ local path = ([[Interface\AddOns\%s\media\]]):format(Addon)
 local MINIMAP_SIZE = Engine:GetConstant("MINIMAP_SIZE") 
 
 -- WoW Client Constants
+local ENGINE_LEGION_730 = Engine:IsBuild("7.3.0")
 local ENGINE_LEGION_725 = Engine:IsBuild("7.2.5")
 local ENGINE_LEGION_715 = Engine:IsBuild("7.1.5")
 local ENGINE_WOD = Engine:IsBuild("WoD")
 local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_CATA = Engine:IsBuild("Cata")
 
--- Using this to figure out older blip texture content and ratio
+-- Using this to figure out blip texture content and ratio
 --local blips = UIParent:CreateTexture()
---blips:SetTexture([[Interface\Minimap\ObjectIcons.blp]])
+--blips:SetDrawLayer("ARTWORK")
 --blips:SetSize(128,128)
 --blips:SetPoint("CENTER")
+--blips:SetTexture([[Interface\MiniMap\ObjectIconsAtlas]]) -- Legion 
+--blips:SetTexture([[Interface\Minimap\ObjectIcons.blp]]) -- others
 
 Engine:NewStaticConfig("Minimap", {
 	size = { MINIMAP_SIZE, MINIMAP_SIZE }, 
@@ -23,7 +26,8 @@ Engine:NewStaticConfig("Minimap", {
 		size = { MINIMAP_SIZE, MINIMAP_SIZE }, 
 		point = { "CENTER", 0, 0 },
 		mask = path..[[textures\DiabolicUI_MinimapCircularMaskSemiTransparent.tga]],
-		blips = ENGINE_LEGION_725 and path..[[textures\Blip-Nandini-New-725.tga]] -- Legion 7.2.5 (Blizzard)
+		blips = ENGINE_LEGION_730 and path..[[textures\Blip-Nandini-New-730.tga]] -- Legion 7.3.0
+			or ENGINE_LEGION_725 and path..[[textures\Blip-Nandini-New-725.tga]] -- Legion 7.2.5 
 			or ENGINE_LEGION_715 and path..[[textures\Blip-Nandini-New-715.tga]] -- Legion 7.1.5 (WoW-Freakz)
 			or ENGINE_WOD and path..[[textures\Blip-Nandini-New-622.tga]] -- late WoD
 			or ENGINE_MOP and path..[[textures\Blip-Nandini-New-548.tga]] -- late MoP (Warmane)
