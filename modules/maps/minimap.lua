@@ -440,6 +440,7 @@ Module.InitMBB = function(self)
 
 	local mbbFrame = _G.MBB_MinimapButtonFrame
 	mbbFrame:SetParent(self.frame.scaffold.border)
+	mbbFrame:SetFrameStrata("MEDIUM") -- Get it above the map which is in LOW
 	mbbFrame:RegisterForDrag()
 	mbbFrame:SetSize(unpack(config.widgets.buttonBag.size)) 
 	mbbFrame:ClearAllPoints()
