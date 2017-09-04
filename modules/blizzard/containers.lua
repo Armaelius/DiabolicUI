@@ -175,6 +175,7 @@ Module.OnInit = function(self)
 
 				if itemLink then
 					local _, _, itemRarity, iLevel, _, _, _, _, itemEquipLoc = GetItemInfo(itemLink)
+					local effectiveLevel, previewLevel, origLevel = GetDetailedItemLevelInfo and GetDetailedItemLevelInfo(itemLink)
 
 					if (not itemLevelCache[itemButton]) then
 
@@ -198,7 +199,7 @@ Module.OnInit = function(self)
 					if (itemRarity and (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1))) and ((itemEquipLoc and _G[itemEquipLoc]) or (itemID and IsArtifactRelicItem and IsArtifactRelicItem(itemID))) then
 						local r, g, b = GetItemQualityColor(itemRarity)
 						itemLevelCache[itemButton]:SetTextColor(r, g, b)
-						itemLevelCache[itemButton]:SetText(iLevel or "")
+						itemLevelCache[itemButton]:SetText(effectiveLevel or iLevel or "")
 					else
 						itemLevelCache[itemButton]:SetText("")
 					end

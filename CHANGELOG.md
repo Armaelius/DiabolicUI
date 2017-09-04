@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.64] 2017-09-04
+### Changed
+- Upgraded itemlevel display in character frame and blizzard bags to perform an extra check for upgraded items.
+- Micro menu buttons in the bottom right corner of the screen that are disabled will now appear darker in color instead of being transparent, as this looked really weird when Bagnon was open and its icons and numbers shone through. 
+
+### Fixed
+- Resetting chat settings through the blizzard options menu shouldn't bug out anymore.
+
 ## [1.3.63] 2017-09-01
 ### Fixed
 - Minimap buttons collected by the addon MinimapButtonBag(MBB) should now properly appear at a higher framelevel than the Minimap, and not underneath it where they where unclickable. 

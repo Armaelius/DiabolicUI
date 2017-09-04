@@ -8,6 +8,7 @@ local pairs = pairs
 local unpack = unpack
 
 -- WoW API
+local GetDetailedItemLevelInfo = _G.GetDetailedItemLevelInfo
 local GetInventoryItemLink = _G.GetInventoryItemLink
 local GetInventorySlotInfo = _G.GetInventorySlotInfo
 local GetItemInfo = _G.GetItemInfo
@@ -102,6 +103,8 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 		if itemLink then
 			local _, _, itemRarity, ilvl = GetItemInfo(itemLink)
 			if itemRarity then
+				local effectiveLevel, previewLevel, origLevel = GetDetailedItemLevelInfo and GetDetailedItemLevelInfo(itemLink)
+				ilvl = effectiveLevel or ilvl
 
 				-- Legion Artifact offhanders report just the base itemLevel, without relic enhancements, 
 				-- so we're borrowing the itemLevel from the main hand weapon when this happens.
@@ -109,6 +112,10 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 				if ENGINE_LEGION and (itemButton:GetID() == _G.INVSLOT_OFFHAND) and (itemRarity == 6) then 
 					local mainHandLink = GetInventoryItemLink("player", _G.INVSLOT_MAINHAND)
 					local _, _, mainHandRarity, mainHandLevel = GetItemInfo(mainHandLink)
+					local effectiveLevel, previewLevel, origLevel = GetDetailedItemLevelInfo and GetDetailedItemLevelInfo(mainHandLink)
+
+					mainHandLevel = effectiveLevel or mainHandLevel
+
 					if (mainHandLevel > ilvl) and (mainHandRarity == 6) then
 						ilvl = mainHandLevel
 					end

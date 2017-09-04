@@ -150,9 +150,45 @@ Module.OnInit = function(self, event, ...)
 	local config = self.config
 	
 	CHAT_FRAME_BUTTON_FRAME_MIN_ALPHA = 0
-    UIPARENT_MANAGED_FRAME_POSITIONS["ChatFrame1"] = nil
-    UIPARENT_MANAGED_FRAME_POSITIONS["ChatFrame2"] = nil
+
+	-- Removing these will make FCF_ResetChatWindows() and FCF_ResetAllWindows() bug out!
+	--UIPARENT_MANAGED_FRAME_POSITIONS["ChatFrame1"] = nil
+	--UIPARENT_MANAGED_FRAME_POSITIONS["ChatFrame2"] = nil
 	
+	local point, anchor, rpoint, xOffset, yOffset = unpack(config.position)
+	UIPARENT_MANAGED_FRAME_POSITIONS.ChatFrame1 = { 
+		baseY = true, 
+		bottomLeft = 0, 
+		justBottomRightAndStance = 0, 
+		overrideActionBar = 0, 
+		petBattleFrame = 0, 
+		bonusActionBar = 1, 
+		pet = 1, 
+		watchBar = 1, 
+		maxLevel = 1, 
+		point = point, 
+		rpoint = rpoint, 
+		xOffset = xOffset,
+		yOffset = yOffset 
+	}
+	
+	local point2, anchor2, rpoint2, xOffset2, yOffset2 = unpack(config.position2)
+	UIPARENT_MANAGED_FRAME_POSITIONS.ChatFrame2 = { 
+		baseY = true, 
+		bottomRight = 0, 
+		rightLeft = 0, 
+		rightRight = 0, 
+		overrideActionBar = 0, 
+		petBattleFrame = 0, 
+		bonusActionBar = 1, 
+		watchBar = 1, 
+		maxLevel = 1, 
+		point = point2, 
+		rpoint = rpoint2, 
+		xOffset = xOffset2, 
+		yOffset = yOffset2
+	}
+
 	-- style any additional BNet frames when they are opened
 	hooksecurefunc("FCF_OpenTemporaryWindow", function(chatType, chatTarget, sourceChatFrame, selectWindow)
 		local frame = FCF_GetCurrentChatFrame()
@@ -253,7 +289,7 @@ Module.OnInit = function(self, event, ...)
 
 	-- FCF_SetWindowAlpha(frame, alpha, doNotSave)
 	
---	ChatFrame2:SetClampRectInsets(-40, -40, -40, -210)
+	--	ChatFrame2:SetClampRectInsets(-40, -40, -40, -210)
 end
 
 Module.StyleFrame = function(self, frame)
@@ -421,21 +457,21 @@ Module.StyleFrame = function(self, frame)
 	-- Buttons
 	------------------------------
 
---		UIFrameFadeIn(chatFrame.buttonFrame, CHAT_FRAME_FADE_TIME, chatFrame.buttonFrame:GetAlpha(), 1);
---		UIFrameFadeOut(chatFrame.buttonFrame, CHAT_FRAME_FADE_OUT_TIME, chatFrame.buttonFrame:GetAlpha(), CHAT_FRAME_BUTTON_FRAME_MIN_ALPHA);
+	--		UIFrameFadeIn(chatFrame.buttonFrame, CHAT_FRAME_FADE_TIME, chatFrame.buttonFrame:GetAlpha(), 1);
+	--		UIFrameFadeOut(chatFrame.buttonFrame, CHAT_FRAME_FADE_OUT_TIME, chatFrame.buttonFrame:GetAlpha(), CHAT_FRAME_BUTTON_FRAME_MIN_ALPHA);
 
---	hooksecurefunc("FCF_FadeInChatFrame", function(chatFrame) 
---		if ( not chatFrame.isDocked ) then
---			UIFrameFadeIn(chatFrame.buttonFrame, CHAT_FRAME_FADE_TIME, chatFrame.buttonFrame:GetAlpha(), 1);
---		end
---	end)
-	
---	hooksecurefunc("FCF_FadeOutChatFrame", function(chatFrame) 
-		--Fade out the ButtonFrame
---		if ( not chatFrame.isDocked ) then
---			UIFrameFadeOut(chatFrame.buttonFrame, CHAT_FRAME_FADE_OUT_TIME, chatFrame.buttonFrame:GetAlpha(), CHAT_FRAME_BUTTON_FRAME_MIN_ALPHA);
---		end
---	end)
+	--	hooksecurefunc("FCF_FadeInChatFrame", function(chatFrame) 
+	--		if ( not chatFrame.isDocked ) then
+	--			UIFrameFadeIn(chatFrame.buttonFrame, CHAT_FRAME_FADE_TIME, chatFrame.buttonFrame:GetAlpha(), 1);
+	--		end
+	--	end)
+		
+	--	hooksecurefunc("FCF_FadeOutChatFrame", function(chatFrame) 
+			--Fade out the ButtonFrame
+	--		if ( not chatFrame.isDocked ) then
+	--			UIFrameFadeOut(chatFrame.buttonFrame, CHAT_FRAME_FADE_OUT_TIME, chatFrame.buttonFrame:GetAlpha(), CHAT_FRAME_BUTTON_FRAME_MIN_ALPHA);
+	--		end
+	--	end)
 	
 	_G[name.."EditBox"]:HookScript("OnShow", function(self) 
 		local frame = selectedFrame()
@@ -730,25 +766,25 @@ Module.PositionChatFrames = function(self)
 		
 		--	if width > 1600 then
 				-- 1920x1080
-		--		ChatFrame1:SetClampRectInsets(-40, -40, -40, -220)
-		--		ChatFrame1:ClearAllPoints()
-		--		ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-		--		ChatFrame1:SetMinResize(440, 120)
-		--		ChatFrame1:SetSize(440,120)
+		--		ChatFrame:SetClampRectInsets(-40, -40, -40, -220)
+		--		ChatFrame:ClearAllPoints()
+		--		ChatFrame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
+		--		ChatFrame:SetMinResize(440, 120)
+		--		ChatFrame:SetSize(440,120)
 		--	else
 				-- 1280x800
-		--		ChatFrame1:SetClampRectInsets(-40, -40, -40, -210)
-		--		ChatFrame1:ClearAllPoints()
-		--		ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-		--		ChatFrame1:SetMinResize(320,120)
-		--		ChatFrame1:SetSize(320,120)
+		--		ChatFrame:SetClampRectInsets(-40, -40, -40, -210)
+		--		ChatFrame:ClearAllPoints()
+		--		ChatFrame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
+		--		ChatFrame:SetMinResize(320,120)
+		--		ChatFrame:SetSize(320,120)
 		--	end
 
-		FCF_SetLocked(ChatFrame1, true)
-		FCF_SavePositionAndDimensions(ChatFrame1, true)
+		FCF_SetLocked(ChatFrame, true)
+		FCF_SavePositionAndDimensions(ChatFrame, true)
 
-		if ChatFrame1:IsMovable() then
-			ChatFrame1:SetUserPlaced(true)
+		if ChatFrame:IsMovable() then
+			ChatFrame:SetUserPlaced(true)
 		end
 	end
 	

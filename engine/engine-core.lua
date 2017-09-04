@@ -1334,8 +1334,8 @@ end
 -------------------------------------------------------------
 -- Returns the UICenter frame, which should be 
 -- the parent of everything except the nameframes.
-Engine.GetFrame = function(self)
-	return UICenter
+Engine.GetFrame = function(self, anchor)
+	return anchor and parseAnchor(anchor) or UICenter
 end
 
 -- Create a frame with certain extra methods we like to have

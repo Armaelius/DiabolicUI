@@ -114,6 +114,27 @@ MenuWidget.Skin = function(self, button, config, icon)
 	end
 	hooksecurefunc(button, "SetButtonState", button.OnButtonState)
 
+	button:HookScript("OnEnable", function(self) 
+		self:SetAlpha(1) 
+		self.Icon:SetVertexColor(1,1,1)
+		self.Normal:SetVertexColor(1,1,1)
+	end)
+	button:HookScript("OnDisable", function(self) 
+		self:SetAlpha(1) 
+		self.Icon:SetVertexColor(.4,.4,.4)
+		self.Normal:SetVertexColor(.4,.4,.4)
+	end)
+
+	button:SetAlpha(1)
+
+	if button:IsEnabled() then
+		button.Icon:SetVertexColor(1,1,1)
+		button.Normal:SetVertexColor(1,1,1)
+	else
+		button.Icon:SetVertexColor(.4,.4,.4)
+		button.Normal:SetVertexColor(.4,.4,.4)
+	end
+
 	button:SetHitRectInsets(0, 0, 0, 0)
 	button:OnButtonState(button:GetButtonState())
 end
