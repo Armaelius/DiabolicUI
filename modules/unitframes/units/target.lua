@@ -47,7 +47,7 @@ local ENEMY_PLATES = ENGINE_LEGION and GetCVarBool("nameplateShowEnemies")
 --------------------------------------------------------------------------
 
 -- reposition the unit classification when needed
-local classificationPostUpdate = function(self, unit)
+local PostUpdateClassification = function(self, unit)
 	if not unit then
 		return
 	end
@@ -59,10 +59,16 @@ local classificationPostUpdate = function(self, unit)
 	local powermax = UnitPowerMax(unit, powerID)
 
 	local haspower = isPlayer or not(power == 0 or powermax == 0)
-	local isboss = UnitClassification(unit) == "worldboss"
+
+	local level = UnitLevel(unit)
+	local classification = UnitClassification(unit)
+
+	local isboss = (classification == "worldboss") or (level and level < 1)
+	local isElite = (classification == "elite") or (classification == "rare") or (classification == "rareelite")
 
 	local hadpower = self.haspower
 	local wasboss = self.isboss
+	local waselite = self.iselite
 	
 	-- todo: clean this mess up
 	if isboss then
@@ -70,41 +76,53 @@ local classificationPostUpdate = function(self, unit)
 			if hadpower and wasboss then
 				return
 			end
-			self:ClearAllPoints()
-			self:SetPoint(unpack(self.position.boss_double))
-			self.isboss = true
+			self:Place(unpack(self.position.boss_double))
 			self.haspower = true
 		else
 			if wasboss and (not hadpower) then
 				return
 			end
-			self:ClearAllPoints()
-			self:SetPoint(unpack(self.position.boss_single))
-			self.isboss = true
+			self:Place(unpack(self.position.boss_single))
 			self.haspower = false
 		end
+		self.isboss = true
+		self.iselite = false
+	elseif isElite then
+		if haspower then
+			if hadpower and waselite then
+				return
+			end
+			self:Place(unpack(self.position.elite_double))
+			self.haspower = true
+		else
+			if waselite and (not hadpower) then
+				return
+			end
+			self:Place(unpack(self.position.elite_single))
+			self.haspower = false
+		end
+		self.iselite = true
+		self.isboss = false
 	else
 		if haspower then
 			if hadpower and (not wasboss) then
 				return
 			end
-			self:ClearAllPoints()
-			self:SetPoint(unpack(self.position.normal_double))
-			self.isboss = false
+			self:Place(unpack(self.position.normal_double))
 			self.haspower = true
 		else
 			if (not hadpower) and (not wasboss) then
 				return
 			end
-			self:ClearAllPoints()
-			self:SetPoint(unpack(self.position.normal_single))
-			self.isboss = false
+			self:Place(unpack(self.position.normal_single))
 			self.haspower = false
 		end
+		self.isboss = false
+		self.iselite = false
 	end
 end
 
-local updateArtworkLayers = function(self)
+local PostUpdateArtwork = function(self)
 	local unit = self.unit
 	if not unit then
 		return
@@ -117,7 +135,13 @@ local updateArtworkLayers = function(self)
 	local powermax = UnitPowerMax(unit, powerID)
 
 	local haspower = isPlayer or not(power == 0 or powermax == 0)
-	local isboss = UnitClassification(unit) == "worldboss"
+
+	local level = UnitLevel(unit)
+	local classification = UnitClassification(unit)
+
+	local isElite = (classification == "elite") or (classification == "rare") or (classification == "rareelite")
+	local isboss = isElite or (classification == "worldboss") or (level and level < 1)
+	
 	local ishighlight = self:IsMouseOver()
 	
 	if (isboss == self.isboss) and (haspower == self.haspower) and (ishighlight == self.ishighlight) then
@@ -167,7 +191,7 @@ local updateArtworkLayers = function(self)
 	
 end
 
-local postCreateAuraButton = function(self, button)
+local PostCreateAuraButton = function(self, button)
 	local config = self.buttonConfig
 	local width, height = unpack(config.size)
 	local r, g, b = unpack(config.color)
@@ -348,7 +372,7 @@ local debuffFilter = function(self, name, rank, icon, count, debuffType, duratio
 	end
 end
 
-local postUpdateAuraButton = function(self, button, ...)
+local PostUpdateAuraButton = function(self, button, ...)
 	local updateType = ...
 	local config = self.buttonConfig
 
@@ -423,7 +447,7 @@ local postUpdateAuraButton = function(self, button, ...)
 	end
 end
 
-local postUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavailable)
+local PostUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavailable)
 
 	local r, g, b
 	if (not isUnavailable) then
@@ -466,9 +490,9 @@ local postUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavaila
 
 end
 
-local Update = function(self, event, ...)
-	updateArtworkLayers(self)
-	classificationPostUpdate(self.Classification, self.unit)
+local PostUpdateFrame = function(self, event, ...)
+	PostUpdateArtwork(self)
+	PostUpdateClassification(self.Classification, self.unit)
 end
 
 local Style = function(self, unit)
@@ -561,7 +585,7 @@ local Style = function(self, unit)
 	health.Value.showPercent = true
 	health.Value.showDeficit = false
 	health.Value.showMaximum = false
-	health.PostUpdate = postUpdateHealth
+	health.PostUpdate = PostUpdateHealth
 
 	
 	-- Power
@@ -602,8 +626,8 @@ local Style = function(self, unit)
 
 	auras.BuffFilter = buffFilter
 	auras.DebuffFilter = debuffFilter
-	auras.PostCreateButton = postCreateAuraButton
-	auras.PostUpdateButton = postUpdateAuraButton
+	auras.PostCreateButton = PostCreateAuraButton
+	auras.PostUpdateButton = PostUpdateAuraButton
 
 	
 
@@ -706,11 +730,11 @@ local Style = function(self, unit)
 	self.CastBar.Name = spellName
 	self.CastBar.Value = castTime
 	self.Classification = classification
-	self.Classification.PostUpdate = classificationPostUpdate
+	self.Classification.PostUpdate = PostUpdateClassification
 	self.Health = health
 	self.Name = name
 	self.Power = power
-	self.Power.PostUpdate = function() Update(self) end
+	--self.Power.PostUpdate = function() Update(self) end
 	self.Threat = threat
 	self.Threat.SetVertexColor = function(_, ...) 
 		for i,v in pairs(self.layers.threat) do
@@ -718,12 +742,14 @@ local Style = function(self, unit)
 		end
 	end
 
-	self:HookScript("OnEnter", updateArtworkLayers)
-	self:HookScript("OnLeave", updateArtworkLayers)
+	self:HookScript("OnEnter", PostUpdateArtwork)
+	self:HookScript("OnLeave", PostUpdateArtwork)
 
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", Update)
-	self:RegisterEvent("PLAYER_TARGET_CHANGED", Update)
-	self:RegisterEvent("UNIT_NAME_UPDATE", Update)
+	self:HookScript("OnShow", PostUpdateFrame)
+
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", PostUpdateFrame)
+	self:RegisterEvent("PLAYER_TARGET_CHANGED", PostUpdateFrame)
+	self:RegisterEvent("UNIT_NAME_UPDATE", PostUpdateFrame)
 
 end
 

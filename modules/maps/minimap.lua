@@ -150,12 +150,22 @@ local onUpdate = function(self, elapsed)
 		if db.use24hrClock then
 			time:SetFormattedText("%02d:%02d", h, m)
 		else
-			if h > 12 then 
-				time:SetFormattedText("%d:%02d%s", h - 12, m, TIMEMANAGER_PM)
-			elseif h < 1 then
-				time:SetFormattedText("%d:%02d%s", h + 12, m, TIMEMANAGER_AM)
-			else
-				time:SetFormattedText("%d:%02d%s", h, m, TIMEMANAGER_AM)
+
+			-- 12-hour clock: https://en.wikipedia.org/wiki/12-hour_clock
+			if (h < 12) then										
+				if (h == 0) then
+					time:SetFormattedText("%d:%02d%s", h + 12, m, TIMEMANAGER_AM) -- Midnight to one, displayed as 12AM
+				else
+					time:SetFormattedText("%d:%02d%s", h, m, TIMEMANAGER_AM) -- One to noon (0100 to 1159), same in both 12- and 24-hour clocks. AM.
+				end
+			else 													
+				if (h == 12) then
+					time:SetFormattedText("%d:%02d%s", h, m, TIMEMANAGER_PM) -- Noon to 1PM - 1200-1259, displayed as 12PM 
+				elseif h < 24 then
+					time:SetFormattedText("%d:%02d%s", h - 12, m, TIMEMANAGER_PM) -- 1PM to Midnight - 1300-2359, displayed as (hour-12)PM 
+				else 
+					time:SetFormattedText("%d:%02d%s", h - 12, m, TIMEMANAGER_AM) -- Midnight (start of the NEXT day, listed as 12AM)
+				end
 			end
 		end
 

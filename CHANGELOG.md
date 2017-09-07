@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.65] 2017-09-07
+### Changed
+- Rares and elites should get the same target frame artwork as bosses now. Will make separate artwork for rares and elites later, just wanted them to stand more out for the time being. 
+
+### Fixed
+- Fixed some issues related to the 12-hour clock. Not that the 12-hour clock has been available as a user choice yet, but still... fixed.
+
 ## [1.3.64] 2017-09-04
 ### Changed
 - Upgraded itemlevel display in character frame and blizzard bags to perform an extra check for upgraded items.

@@ -365,6 +365,8 @@ Engine:NewStaticConfig("UnitFrames", {
 					position = {
 						normal_single = { "TOP", 0.5, -56 +12.5 },
 						normal_double = { "TOP", 0.5, -56 +.5 },
+						elite_single = { "TOP", 0.5, -72 +12.5 },
+						elite_double = { "TOP", 0.5, -72 +.5 },
 						boss_single = { "TOP", 0.5, -72 +12.5 },
 						boss_double = { "TOP", 0.5, -72 +.5 }
 					}
@@ -407,6 +409,16 @@ Engine:NewStaticConfig("UnitFrames", {
 								normal = path .. [[textures\DiabolicUI_Target_305x15_Border2Bars.tga]],
 								highlight = path .. [[textures\DiabolicUI_Target_305x15_Border2BarsHighlight.tga]],
 								threat = path .. [[textures\DiabolicUI_Target_305x15_Glow2Bars.tga]]
+							},
+							elite_single = {
+								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss.tga]],
+								highlight = path .. [[textures\DiabolicUI_Target_305x15_BorderBossHighlight.tga]],
+								threat = path .. [[textures\DiabolicUI_Target_305x15_GlowBoss.tga]]
+							},
+							elite_double = {
+								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss2Bars.tga]],
+								highlight = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss2BarsHighlight.tga]],
+								threat = path .. [[textures\DiabolicUI_Target_305x15_GlowBoss2Bars.tga]]
 							},
 							boss_single = {
 								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss.tga]],
