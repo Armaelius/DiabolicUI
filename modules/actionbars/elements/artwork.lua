@@ -105,6 +105,7 @@ local SetTexture = function(element, config)
 	if config.alpha then
 		element:SetAlpha(config.alpha)
 	end
+	element.visibleAlpha = config.alpha or 1
 end
 
 local SetFont = function(element, config)
@@ -120,6 +121,7 @@ local SetFont = function(element, config)
 	if config.alpha then
 		element:SetAlpha(config.alpha)
 	end
+	element.visibleAlpha = config.alpha or 1
 end
 
 -- Called whenever the visibility of the artwork layers need
@@ -141,42 +143,42 @@ Button.PostUpdate = function(self)
 	local border = self.border
 
 	if hasAction then
-		border.empty:Hide()
-		border.empty_highlight:Hide()
+		border.empty:SetAlpha(0)
+		border.empty_highlight:SetAlpha(0)
 
 		if checked then
-			border.normal:Hide()
-			border.normal_highlight:Hide()
+			border.normal:SetAlpha(0)
+			border.normal_highlight:SetAlpha(0)
 			if isHighlighted then
-				border.checked:Hide()
-				border.checked_highlight:Show()
+				border.checked:SetAlpha(0)
+				border.checked_highlight:SetAlpha(border.checked_highlight.visibleAlpha or 1)
 			else
-				border.checked:Show()
-				border.checked_highlight:Hide()
+				border.checked:SetAlpha(border.checked.visibleAlpha or 1)
+				border.checked_highlight:SetAlpha(0)
 			end
 		else
-			border.checked:Hide()
-			border.checked_highlight:Hide()
+			border.checked:SetAlpha(0)
+			border.checked_highlight:SetAlpha(0)
 			if isHighlighted then
-				border.normal:Hide()
-				border.normal_highlight:Show()
+				border.normal:SetAlpha(0)
+				border.normal_highlight:SetAlpha(border.normal_highlight.visibleAlpha or 1)
 			else
-				border.normal:Show()
-				border.normal_highlight:Hide()
+				border.normal:SetAlpha(border.normal.visibleAlpha or 1)
+				border.normal_highlight:SetAlpha(0)
 			end
 		end
 	else
-		border.normal:Hide()
-		border.normal_highlight:Hide()
-		border.checked:Hide()
-		border.checked_highlight:Hide()
+		border.normal:SetAlpha(0)
+		border.normal_highlight:SetAlpha(0)
+		border.checked:SetAlpha(0)
+		border.checked_highlight:SetAlpha(0)
 
 		if isHighlighted then
-			border.empty:Hide()
-			border.empty_highlight:Show()
+			border.empty:SetAlpha(0)
+			border.empty_highlight:SetAlpha(border.empty_highlight.visibleAlpha or 1)
 		else
-			border.empty:Show()
-			border.empty_highlight:Hide()
+			border.empty:SetAlpha(border.empty.visibleAlpha or 1)
+			border.empty_highlight:SetAlpha(0)
 		end
 
 		self._checked = nil
@@ -205,23 +207,23 @@ Button.PostUpdateUsable = function(self, usableState, canDesaturate)
 	if (usableState == "taxi") then
 		if canDesaturate then
 			dark:SetVertexColor(colors.flightOverlay[1], colors.flightOverlay[2], colors.flightOverlay[3], colors.flightOverlay[4])
-			dark:Show()
+			dark:SetAlpha(colors.flightOverlay[4] or 1)
 		else
 			-- fallback to standard darkening if desaturation fails
 			dark:SetVertexColor(colors.unusableOverlay[1], colors.unusableOverlay[2], colors.unusableOverlay[3], colors.unusableOverlay[4])
-			dark:Show()
+			dark:SetAlpha(colors.unusableOverlay[4] or 1)
 		end
 	else
 		if (usableState == "unusable") then
 			dark:SetVertexColor(colors.unusableOverlay[1], colors.unusableOverlay[2], colors.unusableOverlay[3], colors.unusableOverlay[4])
-			dark:Show()
+			dark:SetAlpha(colors.unusableOverlay[4] or 1)
 		elseif (usableState == "range") then
 			dark:SetVertexColor(colors.rangeOverlay[1], colors.rangeOverlay[2], colors.rangeOverlay[3], colors.rangeOverlay[4])
-			dark:Show()
+			dark:SetAlpha(colors.rangeOverlay[4] or 1)
 		elseif (usableState == "usable") then
-			dark:Hide()
+			dark:SetAlpha(0)
 		elseif (usableState == "mana") then
-			dark:Hide()
+			dark:SetAlpha(0)
 		end
 	end 
 end
@@ -230,10 +232,10 @@ Button.OverrideBindingKey = function(self, key)
 	local keybind = self.keybind
 	if (self.type_by_state == "stance") or (key == RANGE_INDICATOR) then
 		keybind:SetText("")
-		keybind:Hide()
+		keybind:SetAlpha(0)
 	else
 		keybind:SetText(ToShortKey(key))
-		keybind:Show()
+		keybind:SetAlpha(keybind.visibleAlpha or 1)
 	end
 end
 
@@ -270,6 +272,10 @@ Button.UpdateStyle = function(self, STYLE)
 	
 	-- cooldowncount
 	SetFont(self.cooldowncount, STYLE.cooldown_numbers)
+
+	-- Need a post update to adjust alpha values upon bar layout changes, 
+	-- or we'll end with a situation where all the layers are visible at once.
+	self:PostUpdate()
 end
 
 Button.PostCreate = function(self, buttonType)
@@ -288,7 +294,7 @@ Button.PostCreate = function(self, buttonType)
 
 	-- darker texture for unusable actions
 	local iconDimmer = self:CreateTexture(nil, "OVERLAY")
-	iconDimmer:Hide()
+	iconDimmer:SetAlpha(0)
 	iconDimmer:SetAllPoints(icon)
 	iconDimmer:SetColorTexture(.3, .3, .3, 1)
 
@@ -312,27 +318,27 @@ Button.PostCreate = function(self, buttonType)
 	-- normal border highlighted
 	border.normal_highlight = border:CreateTexture(nil, "BORDER")
 	border.normal_highlight:SetAllPoints()
-	border.normal_highlight:Hide()
+	border.normal_highlight:SetAlpha(0)
 	
 	-- border when the ability is checked
 	border.checked = border:CreateTexture(nil, "BORDER")
 	border.checked:SetAllPoints()
-	border.checked:Hide()
+	border.checked:SetAlpha(0)
 
 	-- border when the ability is checked and highlighted
 	border.checked_highlight = border:CreateTexture(nil, "BORDER")
 	border.checked_highlight:SetAllPoints()
-	border.checked_highlight:Hide()
+	border.checked_highlight:SetAlpha(0)
 
 	-- border when the self is empty
 	border.empty = border:CreateTexture(nil, "BORDER")
 	border.empty:SetAllPoints()
-	border.empty:Hide()
+	border.empty:SetAlpha(0)
 
 	-- border when the self is empty and highlighted
 	border.empty_highlight = border:CreateTexture(nil, "BORDER")
 	border.empty_highlight:SetAllPoints()
-	border.empty_highlight:Hide()
+	border.empty_highlight:SetAlpha(0)
 
 	local buttonName = self:GetName()
 

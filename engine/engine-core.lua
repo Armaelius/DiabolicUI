@@ -77,6 +77,7 @@ local timers = {} -- timer registry
 
 local configs = {} -- config registry saved between sessions
 local staticConfigs = {} -- static configurations set by the modules
+local privateConfigs = {} -- static configurations only directly available to the Engine
 
 local handlers = {} -- handler registry
 local handlerElements = {} -- handler element registry
@@ -791,19 +792,19 @@ local GetConfig = function(self, name, profile, option)
 		return error(L["The config '%s' doesn't exist!"]:format(name))
 	end	
 	local config
-	if profile == "realm" then
+	if (profile == "realm") then
 		config = configs[name].profiles.realm[(GetRealmName())]
 		
-	elseif profile == "character" then
+	elseif (profile == "character") then
 		config = configs[name].profiles.character[UnitName("player").."-"..GetRealmName()]
 		
-	elseif profile == "faction" then
+	elseif (profile == "faction") then
 		config = configs[name].profiles.faction[(UnitFactionGroup("player"))]
 		
-	elseif not profile then
+	elseif (not profile) then
 		config = configs[name].profiles.global
 	end
-	if not config then
+	if (not config) then
 		return error(L["The config '%s' doesn't have a profile named '%s'!"]:format(name, profile))
 	end
 	return config
@@ -811,27 +812,32 @@ end
 
 local GetConfigDefaults = function(self, name)
 	self:Check(name, 1, "string")
-	if not configs[name] then
+	if (not configs[name]) then
 		return error(L["The config '%s' doesn't exist!"]:format(name))
 	end	
 	return configs[name].defaults
 end
 
-local GetStaticConfig = function(self, name)
+local GetStaticConfig = function(self, name, private)
 	self:Check(name, 1, "string")
-	if not staticConfigs[name] then
+	if (private and (self ~= Engine)) then
+		return error(L["Only the Engine can access private configs"])
+	end
+	local configTable = private and privateConfigs or staticConfigs
+	if (not configTable[name]) then
 		return error(L["The static config '%s' doesn't exist!"]:format(name))
 	end	
-	return staticConfigs[name]
+	return configTable[name]
 end
 
-local NewStaticConfig = function(self, name, config)
+local NewStaticConfig = function(self, name, config, private)
 	self:Check(name, 1, "string")
 	self:Check(config, 2, "table")
-	if staticConfigs[name] then
+	local configTable = private and privateConfigs or staticConfigs
+	if configTable[name] then
 		return error(L["The static config '%s' already exists!"]:format(name))
 	end	
-	staticConfigs[name] = copyTable(config)
+	configTable[name] = copyTable(config)
 end
 
 
@@ -1418,7 +1424,16 @@ end
 -------------------------------------------------------------
 
 Engine.GetConstant = function(self, constant)
-	return self:GetStaticConfig("Data: Constants")[constant]
+	return self:GetStaticConfig("Data: Constants", true)[constant]
+end
+
+Engine.SetConstant = function(self, constant, value)
+	-- Allow other modules to set constants, 
+	-- but only if the given constant doesn't exist.
+	local constants = self:GetStaticConfig("Data: Constants", true)
+	if (constants[constant] == nil) then
+		constants[constant] = value
+	end
 end
 
 

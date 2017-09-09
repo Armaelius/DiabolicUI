@@ -62,7 +62,7 @@ Module.StyleButtons = function(self)
 			if button then
 				-- Ignore hidden buttons, because that means Blizzard aren't using them.
 				-- An example of this is the mac options button which is hidden on windows/linux.
-				if button:IsShown() then
+				--if button:IsShown() then
 					local label
 					if type(v.label) == "function" then
 						label = v.label()
@@ -76,10 +76,22 @@ Module.StyleButtons = function(self)
 						v.run(button)
 					end
 
-					-- clear away blizzard artwork
+					-- Hide some textures added in Legion that cause flickering
+					if button.Left then
+						button.Left:SetAlpha(0)
+					end
+					if button.Right then
+						button.Right:SetAlpha(0)
+					end
+					if button.Middle then
+						button.Middle:SetAlpha(0)
+					end
+
+					-- Clear away blizzard artwork
 					button:SetNormalTexture("")
 					button:SetHighlightTexture("")
 					button:SetPushedTexture("")
+
 					--button:SetText(" ") -- this is not enough, blizzard adds it back in some cases
 					
 					local fontstring = button:GetFontString()
@@ -152,42 +164,42 @@ Module.StyleButtons = function(self)
 					end)
 					button.UpdateLayers = function(self)
 						if self.isDown then
-							self.normal:Hide()
 							if self:IsMouseOver() then
-								self.highlight:Hide()
-								self.pushed:Show()
+								self.pushed:SetAlpha(1)
+								self.text.pushed:SetAlpha(1)
 								self.text:ClearAllPoints()
 								self.text:SetPoint("CENTER", 0, -4)
-								self.text.pushed:Show()
-								self.text.normal:Hide()
-								self.text.highlight:Hide()
+								self.highlight:SetAlpha(0)
+								self.text.normal:SetAlpha(0)
+								self.text.highlight:SetAlpha(0)
 							else
-								self.pushed:Hide()
-								self.normal:Hide()
-								self.highlight:Show()
+								self.highlight:SetAlpha(1)
+								self.text.highlight:SetAlpha(1)
 								self.text:ClearAllPoints()
 								self.text:SetPoint("CENTER", 0, 0)
-								self.text.pushed:Hide()
-								self.text.normal:Hide()
-								self.text.highlight:Show()
+								self.pushed:SetAlpha(0)
+								self.normal:SetAlpha(0)
+								self.text.pushed:SetAlpha(0)
+								self.text.normal:SetAlpha(0)
 							end
+							self.normal:SetAlpha(0)
 						else
 							self.text:ClearAllPoints()
 							self.text:SetPoint("CENTER", 0, 0)
 							if self:IsMouseOver() then
-								self.pushed:Hide()
-								self.normal:Hide()
-								self.highlight:Show()
-								self.text.pushed:Hide()
-								self.text.normal:Hide()
-								self.text.highlight:Show()
+								self.highlight:SetAlpha(1)
+								self.text.highlight:SetAlpha(1)
+								self.pushed:SetAlpha(0)
+								self.normal:SetAlpha(0)
+								self.text.pushed:SetAlpha(0)
+								self.text.normal:SetAlpha(0)
 							else
-								self.normal:Show()
-								self.highlight:Hide()
-								self.pushed:Hide()
-								self.text.pushed:Hide()
-								self.text.normal:Show()
-								self.text.highlight:Hide()
+								self.normal:SetAlpha(1)
+								self.text.normal:SetAlpha(1)
+								self.highlight:SetAlpha(0)
+								self.pushed:SetAlpha(0)
+								self.text.pushed:SetAlpha(0)
+								self.text.highlight:SetAlpha(0)
 							end
 						end
 					end
@@ -220,7 +232,7 @@ Module.StyleButtons = function(self)
 					v.button = button -- add a reference to the frame handle for the layout function
 					v.styled = true -- avoid double styling
 					
-				end
+				--end
 			else
 				-- If the button doesn't exist, it could be something added by an addon later.
 				if v.addon then

@@ -1,6 +1,5 @@
 local ADDON, Engine = ...
 local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
-local MINIMAP_SIZE = Engine:GetConstant("MINIMAP_SIZE") 
 
 Engine:NewStaticConfig("Objectives", {
 	capturebar = {
@@ -28,11 +27,15 @@ Engine:NewStaticConfig("Objectives", {
 	tracker = {
 		size = {},
 		points = {
-			--{ "TOPRIGHT", "UICenter", "TOPRIGHT", -(20 + 1.5), -(64 + MINIMAP_SIZE + 10 + 30) },
-			--{ "TOPLEFT", "UICenter", "TOPRIGHT", -(MINIMAP_SIZE - 3), -(64 + MINIMAP_SIZE + 10 + 30) },
-			{ "TOPRIGHT", "UICenter", "TOPRIGHT", -(20 + 1.5), -(64 + MINIMAP_SIZE + 10 + 30 + 10) },
-			{ "TOPLEFT", "UICenter", "TOPRIGHT", -(MINIMAP_SIZE - 3), -(64 + MINIMAP_SIZE + 10 + 30 + 10) },
-			{ "BOTTOMRIGHT", "UICenter", "BOTTOMRIGHT", -(20 + 1.5), 220 } 
+			-- New layout that doesn't require the old MINIMAP_SIZE constant, 
+			-- and instead relies on the Minimap and UICenter keywords. 
+			-- Alignment is only done relative to the bottom of the Minimap 
+			-- and the right side of the UICenter, so different Minimap sizes 
+			-- should only affect the top anchor of the tracker, not the width.
+			{ "TOP", "Minimap", "BOTTOM", 0, -30 },
+			{ "RIGHT", "UICenter", "RIGHT", -21.5, 0 },
+			{ "LEFT", "UICenter", "RIGHT", -293, 0 },
+			{ "BOTTOM", "UICenter", "BOTTOM", 0, 220 }
 		},
 		header = {
 			height = 25,

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.66] 2017-09-09
+### Changed
+- In Legion Blizzard decided to unload all hidden UI textures from memory. This causes constant disk access and flickering. In an effort to work against this I've changed how textures are displayed in the GameMenu and on the actionbutton styling functions from showing and hiding to changing the opacity instead. This keeps the textures in memory and removes the annoying flickering. The textures use a few kilobytes of ram each, the whole UI a few megabytes, while the game uses several gigabytes. Unloading 2D textures from memory is absolutely idiotic, and does nothing but increase disk access, cause flickering and lag spikes. Good one, Blizzard. 
+
 ## [1.3.65] 2017-09-07
 ### Changed
 - Rares and elites should get the same target frame artwork as bosses now. Will make separate artwork for rares and elites later, just wanted them to stand more out for the time being. 

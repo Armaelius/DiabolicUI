@@ -32,6 +32,7 @@ L["The config '%s' doesn't exist!"] = true
 L["The config '%s' doesn't have a profile named '%s'!"] = true
 L["The static config '%s' doesn't exist!"] = true
 L["The static config '%s' already exists!"] = true
+L["Only the Engine can access private configs"] = true
 L["Bad argument #%d to '%s': No handler named '%s' exist!"] = true
 L["Bad argument #%d to '%s': No module named '%s' exist!"] = true
 L["The element '%s' is already registered to the '%s' handler!"] = true

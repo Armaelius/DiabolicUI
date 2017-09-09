@@ -1,11 +1,15 @@
 local ADDON, Engine = ...
 
-local MINIMAP_SIZE = Engine:GetConstant("MINIMAP_SIZE") 
+	-- ActionButton Sizes 
+local BUTTON_SIZE_VEHICLE = 64 -- button size with a vehicle UI
+local BUTTON_SIZE_SINGLE = 50 -- button size with a single action bar
+local BUTTON_SIZE_DOUBLE = 44 -- button size with two action bars
+local BUTTON_SIZE_TRIPLE = 36 -- button size with three action bars
 
-local BUTTON_SIZE_VEHICLE = Engine:GetConstant("BUTTON_SIZE_VEHICLE") -- button size with a vehicle UI
-local BUTTON_SIZE_SINGLE = Engine:GetConstant("BUTTON_SIZE_SINGLE") -- button size with a single action bar
-local BUTTON_SIZE_DOUBLE = Engine:GetConstant("BUTTON_SIZE_DOUBLE") -- button size with two action bars
-local BUTTON_SIZE_TRIPLE = Engine:GetConstant("BUTTON_SIZE_TRIPLE") -- button size with three action bars
+Engine:SetConstant("BUTTON_SIZE_VEHICLE", BUTTON_SIZE_VEHICLE)
+Engine:SetConstant("BUTTON_SIZE_SINGLE", BUTTON_SIZE_SINGLE)
+Engine:SetConstant("BUTTON_SIZE_DOUBLE", BUTTON_SIZE_DOUBLE)
+Engine:SetConstant("BUTTON_SIZE_TRIPLE", BUTTON_SIZE_TRIPLE)
 
 local NUM_ACTIONBAR_SLOTS = Engine:GetConstant("NUM_ACTIONBAR_SLOTS") -- number of buttons on a standard bar
 local NUM_PET_SLOTS = Engine:GetConstant("NUM_PET_SLOTS") -- number of pet buttons

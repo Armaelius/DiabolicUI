@@ -26,15 +26,6 @@ Engine:NewStaticConfig("Data: Constants", {
 	-- Quest that needs to be completed for world quests to be available
 	WORLD_QUESTS_AVAILABLE_QUEST_ID = WORLD_QUESTS_AVAILABLE_QUEST_ID or 43341,
 
-	-- Maps
-	MINIMAP_SIZE = 290, -- size of the big Minimap
-
-	-- ActionButton Sizes
-	BUTTON_SIZE_VEHICLE = 64, -- button size with a vehicle UI
-	BUTTON_SIZE_SINGLE = 50, -- button size with a single action bar
-	BUTTON_SIZE_DOUBLE = 44, -- button size with two action bars
-	BUTTON_SIZE_TRIPLE = 36, -- button size with three action bars
-
 	-- ActionButton Numbers
 	NUM_ACTIONBAR_SLOTS = NUM_ACTIONBAR_BUTTONS or 12, -- number of buttons on a standard bar
 	NUM_PET_SLOTS = NUM_PET_ACTION_SLOTS or 10, -- number of pet buttons
@@ -46,4 +37,4 @@ Engine:NewStaticConfig("Data: Constants", {
 	BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]], -- used as a single color texture
 	EMPTY_TEXTURE = path .. [[textures\DiabolicUI_Texture_16x16_Empty.tga]]	-- Used to hide UI elements
 
-})
+}, true)
