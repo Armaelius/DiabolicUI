@@ -1,8 +1,8 @@
 local _, Engine = ...
 local Module = Engine:NewModule("ObjectiveTracker")
 local L = Engine:GetLocale()
-local C = Engine:GetStaticConfig("Data: Colors")
---local QuestZones = Engine:GetStaticConfig("Data: QuestZones") -- not currently in use
+local C = Engine:GetDB("Data: Colors")
+--local QuestZones = Engine:GetDB("Data: QuestZones") -- not currently in use
 
 -- Lua API
 local _G = _G
@@ -2613,7 +2613,8 @@ Module.OnUpdate = function(self, elapsed)
 		end
 	end 
 
-	if needUpdate or listener.QUEUE_GATHER_QUESTLOG_ZONEDATA then
+	--if needUpdate or listener.QUEUE_GATHER_QUESTLOG_ZONEDATA then
+	if listener.QUEUE_GATHER_QUESTLOG_ZONEDATA then
 		listener.QUEUE_GATHER_QUESTLOG_ZONEDATA = nil
 
 		-- Adding this here makes sure new questlog quests appear
@@ -2744,7 +2745,7 @@ Module.SetUpEvents = function(self, event, ...)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Objectives").tracker
+	self.config = self:GetDB("Objectives").tracker
 	self.db = self:GetConfig("ObjectiveTracker") -- user settings. will save manually tracked quests here later.
 
 	local config = self.config

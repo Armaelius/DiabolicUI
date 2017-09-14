@@ -121,7 +121,7 @@ Module.UpdateEditBox = function(self, editbox)
 		editbox:SetBackdropColor(r *.5, g *.5, b *.5)
 		editbox:SetBackdropBorderColor(r, g, b)
 	else
-		local colors = Engine:GetStaticConfig("ChatWindows").editbox.colors
+		local colors = Engine:GetDB("ChatWindows").editbox.colors
 		editbox:SetBackdropColor(unpack(colors.backdrop))
 		editbox:SetBackdropBorderColor(unpack(colors.border))
 		glow:SetBackdropBorderColor(unpack(colors.glow))
@@ -144,7 +144,7 @@ end
 
 Module.OnInit = function(self, event, ...)
 
-	self.config = self:GetStaticConfig("ChatWindows") -- setup
+	self.config = self:GetDB("ChatWindows") -- setup
 	self.db = self:GetConfig("ChatWindows") -- user settings
 	
 	local config = self.config
@@ -756,7 +756,7 @@ Module.PositionChatFrames = function(self)
 				hideOnEscape = false
 			})
 		end
-		PopUpMessage:ShowPopUp("ENGINE_AUTO_SETUP_CHAT", self:GetStaticConfig("UI").popup) 
+		PopUpMessage:ShowPopUp("ENGINE_AUTO_SETUP_CHAT", self:GetDB("UI").popup) 
 	end
 	
 	if db.autoposition then

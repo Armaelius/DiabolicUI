@@ -4,8 +4,8 @@ local _, Engine = ...
 -- as other modules rely on it for positioning. 
 local Module = Engine:NewModule("Minimap", "HIGH")
 local BlizzardUI = Engine:GetHandler("BlizzardUI")
-local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Library: Format")
+local C = Engine:GetDB("Data: Colors")
+local F = Engine:GetDB("Library: Format")
 local L = Engine:GetLocale()
 
 -- Some constants needed later on
@@ -403,7 +403,7 @@ Module.OnEvent = function(self, event, ...)
 end
 
 Module.AlignMinimap = function(self)
-	local config = self:GetStaticConfig("Minimap")
+	local config = self:GetDB("Minimap")
 
 	local map = self.frame.custom.map
 	local mapContent = self.frame.custom.map.content
@@ -441,11 +441,11 @@ Module.AlignMinimap = function(self)
 end
 
 Module.InitMap = function(self)
-	local config = self:GetStaticConfig("Minimap")
+	local config = self:GetDB("Minimap")
 end
 
 Module.InitMBB = function(self)
-	local config = self:GetStaticConfig("Minimap")
+	local config = self:GetDB("Minimap")
 	local mapContent = self.frame.custom.map.content
 
 	local mbbFrame = _G.MBB_MinimapButtonFrame
@@ -521,7 +521,7 @@ Module.WaitForMBB = function(self, event, addon)
 end
 
 Module.OnInit = function(self)
-	local config = self:GetStaticConfig("Minimap")
+	local config = self:GetDB("Minimap")
 	local db = self:GetConfig("Minimap")
 	local data = {
 		currentZoneID = 0,

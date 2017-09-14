@@ -1,6 +1,6 @@
 local ADDON, Engine = ...
 local Module = Engine:NewModule("Blizzard: Styling")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G

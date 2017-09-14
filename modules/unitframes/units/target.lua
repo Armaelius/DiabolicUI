@@ -2,8 +2,8 @@ local Addon, Engine = ...
 
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
-local AuraData = Engine:GetStaticConfig("Data: Auras")
-local C = Engine:GetStaticConfig("Data: Colors")
+local AuraData = Engine:GetDB("Data: Auras")
+local C = Engine:GetDB("Data: Colors")
 
 local Module = Engine:GetModule("UnitFrames")
 local UnitFrameWidget = Module:SetWidget("Unit: Target")
@@ -261,7 +261,7 @@ end
 -- TODO: Add PvP relevant buffs to a whitelist in these filters 
 -- TODO: Optimize the code once we're happy with the functionality
 
-local Filter = Engine:GetStaticConfig("Library: AuraFilters")
+local Filter = Engine:GetDB("Library: AuraFilters")
 local Filter_UnitIsHostileNPC = Filter.UnitIsHostileNPC
 
 local buffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
@@ -496,7 +496,7 @@ local PostUpdateFrame = function(self, event, ...)
 end
 
 local Style = function(self, unit)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.target
+	local config = Module:GetDB("UnitFrames").visuals.units.target
 	local db = Module:GetConfig("UnitFrames") 
 	
 	self:Size(unpack(config.size))

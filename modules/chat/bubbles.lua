@@ -218,7 +218,7 @@ Updater.InitBubble = function(self, bubble)
 end
 
 Module.OnInit = function(self, event, ...)
-	self.config = self:GetStaticConfig("ChatBubbles") -- setup
+	self.config = self:GetDB("ChatBubbles") -- setup
 	self.db = self:GetConfig("ChatBubbles") -- user settings
 
 	self.Updater = Updater

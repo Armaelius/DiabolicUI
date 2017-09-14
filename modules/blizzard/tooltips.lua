@@ -1,8 +1,8 @@
 local _, Engine = ...
 local Module = Engine:NewModule("Blizzard: Tooltips")
 local L = Engine:GetLocale()
-local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Library: Format")
+local C = Engine:GetDB("Data: Colors")
+local F = Engine:GetDB("Library: Format")
 
 -- Register module incompatibilities
 Module:SetIncompatible("TipTac")
@@ -1269,7 +1269,7 @@ Module.OnEvent = function(self, event, ...)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Blizzard").tooltips
+	self.config = self:GetDB("Blizzard").tooltips
 
 	-- create an anchor to hook the tooltip to
 	self.anchor = CreateFrame("Frame", nil, Engine:GetFrame())

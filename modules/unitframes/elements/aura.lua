@@ -1,8 +1,8 @@
 local ADDON, Engine = ...
 local Handler = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
-local C = Engine:GetStaticConfig("Data: Colors")
-local AuraFunctions = Engine:GetStaticConfig("Library: AuraFunctions")
+local C = Engine:GetDB("Data: Colors")
+local AuraFunctions = Engine:GetDB("Library: AuraFunctions")
 local L = Engine:GetLocale()
 local UICenter = Engine:GetFrame()
 

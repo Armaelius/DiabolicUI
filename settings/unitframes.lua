@@ -1,5 +1,5 @@
 local ADDON, Engine = ...
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
 
 -- Lua API

@@ -6,7 +6,7 @@ Module.OnInit = function(self)
 		return
 	end
 
-	local config = self:GetStaticConfig("Blizzard").totembar
+	local config = self:GetDB("Blizzard").totembar
 
 	local point, anchor, rpoint, x, y = unpack(config.position)
 	if anchor == "Main" then

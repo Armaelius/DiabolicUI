@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.67] 2017-09-14
+### Added
+- Added a Legion honor points bar visible while inside a PvP instance.
+
+### Changed
+- Changed when the tracker gathers information about a quest's zone, to work around some major fps drops in certain conditions in Legion. 
+- Renamed the internal Engine API call 'GetStaticConfig' to 'GetDB' as this better reflected its purpose.
+
+### Fixed
+- Fixed an issue that would cause limited starter edition accounts playing at full level on the PTR to not get their Artifact Power displayed as a bar. 
+- Fixed an internal issue that would give quality colors the wrong index in our custom color table. This issue never affected the player, and was merely a backend fix.
+
 ## [1.3.66] 2017-09-09
 ### Changed
 - In Legion Blizzard decided to unload all hidden UI textures from memory. This causes constant disk access and flickering. In an effort to work against this I've changed how textures are displayed in the GameMenu and on the actionbutton styling functions from showing and hiding to changing the opacity instead. This keeps the textures in memory and removes the annoying flickering. The textures use a few kilobytes of ram each, the whole UI a few megabytes, while the game uses several gigabytes. Unloading 2D textures from memory is absolutely idiotic, and does nothing but increase disk access, cause flickering and lag spikes. Good one, Blizzard. 

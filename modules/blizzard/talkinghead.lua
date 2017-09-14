@@ -53,7 +53,7 @@ Module.WaitForTalkingHead = function(self, event, ...)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Blizzard").talkinghead
+	self.config = self:GetDB("Blizzard").talkinghead
 
 	-- Create our container frame
 	self.frame = Engine:CreateFrame("Frame", nil, "UICenter")

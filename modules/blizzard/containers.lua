@@ -1,6 +1,6 @@
 local ADDON, Engine = ...
 local Module = Engine:NewModule("Blizzard: Containers")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G
@@ -98,9 +98,9 @@ Module.OnInit = function(self)
 				if iconBorder then
 					iconBorder:SetTexture([[Interface\Common\WhiteIconFrame]])
 					if itemRarity then
-						if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity-1] then
+						if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity] then
 							iconBorder:Show()
-							iconBorder:SetVertexColor(unpack(C.Quality[itemRarity-1]))
+							iconBorder:SetVertexColor(unpack(C.Quality[itemRarity]))
 						else
 							iconBorder:Show()
 							iconBorder:SetVertexColor(unpack(C.General.UIBorder))
@@ -112,9 +112,9 @@ Module.OnInit = function(self)
 					iconBorder = borderCache[itemButton]
 					if iconBorder then
 						if itemRarity then
-							if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity-1] then
+							if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity] then
 								iconBorder:Show()
-								iconBorder:SetVertexColor(unpack(C.Quality[itemRarity-1]))
+								iconBorder:SetVertexColor(unpack(C.Quality[itemRarity]))
 							else
 								iconBorder:Show()
 								iconBorder:SetVertexColor(unpack(C.General.UIBorder))

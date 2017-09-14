@@ -1,6 +1,6 @@
 local _, Engine = ...
 local Module = Engine:NewModule("CaptureBars")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G
@@ -257,7 +257,7 @@ Module.OnEvent = function(self, event, ...)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Objectives").capturebar
+	self.config = self:GetDB("Objectives").capturebar
 	self.captureBars = {}
 	self.captureBarsByID = {}
 	self.visibleCaptureBars = {}

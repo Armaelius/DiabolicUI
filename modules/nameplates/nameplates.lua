@@ -1,10 +1,10 @@
 local ADDON, Engine = ...
 local Module = Engine:NewModule("NamePlates")
 local StatusBar = Engine:GetHandler("StatusBar")
-local AuraData = Engine:GetStaticConfig("Data: Auras")
-local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Library: Format")
-local AuraFunctions = Engine:GetStaticConfig("Library: AuraFunctions")
+local AuraData = Engine:GetDB("Data: Auras")
+local C = Engine:GetDB("Data: Colors")
+local F = Engine:GetDB("Library: Format")
+local AuraFunctions = Engine:GetDB("Library: AuraFunctions")
 local UICenter = Engine:GetFrame()
 
 -- Register incompatibilities
@@ -2846,7 +2846,7 @@ end)
 
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("NamePlates")
+	self.config = self:GetDB("NamePlates")
 	self.worldFrame = WorldFrame
 	self.allPlates = AllPlates
 	self.allChildren = AllChildren

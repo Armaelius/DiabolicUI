@@ -3,7 +3,7 @@ local Addon, Engine = ...
 local Module = Engine:GetModule("UnitFrames")
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 local UnitFrameWidget = Module:SetWidget("Unit: ToT")
 
@@ -64,7 +64,7 @@ local updateLayers = function(self)
 end
 
 local Style = function(self, unit)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.tot
+	local config = Module:GetDB("UnitFrames").visuals.units.tot
 	local db = Module:GetConfig("UnitFrames") 
 
 	

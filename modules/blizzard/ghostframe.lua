@@ -7,7 +7,7 @@ Module.OnInit = function(self)
 		return
 	end
 
-	local config = self:GetStaticConfig("Blizzard").ghostframe
+	local config = self:GetDB("Blizzard").ghostframe
 
 	local holder = Engine:CreateFrame("Frame", nil, "UICenter")
 	holder:Place(unpack(config.position))

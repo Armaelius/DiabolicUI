@@ -150,17 +150,29 @@ BarWidget.OnEvent = function(self, event, ...)
 	end
 end
 
-BarWidget.UpdateStanceButton = Engine:Wrap(function(self)
+BarWidget.UpdateStanceButton = function(self)
 	local Bar = self.Bar
 
-	local num_forms = GetNumShapeshiftForms()
-	if num_forms == 0 then
+	local oldNumForms = Bar.numForms
+	local numForms = GetNumShapeshiftForms()
+
+	if (oldNumForms == numForms) then
+		return
+	end
+
+	if InCombatLockdown() then
+		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "UpdateStanceButton")
+	end
+
+	if (numForms == 0) then
 		UnregisterStateDriver(Bar, "visibility")
 		RegisterStateDriver(Bar, "visibility", "hide")
 	else
 		UnregisterStateDriver(Bar, "visibility")
 		RegisterStateDriver(Bar, "visibility", ENGINE_MOP and "[overridebar][possessbar][shapeshift][vehicleui]hide;show" or "[bonusbar:5][vehicleui]hide;show")
 	end
+
+	Bar.numForms = numForms
 		
 	--Bar:RegisterVisibilityDriver()
 	-- should be options somewhere for this
@@ -168,7 +180,7 @@ BarWidget.UpdateStanceButton = Engine:Wrap(function(self)
 	--if Bar then
 	--	self.StanceWindow:SetSize(Bar:GetSize())
 	--end
-end)
+end
 
 -- Callback to update the actual stance bar's button artwork.
 -- The bar and buttons are created later, so it can't be done on controller init.

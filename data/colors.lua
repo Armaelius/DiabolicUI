@@ -60,6 +60,7 @@ local C = {
 		XPRested 		= prepare( 251/255, 120/255,  29/255 ), 
 		XPRestedBonus 	= prepare(  84/255,  40/255,   9/255 ),
 		XPComplimentary = prepare(  33/255,  82/255, 166/255 ),
+		Honor 			= prepare( 230/255, 204/255, 128/255 ),
 
 		-- UI Colors
 		UIBackdrop 		= prepare( 140/255, 118/255, 110/255 ),
@@ -409,6 +410,7 @@ local C = {
 		UNUSED 					= prepare(195/255, 202/255, 217/255)  -- Fallback for the rare cases where an unknown type is requested.
 	},
 
+	-- Added later on
 	Quality = {
 
 	},
@@ -470,9 +472,11 @@ local C = {
 	}
 }
 
-for i = 0, #ITEM_QUALITY_COLORS do
+for i in pairs(ITEM_QUALITY_COLORS) do
+--for i = 0, #ITEM_QUALITY_COLORS do
 	local r, g, b = ITEM_QUALITY_COLORS[i].r, ITEM_QUALITY_COLORS[i].g, ITEM_QUALITY_COLORS[i].b
-	C.Quality[i-1] = prepare(r, g, b)
+	C.Quality[i] = prepare(r, g, b)
+	--C.Quality[i-1] = prepare(r, g, b)
 end
 
 

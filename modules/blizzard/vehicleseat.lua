@@ -10,7 +10,7 @@ Module.OnInit = function(self)
 		return
 	end
 
-	local config = self:GetStaticConfig("Blizzard").vehicleseat
+	local config = self:GetDB("Blizzard").vehicleseat
 
 	local holder = Engine:CreateFrame("Frame", nil, "UICenter")
 	holder:Place(unpack(config.position))

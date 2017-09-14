@@ -37,7 +37,7 @@ local GetAddOnEnableState = _G.GetAddOnEnableState
 local GetAddOnInfo = _G.GetAddOnInfo
 local GetBuildInfo = _G.GetBuildInfo
 local GetCurrentResolution = _G.GetCurrentResolution
-local GetCVar, SetCVar = _G.GetCVar, _G.SetCVar
+local GetCVar = _G.GetCVar
 local GetCVarBool = _G.GetCVarBool
 local GetLocale = _G.GetLocale
 local GetNumAddOns = _G.GetNumAddOns
@@ -53,7 +53,6 @@ local IsLoggedIn = _G.IsLoggedIn
 local IsMacClient = _G.IsMacClient
 local LoadAddOn = _G.LoadAddOn
 local RegisterStateDriver = _G.RegisterStateDriver
-local SetCVar = _G.SetCVar
 local StaticPopup_Show = _G.StaticPopup_Show
 local StaticPopupDialogs = _G.StaticPopupDialogs
 local UnitAffectingCombat = _G.UnitAffectingCombat
@@ -232,7 +231,7 @@ end
 -- Not using camel case for the names of these two, 
 -- since we're sort of pretending they're regular lua math calls.
 local math_round = function(n, accuracy) 
-	return (math_floor(n*accuracy))/accuracy 
+	return (math_floor(n*accuracy + .5))/accuracy -- adding the .5 to fix numbers blizzard have rounded down (?)
 end
 
 local math_compare = function(a, b, accuracy) 
@@ -271,6 +270,26 @@ copyTable = function(source, target)
 		end
 	end
 	return new
+end
+
+-- Using this as sort of a "catch all" copy function
+local fullCopy
+fullCopy = function(source)
+	do return source end
+
+	-- Tables need to be deep copied, or the referenced table can disappear, causing mayhem.
+	if (type(source) == "table") then
+		-- If it's a WoW UI object, we just return it as is. 
+		if source.GetObjectType then
+			return source
+		-- If it's a normal table, we do a full deep copy of it.
+		else
+			return copyTable(source)
+		end 
+	end
+
+	-- Non table values are copied by default, simply returning the value is enough.
+	return source
 end
 
 
@@ -818,7 +837,7 @@ local GetConfigDefaults = function(self, name)
 	return configs[name].defaults
 end
 
-local GetStaticConfig = function(self, name, private)
+local GetDB = function(self, name, private)
 	self:Check(name, 1, "string")
 	if (private and (self ~= Engine)) then
 		return error(L["Only the Engine can access private configs"])
@@ -847,37 +866,39 @@ end
 -------------------------------------------------------------
 
 local safeCall = function(func, ...)
+
 	-- perform the function right away when not in combat
-	if not INCOMBAT then
+	if (not INCOMBAT) then
 		if queue[func] then -- check if the function has been previously queued during combat
 			push(queue[func]) -- push the table to the stack
-			queue[func] = nil -- remove the element from the queue
+			queue[func] = nil -- remove the element's reference from the queue
 		end
 		func(...) 
 		return
 	end
-	if not INLOCKDOWN then
+
+	-- combat has ended but the event hasn't fired yet
+	if (not INLOCKDOWN) then
 		INLOCKDOWN = InCombatLockdown() -- still in PLAYER_REGEN_DISABLED?
-		if not INLOCKDOWN then
+		if (not INLOCKDOWN) then
 			if queue[func] then -- check if the function has been previously queued during combat
 				push(queue[func]) -- push the table to the stack
-				queue[func] = nil -- remove the element from the queue
+				queue[func] = nil -- remove the element's reference from the queue
 			end
 			func(...)
 			return
 		end
 	end
 	
-	-- we're still in combat, combat has ended but the event hasn't fired yet. 
-	-- we need to queue the function call.
+	-- we're still in combat, we need to queue the function call.
 	-- if it has been previously queued, we simply update the arguments
 	if queue[func] then
 		local tbl, oldArgs = queue[func], #queue[func]
 		local numArgs = select("#", ...)
 		for i = 1, numArgs do
-			tbl[i] = select(i, ...) -- give each argument its own entry
+			tbl[i] = fullCopy(select(i, ...)) -- give each argument its own entry
 		end
-		if oldArgs > numArgs then
+		if (oldArgs > numArgs) then
 			for i = oldArgs + 1, numArgs do
 				tbl[i] = nil -- kill of excess args from the previous queue, if any
 			end
@@ -886,7 +907,7 @@ local safeCall = function(func, ...)
 		local tbl = pop() -- request a fresh table from the stack
 		local numArgs = select("#", ...)
 		for i = 1, numArgs do
-			tbl[i] = select(i, ...) -- give each argument its own entry
+			tbl[i] = fullCopy(select(i, ...)) -- give each argument its own entry
 		end
 		-- To avoid multiple calls of the same function, 
 		-- we use the actual function as the key.
@@ -1074,7 +1095,7 @@ local corePrototype = {
 	NewConfig = NewConfig,
 	GetConfig = GetConfig,
 	NewStaticConfig = NewStaticConfig,
-	GetStaticConfig = GetStaticConfig,
+	GetDB = GetDB,
 	Wrap = wrap
 }
 local corePrototype_MT = { __index = corePrototype, __tostring = function(t) return objectName[t] end }
@@ -1424,13 +1445,13 @@ end
 -------------------------------------------------------------
 
 Engine.GetConstant = function(self, constant)
-	return self:GetStaticConfig("Data: Constants", true)[constant]
+	return self:GetDB("Data: Constants", true)[constant]
 end
 
 Engine.SetConstant = function(self, constant, value)
 	-- Allow other modules to set constants, 
 	-- but only if the given constant doesn't exist.
-	local constants = self:GetStaticConfig("Data: Constants", true)
+	local constants = self:GetDB("Data: Constants", true)
 	if (constants[constant] == nil) then
 		constants[constant] = value
 	end
@@ -1593,12 +1614,14 @@ do
 	-- regardless of screen resolution. 
 	local HD_MODIFIER = 1 
 
-	local accuracy = 1e4 -- note that for anything more than 2 decimals will spam reloads on every video options frame opening (unless the slider is disabled, as we're doing)
-	local widescreen = 1.6 -- minimum aspect ratio for a screen to be considered widescreen (16:10)
-	local currentPixelScale = 1 -- initial pixel scale of the UICenter frame 
-	local screenPixelWidth, screenPixelHeight -- on-screen pixel size of the frame
+	-- Initial pixel scale of the UICenter frame 
+	local PIXEL_SCALE = 1 
+	
+	-- Size of the UICenter frame in actual pixels
+	local SCREENWIDTH_PIXELS, SCREENHEIGHT_PIXELS
 
-	-- Returns the current game resolution -- /run print(({GetScreenResolutions(tonumber(GetCVar("gxMonitor")))})[GetCurrentResolution(tonumber(GetCVar("gxMonitor")))])
+	-- Returns the current game resolution 
+	-- /run print(({GetScreenResolutions(tonumber(GetCVar("gxMonitor")))})[GetCurrentResolution(tonumber(GetCVar("gxMonitor")))])
 	UICenter.GetResolution = function(self)
 		local resolution
 		if Engine:IsBuild("Legion") then
@@ -1611,7 +1634,7 @@ do
 			resolution = ({GetScreenResolutions()})[GetCurrentResolution()]
 		end
 
-		if not resolution then 
+		if (not resolution) then 
 			return
 		end
 
@@ -1629,14 +1652,14 @@ do
 			return
 		end
 
-		local aspectRatio = math_round(screenWidth / screenHeight, accuracy)
+		local aspectRatio = math_round(screenWidth / screenHeight, 1e4)
 
 		-- Somebody using AMD EyeFinity?
 		-- 	*we're blatently assuming we're talking about 3x widescreen monitors,
 		-- 	 and we will simply ignore all other setups. Dual monitors in WoW is just dumb.
-		local viewPortWidth 
-		if aspectRatio >= 3*widescreen then
-			viewPortWidth = math_floor(screenWidth/3)
+		local viewPortWidth = math_round(screenWidth, 1)
+		if aspectRatio >= (3*(16/10)) then
+			viewPortWidth = math_round(math_floor(screenWidth/3), 1)
 		end
 
 		-- Add scaling modifiers for widescreen
@@ -1645,103 +1668,125 @@ do
 		-- so we're scaling to more or less maintain that look,
 		-- in both higher and lower resolutions.
 		--
-		-- 
-		if (aspectRatio >= 1.6) then
-			if (viewPortWidth or screenWidth) >= 7680 then
+
+		-- Modern 21:9 screens of various sizes
+		if (aspectRatio >= 21/9) then
+
+			if (viewPortWidth >= 13760) then
 				HD_MODIFIER = 4
-			elseif (viewPortWidth or screenWidth) >= 7680 then
+			elseif (viewPortWidth >= 10240) then
 				HD_MODIFIER = 4
-			elseif (viewPortWidth or screenWidth) >= 3840 then
+			elseif (viewPortWidth >= 6880) then
 				HD_MODIFIER = 2
-			elseif (viewPortWidth or screenWidth) >= 1920 then
+			elseif (viewPortWidth >= 5120) then
+				HD_MODIFIER = 2
+			elseif (viewPortWidth >= 3440) then
 				HD_MODIFIER = 1
-			elseif (viewPortWidth or screenWidth) >= 1600 then
-				HD_MODIFIER = math_round(5/6, accuracy)
-			elseif (viewPortWidth or screenWidth) >= 1280 then
-				HD_MODIFIER = .75
+			elseif (viewPortWidth >= 2560) then
+				HD_MODIFIER = 1
+			end
+
+		-- Not so modern 16:9 and 16:10 screens (mine!)
+		elseif (aspectRatio >= 16/10) then
+
+			if (viewPortWidth >= 7680) then
+				HD_MODIFIER = 4
+			elseif (viewPortWidth >= 7680) then
+				HD_MODIFIER = 4
+			elseif (viewPortWidth >= 3840) then
+				HD_MODIFIER = 2
+			elseif (viewPortWidth >= 1920) then
+				HD_MODIFIER = 1
+			elseif (viewPortWidth >= 1600) then
+				HD_MODIFIER = math_round(5/6, 1e4)
+			elseif (viewPortWidth >= 1280) then
+				HD_MODIFIER = 3/4
 			else
 				-- smaller screens are just weird
-				HD_MODIFIER = math_round(768/1200, accuracy)
+				HD_MODIFIER = math_round(768/1200, 1e4)
 			end
+
+		-- Old school 4:3 and 5:4! Bring out the Amiga 500!
 		else
-			-- I don't really expect people to be using weird
-			-- super high res 4:3 or 5:4 monitors, 
-			-- but if they do, we're at least ready for them!
-			-- 
+
 			-- These scales also make the UI fit on tiny old
 			-- standard screens like 800x600 and 1024x768, though, 
 			-- which was sort of the whole point in including them.
-			if (viewPortWidth or screenWidth) >= 7680 then
+			if (viewPortWidth >= 7680) then
 				HD_MODIFIER = 4
-			elseif (viewPortWidth or screenWidth) >= 3840 then
+			elseif (viewPortWidth >= 3840) then
 				HD_MODIFIER = 2
-			elseif (viewPortWidth or screenWidth) >= 1920 then
+			elseif (viewPortWidth >= 1920) then
 				HD_MODIFIER = 1
-			elseif (viewPortWidth or screenWidth) >= 1600 then
-				HD_MODIFIER = math_round(5/6, accuracy)
-			elseif (viewPortWidth or screenWidth) >= 1280 then
-				HD_MODIFIER = .75
-			elseif (viewPortWidth or screenWidth) >= 1024 then
-				HD_MODIFIER = math_round(2/3, accuracy)
+			elseif (viewPortWidth >= 1600) then
+				HD_MODIFIER = math_round(5/6, 1e4)
+			elseif (viewPortWidth >= 1280) then
+				HD_MODIFIER = 3/4
+			elseif (viewPortWidth >= 1024) then
+				HD_MODIFIER = math_round(2/3, 1e4)
 			else
 				-- Smaller screens are even weirder here. 
 				-- I mean, 1020x768 or 800x600... really?
 				-- Still, let's support it! :) 
-				HD_MODIFIER = math_round(1/2, accuracy)
+				HD_MODIFIER = math_round(1/2, 1e4)
 			end
 		end
-		return viewPortWidth or screenWidth, screenHeight
+
+		return viewPortWidth, screenHeight
 	end
 
 	UICenter.GetPixelSize = function(self)
-		if not(screenPixelWidth and screenPixelHeight) then
-			screenPixelWidth, screenPixelHeight = self:GetScreenSize()
+		if not(SCREENWIDTH_PIXELS and SCREENHEIGHT_PIXELS) then
+			SCREENWIDTH_PIXELS, SCREENHEIGHT_PIXELS = self:GetScreenSize()
 		end
-		return screenPixelWidth, screenPixelHeight
+		return SCREENWIDTH_PIXELS, SCREENHEIGHT_PIXELS
 	end
 
 	UICenter.GetPixelScale = function(self)
-		return currentPixelScale
+		return PIXEL_SCALE
 	end
 
 	-- Sets the actual pixel size of the UICenter frame
-	UICenter.SetPixelSize = function(self, width, height)
-		screenPixelWidth, screenPixelHeight = width, height
-
-		local screenWidth, screenHeight = self:GetScreenSize()
-		local effectiveScale = self:GetEffectiveScale()
-		local perfectScale = 768/screenHeight
-		local scalar = perfectScale / effectiveScale
-
-		self:SetSize(screenPixelWidth * scalar, screenPixelHeight * scalar)
-	end
+	--UICenter.SetPixelSize = function(self, width, height)
+	--	SCREENWIDTH_PIXELS, SCREENHEIGHT_PIXELS = width, height
+	--
+	--	local screenWidth, screenHeight = self:GetScreenSize()
+	--	local effectiveScale = self:GetEffectiveScale()
+	--	local perfectScale = 768/screenHeight
+	--	local scalar = perfectScale / effectiveScale
+	--
+	--	self:SetSize(SCREENWIDTH_PIXELS * scalar, SCREENHEIGHT_PIXELS * scalar)
+	--end
 
 	-- Sets the scale of the UICenter frame, and resizes it to still fill the primary monitor
 	UICenter.SetPixelScale = function(self, scale)
 
-		local screenWidth, screenHeight = self:GetScreenSize() -- this also sets the HD_MODIFIER variable
-		local perfectEffectiveScale = 768/screenHeight -- The virtual WoW screen always has 768 pixel lines
+		local effectiveScale = self:GetEffectiveScale()
 		local parentEffectiveScale = self:GetParent():GetEffectiveScale()
+
+		local screenWidth, screenHeight = self:GetScreenSize() -- this also sets the HD_MODIFIER variable
+		
+		local perfectEffectiveScale = 768/screenHeight -- The virtual WoW screen always has 768 pixel lines
 		local pixelPerfectScale = perfectEffectiveScale / parentEffectiveScale -- this scale is pixel perfect
+		local scalar = perfectEffectiveScale / effectiveScale
 
-		currentPixelScale = pixelPerfectScale * scale * HD_MODIFIER
+		self:SetScale(pixelPerfectScale * scale * HD_MODIFIER)
+		self:SetSize(screenWidth * scalar, screenHeight * scalar)
 
-		self:SetScale(currentPixelScale)
-		self:SetPixelSize(self:GetScreenSize())
 	end
 
-	UICenter:SetAttribute("_onattributechanged", [=[
-		if name == "currentPixelScale" then
-			local scale = tonumber(value);
-			local width, height = self:GetAttribute("screenPixelWidth"), self:GetAttribute("screenPixelHeight"); 
-			self:SetScale(scale); 
-			self:SetSize()
-
-		elseif name == "pixel_size" then
-			local width, height = strsplit(value, ","); 
-
-		end
-	]=])
+	--UICenter:SetAttribute("_onattributechanged", [=[
+	--	if name == "PIXEL_SCALE" then
+	--		local scale = tonumber(value);
+	--		local width, height = self:GetAttribute("SCREENWIDTH_PIXELS"), self:GetAttribute("SCREENHEIGHT_PIXELS"); 
+	--		self:SetScale(scale); 
+	--		self:SetSize()
+	--
+	--	elseif name == "pixel_size" then
+	--		local width, height = strsplit(value, ","); 
+	--
+	--	end
+	--]=])
 
 	Engine.UpdateScale = function(self, event, ...)
 		if event == "CINEMATIC_STOP" then
@@ -1828,7 +1873,7 @@ Engine.ReloadUI = function(self)
 			hideOnEscape = false
 		})
 	end
-	PopUpMessage:ShowPopUp("ENGINE_GENERAL_RELOADUI", self:GetStaticConfig("UI").popup) 
+	PopUpMessage:ShowPopUp("ENGINE_GENERAL_RELOADUI", self:GetDB("UI").popup) 
 end
 
 
@@ -1840,17 +1885,17 @@ local queueWorldEnterEvent
 do
 	local engineIsLoaded, engineVariablesAreLoaded
 	Engine.PreInit = function(self, event, ...)
-		if event == "ADDON_LOADED" then
+		if (event == "ADDON_LOADED") then
 			local arg1 = ...
 			if arg1 == ADDON then
 				engineIsLoaded = true
 				self:UnregisterEvent("ADDON_LOADED", "PreInit")
 			end
-		elseif event == "VARIABLES_LOADED" then
+		elseif (event == "VARIABLES_LOADED") then
 			engineVariablesAreLoaded = true
 			self:UnregisterEvent("VARIABLES_LOADED", "PreInit")
 		end
-		if engineVariablesAreLoaded and engineIsLoaded then
+		if (engineVariablesAreLoaded and engineIsLoaded) then
 			if (not IsLoggedIn()) then
 				self:RegisterEvent("PLAYER_LOGIN", "Enable")
 			else 
@@ -1870,7 +1915,7 @@ end
 -- called when the addon is fully loaded
 Engine.Init = function(self, event, ...)
 	local arg1 = ...
-	if arg1 ~= ADDON then
+	if (arg1 ~= ADDON) then
 		return 
 	end
 
@@ -1953,7 +1998,7 @@ Engine.Init = function(self, event, ...)
 	initializedObjects[self] = true
 	
 	-- this could happen on WotLK clients
-	if IsLoggedIn() and (not self:IsEnabled()) then
+	if (IsLoggedIn() and (not self:IsEnabled())) then
 		self:Enable()
 	end
 end
@@ -2011,7 +2056,7 @@ Engine.GetModule = GetModule
 Engine.NewConfig = NewConfig
 Engine.GetConfig = GetConfig
 Engine.NewStaticConfig = NewStaticConfig
-Engine.GetStaticConfig = GetStaticConfig
+Engine.GetDB = GetDB
 
 
 

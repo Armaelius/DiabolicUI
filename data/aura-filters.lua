@@ -7,7 +7,7 @@ local _, Engine = ...
 
 
 -- Need the aura database for this one
-local AuraData = Engine:GetStaticConfig("Data: Auras")
+local AuraData = Engine:GetDB("Data: Auras")
 
 -- Need the constants for aura time limits here too
 local TIME_LIMIT = Engine:GetConstant("AURA_TIME_LIMIT")

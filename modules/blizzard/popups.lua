@@ -104,7 +104,7 @@ Module.StylePopUps = function(self)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("UI")
+	self.config = self:GetDB("UI")
 	
 	self:StylePopUps() -- initial styling (is more needed?)
 	self:UpdateLayout() -- initial layout update

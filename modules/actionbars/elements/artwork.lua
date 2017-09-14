@@ -408,7 +408,7 @@ Widget.GetBarTemplate = function(self)
 end
 
 Widget.OnEnable = function(self)
-	self.config = self:GetStaticConfig("ActionBars") -- static config
+	self.config = self:GetDB("ActionBars") -- static config
 	self.db = self:GetConfig("ActionBars", "character") -- per user settings for bars
 
 	self:RegisterEvent("PLAYER_ALIVE", "UpdateArtwork")

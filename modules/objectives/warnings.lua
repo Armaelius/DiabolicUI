@@ -178,7 +178,7 @@ Module.OnEvent = function(self, event, ...)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Warnings")
+	self.config = self:GetDB("Warnings")
 	
 	self.frames = {}
 	self.frames.player = Engine:CreateFrame("Frame")

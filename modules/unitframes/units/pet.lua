@@ -4,7 +4,7 @@ local UnitFrameWidget = Module:SetWidget("Unit: Pet")
 
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local tostring = tostring
@@ -73,7 +73,7 @@ local UpdateLayers = function(self)
 end
 
 local Style = function(self, unit)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.pet
+	local config = Module:GetDB("UnitFrames").visuals.units.pet
 	local db = Module:GetConfig("UnitFrames") 
 
 	
@@ -240,7 +240,7 @@ local Style = function(self, unit)
 end
 
 UnitFrameWidget.OnEnable = function(self)
-	local config = self:GetStaticConfig("UnitFrames").visuals.units.pet
+	local config = self:GetDB("UnitFrames").visuals.units.pet
 	local db = self:GetConfig("UnitFrames") 
 
 	self.UnitFrame = UnitFrame:New("pet", Engine:GetFrame(), Style) 

@@ -1,7 +1,7 @@
 local ADDON, Engine = ...
 local Module = Engine:GetModule("UnitFrames")
 local UnitFrameWidget = Module:SetWidget("Unit: Player")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G
@@ -408,7 +408,7 @@ end
 
 -- Left orb (health, castbar, actionbar auras)	
 local StyleLeftOrb = function(self, unit, index, numBars, inVehicle)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.player
+	local config = Module:GetDB("UnitFrames").visuals.units.player
 	local db = Module:GetConfig("UnitFrames") 
 
 	local configHealth = config.left.health
@@ -582,7 +582,7 @@ end
 
 -- Right orb (power, minimap auras)
 local StyleRightOrb = function(self, unit, index, numBars, inVehicle)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.player
+	local config = Module:GetDB("UnitFrames").visuals.units.player
 	local db = Module:GetConfig("UnitFrames") 
 
 	local configPower = config.right.power
@@ -774,7 +774,7 @@ UnitFrameWidget.OnEvent = function(self, event, ...)
 end
 
 UnitFrameWidget.OnEnable = function(self)
-	self.config = self:GetStaticConfig("UnitFrames").visuals.units.player
+	self.config = self:GetDB("UnitFrames").visuals.units.player
 	self.db = self:GetConfig("UnitFrames") 
 
 	-- get the main actionbar controller, as we need some info from it

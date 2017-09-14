@@ -4,7 +4,7 @@ local UnitFrameWidget = Module:SetWidget("Unit: Focus")
 
 local UnitFrame = Engine:GetHandler("UnitFrame")
 local StatusBar = Engine:GetHandler("StatusBar")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G
@@ -75,7 +75,7 @@ local UpdateLayers = function(self)
 end
 
 local Style = function(self, unit)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.focus
+	local config = Module:GetDB("UnitFrames").visuals.units.focus
 	local db = Module:GetConfig("UnitFrames") 
 
 	
@@ -242,7 +242,7 @@ local Style = function(self, unit)
 end
 
 UnitFrameWidget.OnEnable = function(self)
-	local config = Module:GetStaticConfig("UnitFrames").visuals.units.focus
+	local config = Module:GetDB("UnitFrames").visuals.units.focus
 	local db = Module:GetConfig("UnitFrames") 
 
 	self.UnitFrame = UnitFrame:New("focus", Engine:GetFrame(), Style) 

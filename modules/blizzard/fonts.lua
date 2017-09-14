@@ -11,7 +11,7 @@ local ENGINE_WOD 		= Engine:IsBuild("WoD")
 -- Sets up the module font lists
 Module.SetUp = function(self)
 	-- shortcuts to the fonts
-	local config = self:GetStaticConfig("Fonts")
+	local config = self:GetDB("Fonts")
 	self.fonts = {
 		text_normal = config.fonts.text_normal.path,
 		text_narrow = config.fonts.text_narrow.path,
@@ -215,7 +215,7 @@ Module.SetEngineFontObjects = function(self)
 		return
 	end
 
-	local config = self:GetStaticConfig("Fonts")
+	local config = self:GetDB("Fonts")
 	local fontObjects = config.fontObjects
 	for group in pairs(fontObjects) do
 		local replacement = fontObjects[group].replacements[gameLocale]

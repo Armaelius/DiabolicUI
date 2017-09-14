@@ -1,5 +1,5 @@
 local ADDON, Engine = ...
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 local BLANK_TEXTURE = Engine:GetConstant("BLANK_TEXTURE")
 local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
 

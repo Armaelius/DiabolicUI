@@ -48,7 +48,7 @@ Module.LoadArtWork = function(self)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("UnitFrames") -- setup
+	self.config = self:GetDB("UnitFrames") -- setup
 	self.db = self:GetConfig("UnitFrames") -- user settings
 
 	self:GetWidget("Controller: Party"):Enable()

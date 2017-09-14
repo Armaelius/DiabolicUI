@@ -3,11 +3,11 @@ local Module = Engine:NewModule("OrderHall")
 
 
 Module.UpdateOrderHallUI = function(self, event, ...)
-	local config = self:GetStaticConfig("Objectives").orderhall
+	local config = self:GetDB("Objectives").orderhall
 end
 
 Module.CreateOrderHallUI = function(self, event, ...)
-	local config = self:GetStaticConfig("Objectives").orderhall
+	local config = self:GetDB("Objectives").orderhall
 
 	self:RegisterEvent("DISPLAY_SIZE_CHANGED", "UpdateOrderHallUI")
 	self:RegisterEvent("UI_SCALE_CHANGED", "UpdateOrderHallUI")

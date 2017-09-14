@@ -1,6 +1,6 @@
 local ADDON, Engine = ...
 local Module = Engine:NewModule("Blizzard: Character")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G
@@ -121,7 +121,7 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 					end
 				end 
 
-				local r, g, b = unpack(C.Quality[itemRarity - 1])
+				local r, g, b = unpack(C.Quality[itemRarity])
 				itemLevel:SetTextColor(r, g, b)
 				itemLevel.shade:SetVertexColor(r, g, b)
 				itemLevel:SetText(ilvl or "")
@@ -130,9 +130,9 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 				if iconBorder then
 					iconBorder:SetTexture([[Interface\Common\WhiteIconFrame]])
 					if itemRarity then
-						if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity-1] then
+						if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity] then
 							iconBorder:Show()
-							iconBorder:SetVertexColor(unpack(C.Quality[itemRarity-1]))
+							iconBorder:SetVertexColor(unpack(C.Quality[itemRarity]))
 						else
 							iconBorder:Show()
 							iconBorder:SetVertexColor(unpack(C.General.UIOverlay))
@@ -144,9 +144,9 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 					iconBorder = self.borderCache[itemButton]
 					if iconBorder then
 						if itemRarity then
-							if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity-1] then
+							if (itemRarity >= (LE_ITEM_QUALITY_COMMON + 1)) and C.Quality[itemRarity] then
 								iconBorder:Show()
-								iconBorder:SetVertexColor(unpack(C.Quality[itemRarity-1]))
+								iconBorder:SetVertexColor(unpack(C.Quality[itemRarity]))
 							else
 								iconBorder:Show()
 								iconBorder:SetVertexColor(unpack(C.General.UIBorder))
@@ -182,7 +182,7 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 end
 
 Module.OnInit = function(self)
-	self.config = Engine:GetStaticConfig("Blizzard").character
+	self.config = Engine:GetDB("Blizzard").character
 
 	self:InitializePaperDoll()
 

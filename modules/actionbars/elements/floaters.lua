@@ -2,7 +2,7 @@ local _, Engine = ...
 local Module = Engine:GetModule("ActionBars")
 local BarWidget = Module:SetWidget("Bar: Floaters")
 local FloatButton = Module:GetWidget("Template: FloatButton")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 local L = Engine:GetLocale()
 
 -- Lua API

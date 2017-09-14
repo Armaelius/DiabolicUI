@@ -342,8 +342,8 @@ Module.StyleWindow = function(self, frame)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Blizzard").gamemenu
-	self.uiconfig = self:GetStaticConfig("UI")
+	self.config = self:GetDB("Blizzard").gamemenu
+	self.uiconfig = self:GetDB("UI")
 	self.frame = GameMenuFrame
 
 	-- does this taint? :/

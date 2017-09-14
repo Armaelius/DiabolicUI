@@ -1,5 +1,5 @@
 local _, Engine = ...
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 local F = {}
 
 

@@ -101,6 +101,14 @@ L["You must rest for %s additional\nminutes to become fully rested."] = true
 L["Normal"] = true
 L["You should rest at an Inn."] = true
 
+-- artifact bar 
+L["Current Artifact Power: "] = true 
+L["<Left-Click to toggle Artifact Window>"] = true
+
+-- honor bar 
+L["Current Honor Points: "] = true
+L["<Left-Click to toggle Honor Talents Window>"] = true
+
 -- floating buttons
 L["Stances"] = true
 L["<Left-click> to toggle stance bar."] = true

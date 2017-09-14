@@ -16,7 +16,7 @@ Module.SetupRealmExceptions = ENGINE_LEGION_FELSONG and function(self)
 end
 
 Module.OnInit = function(self, event, ...)
-	self.config = self:GetStaticConfig("ChatFilters") 
+	self.config = self:GetDB("ChatFilters") 
 	self.db = self:GetConfig("ChatFilters") 
 end
 

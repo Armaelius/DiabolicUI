@@ -32,7 +32,7 @@ local UnitXPMax = _G.UnitXPMax
 
 -- WoW tables and objects
 local GameTooltip = _G.GameTooltip
-local maxLevelTable = _G.MAX_PLAYER_LEVEL_TABLE
+local MAX_PLAYER_LEVEL_TABLE = _G.MAX_PLAYER_LEVEL_TABLE
 
 -- Client version constants
 local ENGINE_LEGION 	= Engine:IsBuild("Legion")
@@ -44,15 +44,31 @@ local ENGINE_CATA 		= Engine:IsBuild("Cata")
 -- This will return true for the artifact bar as well, 
 -- and for reputation when we introduce reputation tracking.
 Module.IsXPVisible = ENGINE_LEGION and function(self)
-	if ((maxLevelTable[GetAccountExpansionLevel() or #maxLevelTable] or maxLevelTable[#maxLevelTable]) == UnitLevel("player")) then
+	local expacMax = MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT or #MAX_PLAYER_LEVEL_TABLE]
+	local playerMax = MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel() or #MAX_PLAYER_LEVEL_TABLE]
+	local playerLevel = UnitLevel("player")
+
+	if (playerLevel == playerMax) or (playerLevel >= expacMax) then
+
+		-- honor bar if in a BG
+		local hasHonorBar
+		if (playerLevel >= expacMax) then
+			local isInInstance, instanceType = IsInInstance()
+			if (instanceType == "pvp") or (instanceType == "arena") then
+				hasHonorBar = true
+			end 
+		end
+
 		if UnitHasVehicleUI("player") or UnitHasVehiclePlayerFrameUI("player") then
 			return false
 		elseif HasArtifactEquipped() then
-			return true, true
+			return true, true, hasHonorBar
 		else
-			return false
+			return hasHonorBar, false, hasHonorBar
 		end
+
 	else
+
 		if IsXPUserDisabled() then
 			return false
 		elseif UnitHasVehicleUI("player") or UnitHasVehiclePlayerFrameUI("player") then
@@ -60,10 +76,11 @@ Module.IsXPVisible = ENGINE_LEGION and function(self)
 		else
 			return true
 		end
+
 	end
 
 end or ENGINE_CATA and function(self)
-	if ((maxLevelTable[GetAccountExpansionLevel() or #maxLevelTable] or maxLevelTable[#maxLevelTable]) == UnitLevel("player")) then
+	if ((MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel() or #MAX_PLAYER_LEVEL_TABLE] or MAX_PLAYER_LEVEL_TABLE[#MAX_PLAYER_LEVEL_TABLE]) == UnitLevel("player")) then
 		return false
 	else
 		if IsXPUserDisabled() then
@@ -76,7 +93,7 @@ end or ENGINE_CATA and function(self)
 	end
 
 end or function(self)
-	if ((maxLevelTable[GetAccountExpansionLevel() or #maxLevelTable] or maxLevelTable[#maxLevelTable]) == UnitLevel("player")) then
+	if ((MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel() or #MAX_PLAYER_LEVEL_TABLE] or MAX_PLAYER_LEVEL_TABLE[#MAX_PLAYER_LEVEL_TABLE]) == UnitLevel("player")) then
 		return false
 	else
 		if IsXPUserDisabled() then
@@ -123,7 +140,7 @@ Module.AddBar = function(self, bar, actionName)
 end
 
 Module.OnInit = function(self, event, ...)
-	self.config = self:GetStaticConfig("ActionBars") -- static config
+	self.config = self:GetDB("ActionBars") -- static config
 	self.db = self:GetConfig("ActionBars", "character") -- per user settings for bars
 
 	-- Enable controllers

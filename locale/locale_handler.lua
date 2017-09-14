@@ -22,6 +22,9 @@ local L_fallback = setmetatable({}, {
 		if value == true then 
 			return key
 		else
+			if (not value) then
+				print("Tell Goldpaw! There's a missing locale: ", key)
+			end
 			return value or key
 		end
 	end,
@@ -42,6 +45,9 @@ local L = setmetatable({}, {
 		if value == true then 
 			return key
 		else
+			if (not value) then
+				print("Tell Goldpaw! There's a missing locale: ", key)
+			end
 			return value or key
 		end
 	end,

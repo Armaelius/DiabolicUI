@@ -9,7 +9,7 @@ local path = ([[Interface\AddOns\%s\media\]]):format(ADDON)
 -- Example (shows a popup with the style created here):
 -- 		local PopUpMessage = Engine:GetHandler("PopUpMessage") -- get the popup handler
 -- 		PopUpMessage:RegisterPopUp("MY_POP", popup_table) -- register a virtual popup
--- 		PopUpMessage:ShowPopUp("MY_POP", Engine:GetStaticConfig("UI").popup) -- show the popup with this visual style
+-- 		PopUpMessage:ShowPopUp("MY_POP", Engine:GetDB("UI").popup) -- show the popup with this visual style
 -- 		PopUpMessage:HidePopUp("MY_POP") -- hide it
 local config = {
 	coin = {

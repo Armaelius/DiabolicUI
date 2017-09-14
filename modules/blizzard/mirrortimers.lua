@@ -1,6 +1,6 @@
 local _, Engine = ...
 local Module = Engine:NewModule("Blizzard: MirrorTimers")
-local C = Engine:GetStaticConfig("Data: Colors")
+local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
 local _G = _G
@@ -163,7 +163,7 @@ Module.CaptureBarHidden = function(self)
 end
 
 Module.OnInit = function(self)
-	self.config = self:GetStaticConfig("Blizzard").mirrortimers
+	self.config = self:GetDB("Blizzard").mirrortimers
 	self.timers = {}
 	
 	if MirrorTimer_Show then

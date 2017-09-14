@@ -3,25 +3,40 @@ local Module = Engine:GetModule("ActionBars")
 local BarWidget = Module:SetWidget("Bar: XP")
 local StatusBar = Engine:GetHandler("StatusBar")
 local L = Engine:GetLocale()
-local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Library: Format")
+local C = Engine:GetDB("Data: Colors")
+local F = Engine:GetDB("Library: Format")
 
 -- Lua API
-local unpack, select = unpack, select
-local tonumber, tostring = tonumber, tostring
-local floor, min = math.floor, math.min
+local _G = _G
+local math_floor = math.floor
+local math_min = math.min
+local select = select
+local tonumber = tonumber
+local tostring = tostring
+local unpack = unpack
 
 -- WoW API
+local BreakUpLargeNumbers = _G.BreakUpLargeNumbers
 local CreateFrame = _G.CreateFrame
 local GameTooltip = _G.GameTooltip
-local GetAccountExpansionLevel = _G.GetAccountExpansionLevel
+local GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
+local GetHonorExhaustion = _G.GetHonorExhaustion
+local GetHonorRestState = _G.GetHonorRestState
+local GetMaxPlayerHonorLevel = _G.GetMaxPlayerHonorLevel
+local GetRestState = _G.GetRestState
 local GetTimeToWellRested = _G.GetTimeToWellRested
 local GetXPExhaustion = _G.GetXPExhaustion
 local HasArtifactEquipped = _G.HasArtifactEquipped
+local HideUIPanel = _G.HideUIPanel
+local IsResting = _G.IsResting
 local IsXPUserDisabled = _G.IsXPUserDisabled
 local MAX_PLAYER_LEVEL_TABLE = _G.MAX_PLAYER_LEVEL_TABLE
+local SocketInventoryItem = _G.SocketInventoryItem
 local UnitHasVehicleUI = _G.UnitHasVehicleUI
 local UnitHasVehiclePlayerFrameUI = _G.UnitHasVehiclePlayerFrameUI
+local UnitHonor = _G.UnitHonor
+local UnitHonorLevel = _G.UnitHonorLevel
+local UnitHonorMax = _G.UnitHonorMax
 local UnitLevel = _G.UnitLevel
 local UnitRace = _G.UnitRace
 local UnitXP = _G.UnitXP
@@ -30,34 +45,44 @@ local UnitXPMax = _G.UnitXPMax
 -- Legion!
 local C_ArtifactUI = _G.C_ArtifactUI
 local GetArtifactArtInfo = C_ArtifactUI and C_ArtifactUI.GetArtifactArtInfo
+local GetArtifactKnowledgeLevel = C_ArtifactUI.GetArtifactKnowledgeLevel
+local GetArtifactKnowledgeMultiplier = C_ArtifactUI.GetArtifactKnowledgeMultiplier
 local GetCostForPointAtRank = C_ArtifactUI and C_ArtifactUI.GetCostForPointAtRank
 local GetEquippedArtifactInfo = C_ArtifactUI and C_ArtifactUI.GetEquippedArtifactInfo
+local GetTotalPurchasedRanks = C_ArtifactUI.GetTotalPurchasedRanks
 
 -- Client version constants
 local ENGINE_LEGION = Engine:IsBuild("Legion")
 local ENGINE_CATA = Engine:IsBuild("Cata")
 
--- Track XP/Rep/Artifact bar UpdateVisibility
+-- Track XP/Rep/Artifact bar visibility
 local XPBARVISIBLE
 
--- pandaren can get 300% rested bonus
+-- Pandaren can get 300% rested bonus
 local maxRested = select(2, UnitRace("player")) == "Pandaren" and 3 or 1.5
 
+-- Various string formatting for our tooltips and bars
 local shortXPString = "%s%%"
 local longXPString = "%s / %s"
 local fullXPString = "%s / %s - %s%%"
 local restedString = " (%s%% %s)"
 local shortLevelString = "%s %d"
 
+-- Just to avoid some updates we don't need
+local vehicleEvents = {
+	UNIT_ENTERING_VEHICLE = "player", 
+	UNIT_EXITING_VEHICLE = "player", 
+	UNIT_ENTERED_VEHICLE = "player",
+	UNIT_EXITED_VEHICLE = "player"
+}
+
 local GetEquippedArtifactXP = function(pointsSpent, artifactXP, artifactTier)
 	local numPoints = 0
 	local xpForNextPoint = GetCostForPointAtRank(pointsSpent, artifactTier)
-	while artifactXP >= xpForNextPoint and xpForNextPoint > 0 do
+	while ((artifactXP >= xpForNextPoint) and (xpForNextPoint > 0)) do
 		artifactXP = artifactXP - xpForNextPoint
-
 		pointsSpent = pointsSpent + 1
 		numPoints = numPoints + 1
-
 		xpForNextPoint = GetCostForPointAtRank(pointsSpent, artifactTier)
 	end
 	return numPoints, artifactXP, xpForNextPoint
@@ -70,7 +95,11 @@ end
 local Bar = Engine:CreateFrame("Frame")
 local Bar_MT = { __index = Bar }
 
--- highest priority, will override everything else
+-- shown if we're in a BG in the Legion expansion or higher
+local Bar_Honor = setmetatable({}, { __index = Bar })
+local Bar_Honor_MT = { __index = Bar_Honor }
+
+-- high priority, will override almost everything else (not that it's implemented yet...)
 local Bar_Reputation = setmetatable({}, { __index = Bar })
 local Bar_Reputation_MT = { __index = Bar_Reputation }
 
@@ -83,23 +112,11 @@ local Bar_XP_MT = { __index = Bar_XP }
 local Bar_Artifact = setmetatable({}, { __index = Bar })
 local Bar_Artifact_MT = { __index = Bar_Artifact }
 
-
-Bar.UpdateData = function(self)
-	local data = self.data
-	return data
-end
-
-Bar.Update = function(self)
-	local data = self:UpdateData()
-end
-
-Bar.OnEnter = function(self)
-	local data = self:UpdateData()
-end
-
-Bar.OnLeave = function(self)
-	local data = self:UpdateData()
-end
+-- Standard methods we'll let the module assume always exist 
+Bar.UpdateData = function(self) return self.data end
+Bar.Update = function(self) end
+Bar.OnEnter = function(self) end
+Bar.OnLeave = function(self) end
 
 
 -- XP Bar Methods
@@ -125,7 +142,7 @@ Bar_XP.Update = function(self)
 	self.XP:SetMinMaxValues(0, data.xpMax)
 	self.XP:SetValue(data.xp)
 	self.Rested:SetMinMaxValues(0, data.xpMax)
-	self.Rested:SetValue(min(data.xpMax, data.xp + (data.restedLeft or 0)))
+	self.Rested:SetValue(math_min(data.xpMax, data.xp + (data.restedLeft or 0)))
 	if (not self.Rested:IsShown()) then
 		self.Rested:Show()
 	end
@@ -137,12 +154,12 @@ Bar_XP.Update = function(self)
 	end
 	if self.mouseIsOver then
 		if data.restedLeft then
-			self.Value:SetFormattedText(fullXPString..F.Colorize(restedString, "OffGreen"), F.Colorize(F.Short(data.xp), "Normal"), F.Colorize(F.Short(data.xpMax), "Normal"), F.Colorize(F.Short(floor(data.xp/data.xpMax*100)), "Normal"), F.Short(floor(data.restedLeft/data.xpMax*100)), L["Rested"])
+			self.Value:SetFormattedText(fullXPString..F.Colorize(restedString, "OffGreen"), F.Colorize(F.Short(data.xp), "Normal"), F.Colorize(F.Short(data.xpMax), "Normal"), F.Colorize(F.Short(math_floor(data.xp/data.xpMax*100)), "Normal"), F.Short(math_floor(data.restedLeft/data.xpMax*100)), L["Rested"])
 		else
-			self.Value:SetFormattedText(fullXPString, F.Colorize(F.Short(data.xp), "Normal"), F.Colorize(F.Short(data.xpMax), "Normal"), F.Colorize(F.Short(floor(data.xp/data.xpMax*100)), "Normal"))
+			self.Value:SetFormattedText(fullXPString, F.Colorize(F.Short(data.xp), "Normal"), F.Colorize(F.Short(data.xpMax), "Normal"), F.Colorize(F.Short(math_floor(data.xp/data.xpMax*100)), "Normal"))
 		end
 	else
-		self.Value:SetFormattedText(shortXPString, F.Colorize(F.Short(floor(data.xp/data.xpMax*100)), "Normal"))
+		self.Value:SetFormattedText(shortXPString, F.Colorize(F.Short(math_floor(data.xp/data.xpMax*100)), "Normal"))
 	end
 end
 
@@ -174,9 +191,9 @@ Bar_XP.OnEnter = function(self)
 			GameTooltip:AddLine(" ")
 			GameTooltip:AddLine(L["Resting"], unpack(C.General.Highlight))
 			if data.restedTimeLeft > hour*2 then
-				GameTooltip:AddLine(L["You must rest for %s additional\nhours to become fully rested."]:format(F.Colorize(floor(data.restedTimeLeft/hour), "OffWhite")), unpack(C.General.Normal))
+				GameTooltip:AddLine(L["You must rest for %s additional\nhours to become fully rested."]:format(F.Colorize(math_floor(data.restedTimeLeft/hour), "OffWhite")), unpack(C.General.Normal))
 			else
-				GameTooltip:AddLine(L["You must rest for %s additional\nminutes to become fully rested."]:format(F.Colorize(floor(data.restedTimeLeft/minute), "OffWhite")), unpack(C.General.Normal))
+				GameTooltip:AddLine(L["You must rest for %s additional\nminutes to become fully rested."]:format(F.Colorize(math_floor(data.restedTimeLeft/minute), "OffWhite")), unpack(C.General.Normal))
 			end
 		end
 	elseif data.restState >= 2 then
@@ -210,7 +227,7 @@ Bar_Artifact.UpdateData = function(self)
 		self.data.name = name
 		self.data.rank = usedPoints
 		self.data.equipped = HasArtifactEquipped()
-		self.data.color = C.Quality[quality-1]
+		self.data.color = C.Quality[quality]
 		self.data.itemID = itemID
 		self.data.totalXP = totalXP
 		self.data.unusedPoints = unusedPoints
@@ -242,9 +259,9 @@ Bar_Artifact.Update = function(self)
 	end
 
 	if self.mouseIsOver then
-		self.Value:SetFormattedText(fullXPString, F.Colorize(F.Short(data.barValue), "Normal"), F.Colorize(F.Short(data.barMax), "Normal"), F.Colorize(F.Short(floor(data.barValue/data.barMax*100)), "Normal"))
+		self.Value:SetFormattedText(fullXPString, F.Colorize(F.Short(data.barValue), "Normal"), F.Colorize(F.Short(data.barMax), "Normal"), F.Colorize(F.Short(math_floor(data.barValue/data.barMax*100)), "Normal"))
 	else
-		self.Value:SetFormattedText(shortXPString, F.Colorize(F.Short(floor(data.barValue/data.barMax*100)), "Normal"))
+		self.Value:SetFormattedText(shortXPString, F.Colorize(F.Short(math_floor(data.barValue/data.barMax*100)), "Normal"))
 	end
 
 end
@@ -270,7 +287,7 @@ Bar_Artifact.OnEnter = function(self)
 	local itemID, altItemID, name, icon, totalXP, usedPoints, quality, _, _, _, _, _, artifactTier = GetEquippedArtifactInfo()
 	local unusedPoints, value, max = GetEquippedArtifactXP(usedPoints, totalXP, artifactTier)
 
-	--GameTooltip:AddLine(ARTIFACTS_NUM_PURCHASED_RANKS:format(C_ArtifactUI.GetTotalPurchasedRanks()), HIGHLIGHT_FONT_COLOR:GetRGB());
+	--GameTooltip:AddLine(ARTIFACTS_NUM_PURCHASED_RANKS:format(GetTotalPurchasedRanks()), HIGHLIGHT_FONT_COLOR:GetRGB());
 
 	local r, g, b = unpack(C.General.Highlight)
 	local nameR, nameG, nameB = unpack(data.color)
@@ -279,9 +296,9 @@ Bar_Artifact.OnEnter = function(self)
 	local r, g, b = unpack(C.General.OffWhite)
 	GameTooltip:AddDoubleLine(L["Current Artifact Power: "], longXPString:format(F.Colorize(F.Short(data.barValue), "Normal"), F.Colorize(F.Short(data.barMax), "Normal")), r, g, b, r, g, b)
 
-	local knowledgeLevel = C_ArtifactUI.GetArtifactKnowledgeLevel()
+	local knowledgeLevel = GetArtifactKnowledgeLevel()
 	if knowledgeLevel and knowledgeLevel > 0 then
-		local knowledgeMultiplier = C_ArtifactUI.GetArtifactKnowledgeMultiplier()
+		local knowledgeMultiplier = GetArtifactKnowledgeMultiplier()
 
 		GameTooltip:AddLine(" ")
 		GameTooltip:AddLine(ARTIFACTS_KNOWLEDGE_TOOLTIP_LEVEL:format(knowledgeLevel), HIGHLIGHT_FONT_COLOR:GetRGB())
@@ -305,6 +322,126 @@ Bar_Artifact.OnLeave = function(self)
 end
 
 
+-- Honor Bar Methods
+--------------------------------------------------
+Bar_Honor.UpdateData = function(self)
+	local data = self.data
+
+	local current = UnitHonor("player")
+	local max = UnitHonorMax("player")
+	local level = UnitHonorLevel("player")
+	local levelMax = GetMaxPlayerHonorLevel()
+	local exhaustionStateID, exhaustionStateName, exhaustionStateMultiplier = GetHonorRestState()
+	local exhaustionThreshold = GetHonorExhaustion()
+
+	local exhaustionCountdown = nil
+	local timeToWellRested = GetTimeToWellRested()
+	if timeToWellRested then
+		exhaustionCountdown = timeToWellRested / 60
+	end
+
+	data.color = C.General.Honor
+	data.honor = current
+	data.honorMax = max
+	data.honorLevel = level
+	data.honorLevelMax = levelMax
+	data.honorExhaustID = exhaustionStateID
+	data.honorExhaustName = exhaustionStateName
+	data.honorExhaustThreshold = exhaustionThreshold
+	data.honorExhaustPercent = (exhaustionStateMultiplier or 1) * 100
+	data.honorExhaustCountdown = exhaustionCountdown
+	data.resting = IsResting()
+    
+	--if (exhaustionStateID == 1) then
+		-- rested?
+	--end
+
+	return data
+end
+
+Bar_Honor.Update = function(self)
+	local data = self:UpdateData()
+	if (not data.honorMax) then return end
+
+	self.XP:SetStatusBarColor(unpack(data.color))
+	self.XP:SetMinMaxValues(0, data.honorMax)
+	self.XP:SetValue(data.honor)
+
+	if (self.Rested:IsShown()) then
+		self.Rested:Hide()
+	end
+
+	if self.mouseIsOver then
+		self.Value:SetFormattedText(fullXPString, F.Colorize(F.Short(data.honor), "Normal"), F.Colorize(F.Short(data.honorMax), "Normal"), F.Colorize(F.Short(math_floor(data.honor/data.honorMax*100)), "Normal"))
+	else
+		self.Value:SetFormattedText(shortXPString, F.Colorize(F.Short(math_floor(data.honor/data.honorMax*100)), "Normal"))
+	end
+end
+
+-- Not strictly certain if this causes taint or not.
+-- It didn't in my own tests. 
+Bar_Honor.OnClick = function(self)
+	ToggleTalentFrame(PVP_TALENTS_TAB)
+end
+
+Bar_Honor.OnEnter = function(self)
+	local data = self:UpdateData()
+	if not data.honorMax then return end
+
+	GameTooltip_SetDefaultAnchor(GameTooltip, self)
+
+	local r, g, b = unpack(C.General.Highlight)
+	local r2, g2, b2 = unpack(C.General.OffWhite)
+	local nameR, nameG, nameB = unpack(data.color)
+
+	GameTooltip:AddDoubleLine(HONOR, data.honorLevel, nameR, nameG, nameB, r, g, b)
+	GameTooltip:AddDoubleLine(L["Current Honor Points: "], longXPString:format(F.Colorize(F.Short(data.honor), "Normal"), F.Colorize(F.Short(data.honorMax), "Normal")), r2, g2, b2, r2, g2, b2)
+	
+	--GameTooltip:AddLine(fullXPString:format(F.Colorize(F.Short(data.honor), "Normal"), F.Colorize(F.Short(data.honorMax), "Normal"), F.Colorize(F.Short(math_floor(data.honor/data.honorMax*100)), "Normal")))
+
+	
+	--[[
+
+	HONOR_BAR -- "Honor %d / %d"
+	HONOR_LEVEL_LABEL -- "Honor Level %d"
+	LFG_LIST_HONOR_LEVEL_CURRENT_PVP -- "Honor Level: %d"
+	LFG_LIST_HONOR_LEVEL_INSTR_SHORT -- "Honor Level"
+
+	
+	local currXP = UnitHonor("player")
+	local nextXP = UnitHonorMax("player")
+	local percentXP = math.ceil(currXP/nextXP*100)
+	local XPText = format( XP_TEXT, BreakUpLargeNumbers(currXP), BreakUpLargeNumbers(nextXP), percentXP )
+	local tooltipText = XPText .. (exhaustionStateName and format(EXHAUST_HONOR_TOOLTIP1, exhaustionStateName, exhaustionStateMultiplier) or "")
+	local append = nil
+	if ( IsResting() ) then
+		if ( exhaustionThreshold and exhaustionCountdown ) then
+			append = format(EXHAUST_TOOLTIP4, exhaustionCountdown)
+		end
+	elseif ( (exhaustionStateID == 4) or (exhaustionStateID == 5) ) then
+		append = EXHAUST_TOOLTIP2
+	end
+
+	if ( append ) then
+		tooltipText = tooltipText..append
+	end
+
+
+	GameTooltip:AddLine(tooltipText)
+	]]
+
+	GameTooltip:AddLine(" ")
+	GameTooltip:AddLine(L["<Left-Click to toggle Honor Talents Window>"], unpack(C.General.OffGreen))
+
+	GameTooltip:Show()
+end
+
+Bar_Honor.OnLeave = function(self)
+	GameTooltip:Hide()
+end
+
+
+
 BarWidget.OnEnter = function(self)
 	self.Bar.mouseIsOver = true
 	self.Bar:OnEnter()
@@ -317,13 +454,6 @@ BarWidget.OnLeave = function(self)
 	self:UpdateBar()
 end
 
--- Just to avoid some updates we don't need
-local vehicleEvents = {
-	UNIT_ENTERING_VEHICLE = "player", 
-	UNIT_EXITING_VEHICLE = "player", 
-	UNIT_ENTERED_VEHICLE = "player",
-	UNIT_EXITED_VEHICLE = "player"
-}
 BarWidget.Update = function(self, event, unit)
 	if event and vehicleEvents[event] and (vehicleEvents[event] ~= unit) then
 		return
@@ -359,16 +489,36 @@ BarWidget.UpdateVisibility = function(self)
 end
 
 BarWidget.UpdateBarType = function(self)
-	local xp, artifact = Module:IsXPVisible()
-	local barType = artifact and "artifact" or xp and "xp" or "none"
+
+	-- Get info about visible XP type
+	local xp, artifact, honor = Module:IsXPVisible()
+	local barType = honor and "honor" or artifact and "artifact" or xp and "xp" or "none"
+
+	-- Initiate a bar change if the XP type has changed
 	if (self.barType ~= barType) then
-		self:OnLeave()
+
+		-- Store the old tooltip state in case it's visible
+		local mouseIsOver = self.mouseIsOver 
+
+		-- Kill of old tooltip if visible on bar changes
+		self:OnLeave() 
+
+		-- Choose the correct inheritance for our current bar 
 		if (barType == "xp") then
 			setmetatable(self.Bar, Bar_XP_MT)
 		elseif (barType == "artifact") then
 			setmetatable(self.Bar, Bar_Artifact_MT)
+		elseif (barType == "honor") then
+			setmetatable(self.Bar, Bar_Honor_MT)
 		end
-		self.barType = barType
+
+		-- Store the current bartype
+		self.barType = barType 
+
+		-- Show the tooltip belonging to the current bartype
+		if mouseIsOver then
+			self:OnEnter()
+		end
 	end
 end
 
@@ -479,8 +629,14 @@ BarWidget.OnEnable = function(self)
 	self:RegisterEvent("UNIT_ENTERED_VEHICLE", "Update")
 	self:RegisterEvent("UNIT_EXITING_VEHICLE", "Update")
 	self:RegisterEvent("UNIT_EXITED_VEHICLE", "Update")
-	self:RegisterEvent("ARTIFACT_XP_UPDATE", "Update")
 	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "Update")
+
+	if ENGINE_LEGION then
+		self:RegisterEvent("ARTIFACT_XP_UPDATE", "Update")
+		--self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", "Update") -- not really needed
+		self:RegisterEvent("HONOR_LEVEL_UPDATE", "Update")
+		self:RegisterEvent("HONOR_PRESTIGE_UPDATE", "Update")
+	end
 	
 	-- Note to self for later: 
 	-- 	ReputationWatchBarStatusBar ( >= WoD)

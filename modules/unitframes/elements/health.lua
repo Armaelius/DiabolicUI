@@ -1,7 +1,7 @@
 local _, Engine = ...
 local Handler = Engine:GetHandler("UnitFrame")
-local C = Engine:GetStaticConfig("Data: Colors")
-local F = Engine:GetStaticConfig("Library: Format")
+local C = Engine:GetDB("Data: Colors")
+local F = Engine:GetDB("Library: Format")
 
 -- Lua API
 local _G = _G
