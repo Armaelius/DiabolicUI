@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.68] 2017-09-14
+### Fixed
+- Fixed an issue where the UI would attempt to load the Artifact bar in WoW clients older than Legion.
+
 ## [1.3.67] 2017-09-14
 ### Added
 - Added a Legion honor points bar visible while inside a PvP instance.

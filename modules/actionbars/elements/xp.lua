@@ -45,11 +45,11 @@ local UnitXPMax = _G.UnitXPMax
 -- Legion!
 local C_ArtifactUI = _G.C_ArtifactUI
 local GetArtifactArtInfo = C_ArtifactUI and C_ArtifactUI.GetArtifactArtInfo
-local GetArtifactKnowledgeLevel = C_ArtifactUI.GetArtifactKnowledgeLevel
-local GetArtifactKnowledgeMultiplier = C_ArtifactUI.GetArtifactKnowledgeMultiplier
+local GetArtifactKnowledgeLevel = C_ArtifactUI and C_ArtifactUI.GetArtifactKnowledgeLevel
+local GetArtifactKnowledgeMultiplier = C_ArtifactUI and C_ArtifactUI.GetArtifactKnowledgeMultiplier
 local GetCostForPointAtRank = C_ArtifactUI and C_ArtifactUI.GetCostForPointAtRank
 local GetEquippedArtifactInfo = C_ArtifactUI and C_ArtifactUI.GetEquippedArtifactInfo
-local GetTotalPurchasedRanks = C_ArtifactUI.GetTotalPurchasedRanks
+local GetTotalPurchasedRanks = C_ArtifactUI and C_ArtifactUI.GetTotalPurchasedRanks
 
 -- Client version constants
 local ENGINE_LEGION = Engine:IsBuild("Legion")
