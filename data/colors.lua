@@ -415,6 +415,10 @@ local C = {
 
 	},
 
+	-- World Quest Rarity
+	WorldQuestRarity = {
+	},
+
 	-- Unit Reactions
 	Reaction = {
 		--[1] 			= prepare( 175/255,  76/255,  56/255 ), -- hated
@@ -473,13 +477,13 @@ local C = {
 }
 
 for i in pairs(ITEM_QUALITY_COLORS) do
---for i = 0, #ITEM_QUALITY_COLORS do
 	local r, g, b = ITEM_QUALITY_COLORS[i].r, ITEM_QUALITY_COLORS[i].g, ITEM_QUALITY_COLORS[i].b
 	C.Quality[i] = prepare(r, g, b)
-	--C.Quality[i-1] = prepare(r, g, b)
 end
 
-
+C.WorldQuestRarity[LE_WORLD_QUEST_QUALITY_COMMON] = C.Quality[1]
+C.WorldQuestRarity[LE_WORLD_QUEST_QUALITY_RARE] = C.Quality[3]
+C.WorldQuestRarity[LE_WORLD_QUEST_QUALITY_EPIC] = C.Quality[4]
 
 -- Allow us to use power type index to get the color
 C.Power[0] = C.Power.MANA

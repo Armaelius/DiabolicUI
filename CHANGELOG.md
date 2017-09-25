@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.69] 2017-09-26
+### Added
+- Added world quest rarity colors to our internal color database
+
+### Fixed
+- The tracker should now display a correctly rarity colored plus sign for elite world quests.
+
 ## [1.3.68] 2017-09-14
 ### Fixed
 - Fixed an issue where the UI would attempt to load the Artifact bar in WoW clients older than Legion.

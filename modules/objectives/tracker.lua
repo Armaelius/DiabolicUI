@@ -1005,8 +1005,8 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 	-- We add a blue or purple plus sign for elite world quests, 
 	-- to indicate their difficulty in a non-intrusive manner.
 	local titleMessage 
-	if currentQuestData.isElite and currentQuestData.rarity then
-		titleMessage = currentQuestData.questTitle .. " " .. C.Quality[currentQuestData.rarity].colorCode .. "+" .. "|r"
+	if currentQuestData.isElite and currentQuestData.rarity and C.WorldQuestRarity[currentQuestData.rarity] then
+		titleMessage = currentQuestData.questTitle .. " " .. C.WorldQuestRarity[currentQuestData.rarity].colorCode .. "+" .. "|r"
 	else
 		titleMessage = currentQuestData.questTitle
 	end
@@ -2202,7 +2202,7 @@ Module.GatherWorldQuestData = function(self)
 					currentQuestData.isPetBattle = worldQuestType == LE.LE_QUEST_TAG_TYPE_PET_BATTLE
 					currentQuestData.isTradeSkill = worldQuestType == LE.LE_QUEST_TAG_TYPE_PROFESSION
 					currentQuestData.isElite = isElite
-					currentQuestData.rarity = rarity
+					currentQuestData.rarity = rarity 
 
 					-- Store coordinates if any
 					-- Will be used to figure out the closest world quest to track (maybe)
