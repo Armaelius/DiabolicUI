@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.70] 2017-09-27
+### Fixed
+- Fixed an issue where some Brewfest dailies would bug out the tracker. The tracker still does not display these quests, but at least it doesn't cause bugs and a big error frame in the middle of the screen anymore.  
+
 ## [1.3.69] 2017-09-26
 ### Added
 - Added world quest rarity colors to our internal color database

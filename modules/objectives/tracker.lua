@@ -1694,6 +1694,9 @@ end
 
 Module.GetQuestLogLeaderBoard = function(self, objectiveIndex, questLogIndex)
 	local description, objectiveType, isCompleted = GetQuestLogLeaderBoard(objectiveIndex, questLogIndex)
+	if (not description) then 
+		return -- can happen with certain dailies like the brewfast barking quests
+	end
 	local item, numCurrent, numNeeded = string_match(description, questCaptures[objectiveType]) 
 
 	if (objectiveType == "progressbar") then
