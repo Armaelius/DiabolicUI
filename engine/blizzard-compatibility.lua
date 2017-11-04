@@ -985,7 +985,10 @@ addGlobal("SOUNDKIT", {
 	UI_GARRISON_MISSION_COMPLETE_ENCOUNTER_CHANCE = 0, -- missing SoundKit entry!
 })
 
-
+-- To avoid breaking in WotLK and non-Legion clients
+addGlobal("LE_WORLD_QUEST_QUALITY_COMMON", 1)
+addGlobal("LE_WORLD_QUEST_QUALITY_RARE", 2)
+addGlobal("LE_WORLD_QUEST_QUALITY_EPIC", 3)
 
 -- Lua Enums
 ------------------------------------------------------------------------------------
