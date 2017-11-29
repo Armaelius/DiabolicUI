@@ -116,7 +116,7 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 
 					mainHandLevel = effectiveLevel or mainHandLevel
 
-					if (mainHandLevel > ilvl) and (mainHandRarity == 6) then
+					if (mainHandLevel and (mainHandLevel > ilvl)) and (mainHandRarity and (mainHandRarity == 6)) then
 						ilvl = mainHandLevel
 					end
 				end 
@@ -163,7 +163,13 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 				itemLevel:SetTextColor(1, 1, 0)
 				itemLevel.shade:SetVertexColor(1, 1, 0)
 			end
-			itemLevel:SetText(ilvl or "")
+			if ilvl then
+				itemLevel:SetText(ilvl)
+				itemLevel.shade:Show()
+			else
+				itemLevel:SetText("")
+				itemLevel.shade:Hide()
+			end
 		else
 			local iconBorder = itemButton.IconBorder
 			if iconBorder then
@@ -176,6 +182,7 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 				end
 			end
 			itemLevel:SetText("")
+			itemLevel.shade:Hide()
 		end	
 	end
 
