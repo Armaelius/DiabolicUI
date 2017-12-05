@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.74] 2017-12-05
+### Fixed
+- Fixed a missing pointer to the addon locales in the nameplate module, which sometimes would cause excessive error spam.
+
 ## [1.3.73] 2017-12-05
 ### Fixed
 - Fixed an issue with the LevelUpDisplay on Cata realms that broke the UI. 

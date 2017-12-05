@@ -4,6 +4,7 @@ local StatusBar = Engine:GetHandler("StatusBar")
 local AuraData = Engine:GetDB("Data: Auras")
 local C = Engine:GetDB("Data: Colors")
 local F = Engine:GetDB("Library: Format")
+local L = Engine:GetLocale()
 local AuraFunctions = Engine:GetDB("Library: AuraFunctions")
 local UICenter = Engine:GetFrame()
 
@@ -1719,7 +1720,10 @@ NamePlate.CreateRegions = function(self)
 
 	local CastValue = Cast:CreateFontString()
 	CastValue:SetDrawLayer("OVERLAY")
-	CastValue:SetPoint("BOTTOM", Cast, "TOP", 0, 6)
+	CastValue:SetJustifyV("TOP")
+	CastValue:SetHeight(10)
+	--CastValue:SetPoint("BOTTOM", Cast, "TOP", 0, 6)
+	CastValue:SetPoint("TOPLEFT", Cast, "TOPRIGHT", 4, -(Cast:GetHeight() - Cast:GetHeight())/2)
 	CastValue:SetFontObject(DiabolicFont_SansBold10)
 	CastValue:SetTextColor(C.General.Prefix[1], C.General.Prefix[2], C.General.Prefix[3])
 	CastValue:Hide()
@@ -2502,7 +2506,7 @@ Module.UpdateCastBar = function(self, castBar, unit, castData, elapsed)
 		if castBar.Value then
 			if castData.tradeskill then
 				castBar.Value:SetText(formatTime(castData.max - duration))
-			elseif (self.delay and (self.delay ~= 0)) then
+			elseif (castData.delay and (castData.delay ~= 0)) then
 				castBar.Value:SetFormattedText("%s|cffff0000 -%s|r", formatTime(floor(castData.max - duration)), formatTime(castData.delay))
 			else
 				castBar.Value:SetText(formatTime(castData.max - duration))
@@ -2518,10 +2522,12 @@ Module.UpdateCastBar = function(self, castBar, unit, castData, elapsed)
 			castBar:Hide()
 		end
 		if castBar.Value then
-			if (castData.delay and (castData.delay ~= 0)) then
-				castBar.Value:SetFormattedText("%.1f|cffff0000-%.1f|r", duration, castData.delay)
+			if castData.tradeskill then
+				castBar.Value:SetText(formatTime(duration))
+			elseif (castData.delay and (castData.delay ~= 0)) then
+				castBar.Value:SetFormattedText("%s|cffff0000 -%s|r", formatTime(duration), formatTime(castData.delay))
 			else
-				castBar.Value:SetFormattedText("%.1f", duration)
+				castBar.Value:SetText(formatTime(duration))
 			end
 		end
 		castData.duration = duration
