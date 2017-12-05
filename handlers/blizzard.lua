@@ -546,7 +546,11 @@ local elements = {
 			local LevelUpDisplay = _G.LevelUpDisplay
 			
 			LevelUpDisplay:UnregisterAllEvents()
-			LevelUpDisplay:StopBanner()
+
+			-- Older versions (Cata) lack this method
+			if LevelUpDisplay.StopBanner then
+				LevelUpDisplay:StopBanner()
+			end
 		end
 	},
 	Minimap = {

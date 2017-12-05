@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.73] 2017-12-05
+### Fixed
+- Fixed an issue with the LevelUpDisplay on Cata realms that broke the UI. 
+
 ## [1.3.72] 2017-11-29
 ### Fixed
 - Fixed an issue with the character frame's item level display, which would sometimes bug out with some weapon types.
