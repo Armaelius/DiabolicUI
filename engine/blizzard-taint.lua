@@ -30,6 +30,7 @@ local SetCVar = _G.SetCVar
 local BUILD = tonumber((select(2, GetBuildInfo()))) 
 
 -- Shortcuts to identify client versions
+local LEGION_730 	= BUILD >= 24500 -- 7.3.0 
 local LEGION_23530 	= BUILD >= 23530 -- 7.2.0.23530 (PTR) 
 local LEGION_23478 	= BUILD >= 23478 -- 7.2.0.23478 (PTR)
 local LEGION_23436 	= BUILD >= 23436 -- 7.2.0.23436 (PTR)
@@ -56,6 +57,16 @@ local WOTLK 		= BUILD >=  9056 -- 3.0.1 "Echoes of Doom"
 SetCVar("scriptErrors", 1)
 SetCVar("taintLog", 1)
 
+---------------------------------------------------------------
+-- Blizzard_NamePlates (Legion 7.3.0)
+---------------------------------------------------------------
+-- If these are enabled the GameTooltip will become protected, 
+-- and all sort of taints and bugs will occur.
+-- This happens on specs that can dispel when hovering over nameplate auras.
+-- We create our own auras anyway, so we don't need these. 
+if LEGION_730 then
+	SetCVar("nameplateShowDebuffsOnFriendly", 0) 
+end
 
 ---------------------------------------------------------------
 -- Blizzard_AuthChallengeUI login bug (MoP)

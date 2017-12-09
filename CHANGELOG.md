@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.75] 2017-12-09
+- Working around the protected GameTooltip bug introduced with secure friendly dungeon nameplates in WoW patch 7.3.0 by Blizzard. This bug mostly occurred on specs with dispel abilities when hovering over friendly auras. 
+
 ## [1.3.74] 2017-12-05
 ### Fixed
 - Fixed a missing pointer to the addon locales in the nameplate module, which sometimes would cause excessive error spam.

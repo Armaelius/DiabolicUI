@@ -127,6 +127,7 @@ local EMPTY_TEXTURE 	= Engine:GetConstant("EMPTY_TEXTURE") -- used to make textu
 -- Client version constants, to avoid extra function calls and database lookups 
 -- during the rather performance intensive OnUpdate handling.
 -- Hopefully we'll gain a FPS or two by doing this. 
+local ENGINE_LEGION_730 = Engine:IsBuild("7.3.0")
 local ENGINE_LEGION 	= Engine:IsBuild("Legion")
 local ENGINE_WOD 		= Engine:IsBuild("WoD")
 local ENGINE_MOP 		= Engine:IsBuild("MoP")
@@ -2756,6 +2757,14 @@ Module.UpdateBlizzardSettings = ENGINE_LEGION and Engine:Wrap(function(self)
 	-- and not the fugly super sized names we get otherwise.
 	SetCVar("nameplateShowFriendlyNPCs", 1)
 
+	-- If these are enabled the GameTooltip will become protected, 
+	-- and all sort of taints and bugs will occur.
+	-- This happens on specs that can dispel when hovering over nameplate auras.
+	-- We create our own auras anyway, so we don't need these. 
+	if ENGINE_LEGION_730 then
+		SetCVar("nameplateShowDebuffsOnFriendly", 0) 
+	end
+		
 	-- Insets at the top and bottom of the screen 
 	-- which the target nameplate will be kept away from. 
 	-- Used to avoid the target plate being overlapped 
@@ -2764,8 +2773,7 @@ Module.UpdateBlizzardSettings = ENGINE_LEGION and Engine:Wrap(function(self)
 	SetCVar("nameplateOtherTopInset", .22) -- default .08
 	SetCVar("nameplateLargeBottomInset", .22) -- default .15
 	SetCVar("nameplateOtherBottomInset", .22) -- default .1
-
-
+	
 	SetCVar("nameplateClassResourceTopInset", 0)
 	SetCVar("nameplateGlobalScale", 1)
 	SetCVar("NamePlateHorizontalScale", 1)
