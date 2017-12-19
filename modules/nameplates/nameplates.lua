@@ -692,6 +692,11 @@ NamePlate_WotLK.UpdateRaidTarget = function(self)
 	end
 end 
 
+NamePlate_WotLK.UpdateLevel = function(self)
+	self:UpdateUnitData() -- update 'cosmetic' info like name, level, and elite/boss textures
+	self:ApplyUnitData() -- set name, level, textures and icons
+end
+
 NamePlate_WotLK.UpdateHealth = function(self)
 	self:UpdateCombatData()  -- updates colors, threat, classes, etc
 	self:ApplyUnitData() -- set name, level, textures and icons

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.76] 2017-12-19
+### Changed
+- Changed how the UI deals with the PlaySound changes in the 7.3.0 WoW client patch, to be compatible with the nitwit way Ace3 handles it. They check for the existence of the PlaySoundKitID API call and base their PlaySound usage on that, instead of checking for the client version as they should. 
+
 ## [1.3.75] 2017-12-09
 - Working around the protected GameTooltip bug introduced with secure friendly dungeon nameplates in WoW patch 7.3.0 by Blizzard. This bug mostly occurred on specs with dispel abilities when hovering over friendly auras. 
 

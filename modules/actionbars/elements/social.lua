@@ -3,13 +3,12 @@ local Module = Engine:GetModule("ActionBars")
 local MenuWidget = Module:SetWidget("Menu: Chat")
 local L = Engine:GetLocale()
 
-
 -- Lua API
 local setmetatable = setmetatable
 
 -- WoW API
 local CreateFrame = CreateFrame
-
+local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundKitID
 
 MenuWidget.Skin = function(self, button, config, icon)
 	local icon_config = Module.config.visuals.menus.icons

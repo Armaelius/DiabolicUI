@@ -687,7 +687,11 @@ if ENGINE_LEGION_730 then
 
 	-- In patch 7.3.0 the PlaySound API call was changed to only allow soundkit IDs as input. 
 	-- The function which previously provided this behavior PlaySoundKitID was removed.
-	addGlobal("PlaySoundKitID", _G.PlaySound)
+
+	-- *Had to remove it because of how Ace3 handles the patch. 
+	-- They change the way they use PlaySound command based on the existence of PlaySoundKitID. /stupidasfuck
+
+	--addGlobal("PlaySoundKitID", _G.PlaySound)
 end
 
 -- Just for the client versions that's missing it, 
