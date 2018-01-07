@@ -66,6 +66,16 @@ end
 
 
 
+-- Shortcut to ReloadUI
+---------------------------------------------------------------------
+-- *we want this in all versions
+_G.SLASH_RELOADUI1 = "/rl"
+_G.SLASH_RELOADUI2 = "/reload"
+_G.SLASH_RELOADUI3 = "/reloadui"
+_G.SlashCmdList.RELOADUI = _G.ReloadUI
+
+
+
 -- Stuff added in Cata that we want in older versions
 ------------------------------------------------------------------------------------
 if not ENGINE_CATA then

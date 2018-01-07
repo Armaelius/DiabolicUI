@@ -7,6 +7,8 @@ Module:SetIncompatible("BlizzardBagsPlus")
 
 -- Lua API
 local _G = _G
+local string_find = string.find
+local string_gsub = string.gsub
 local string_match = string.match
 local tonumber = tonumber
 
@@ -17,6 +19,21 @@ local GetContainerItemQuestInfo = _G.GetContainerItemQuestInfo
 local GetItemInfo = _G.GetItemInfo
 local GetItemQualityColor = _G.GetItemQualityColor
 local IsArtifactRelicItem = _G.IsArtifactRelicItem
+
+-- WoW Client Constants
+local ENGINE_LEGION_730 = Engine:IsBuild("7.3.0") 
+local ENGINE_LEGION = Engine:IsBuild("Legion")
+local ENGINE_MOP = Engine:IsBuild("MoP")
+local ENGINE_CATA = Engine:IsBuild("Cata")
+local CRUCIBLE = ENGINE_LEGION_730 and select(4, GetAchievementInfo(12072))
+
+-- Tooltip used for scanning
+local scannerTip = CreateFrame("GameTooltip", "DiabolicUIPaperDollScannerTooltip", WorldFrame, "GameTooltipTemplate")
+local scannerName = scannerTip:GetName()
+
+-- Tooltip and scanning by Phanx @ http://www.wowinterface.com/forums/showthread.php?p=271406
+local S_ITEM_LEVEL = "^" .. string_gsub(_G.ITEM_LEVEL, "%%d", "(%%d+)")
+
 
 local styleFrameCache = {} -- Cache of style frames
 local itemLevelCache = {} -- Cache of itemlevel texts
@@ -110,8 +127,14 @@ local updateItemLevel = (GetDetailedItemLevelInfo and IsArtifactRelicItem) and f
 		-- Retrieve the itemID from the itemLink
 		local itemID = tonumber(string_match(itemLink, "item:(%d+)"))
 
+
 		-- Display item level of equippable gear and artifact relics
 		if (itemRarity and (itemRarity > 1)) and ((itemEquipLoc and _G[itemEquipLoc]) or (itemID and IsArtifactRelicItem(itemID))) then
+
+			local crucibleLevel
+			if LEGION_730 then
+			end
+
 			local r, g, b = GetItemQualityColor(itemRarity)
 			itemLevel:SetTextColor(r, g, b)
 			itemLevel:SetText(effectiveLevel or iLevel or "")
@@ -187,6 +210,10 @@ end
 
 local updateAncientMana = function(self)
 end
+
+local updateBindStatus = function(self)
+end
+
 
 local updateItem = function(self)
 
@@ -279,7 +306,7 @@ local updateItem = function(self)
 		end
 	end
 
-	updateItemLevel(self)
+	updateItemLevel(self, itemLink)
 	
 end
 
@@ -291,6 +318,17 @@ local updateContainer = function(self)
 end
 
 Module.OnInit = function(self)
+
+	--[[
+		TODO:
+
+		create proxy items:
+		- each proxy references the original bagbutton
+		- each proxy has :methods() to update various aspects
+		- each proxy should be identifiable by original button (table index?)
+		- inheritance?
+
+	]]
 
 	local currentContainer = 1
 	local currentItem = 1

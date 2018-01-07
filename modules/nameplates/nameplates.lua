@@ -12,6 +12,10 @@ local UICenter = Engine:GetFrame()
 Module:SetIncompatible("TidyPlates")
 Module:SetIncompatible("Kui_Nameplates")
 
+-- Hack'ish manual disable switch. 
+-- Will be implemented as a user choice later.
+--Module:SetIncompatible("DiabolicUI")
+
 -- Lua API
 local _G = _G
 local ipairs = ipairs

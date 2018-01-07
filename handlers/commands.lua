@@ -40,11 +40,9 @@ Handler.OnEnable = function(self)
 end
 
 Handler.Register = function(self, command, func)
-
 	-- silently fail if the command already exists
 	if commandRegistry[command] then
 		return
 	end
-
 	commandRegistry[command] = func
 end

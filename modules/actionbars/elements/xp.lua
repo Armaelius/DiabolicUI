@@ -268,11 +268,16 @@ end
 
 Bar_Artifact.OnClick = function(self, button)
 	if (button == "LeftButton") then
-		local ArtifactFrame = _G.ArtifactFrame 
+		local ArtifactFrame = _G.ArtifactFrame
+		if ((not ArtifactFrame) and ArtifactFrame_LoadUI) then
+			ArtifactFrame_LoadUI()
+			ArtifactFrame = _G.ArtifactFrame
+		end
 		if (ArtifactFrame and ArtifactFrame:IsShown()) then 
 			HideUIPanel(ArtifactFrame)
-		else
-			SocketInventoryItem(16)
+		elseif (ArtifactFrame and (not ArtifactFrame:IsShown())) then
+			ShowUIPanel(SocketInventoryItem(16))
+			--SocketInventoryItem(16)
 		end
 	end
 end

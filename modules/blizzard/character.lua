@@ -5,18 +5,33 @@ local C = Engine:GetDB("Data: Colors")
 -- Lua API
 local _G = _G
 local pairs = pairs
+local string_find = string.find
+local string_gsub = string.gsub
+local string_match = string.match
+local tonumber = tonumber
 local unpack = unpack
 
 -- WoW API
+local GetAchievementInfo = _G.GetAchievementInfo
 local GetDetailedItemLevelInfo = _G.GetDetailedItemLevelInfo
 local GetInventoryItemLink = _G.GetInventoryItemLink
 local GetInventorySlotInfo = _G.GetInventorySlotInfo
 local GetItemInfo = _G.GetItemInfo
 
 -- WoW Client Constants
+local ENGINE_LEGION_730 = Engine:IsBuild("7.3.0") 
 local ENGINE_LEGION = Engine:IsBuild("Legion")
 local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_CATA = Engine:IsBuild("Cata")
+local CRUCIBLE = ENGINE_LEGION_730 and select(4, GetAchievementInfo(12072))
+
+-- Tooltip used for scanning
+local scannerTip = CreateFrame("GameTooltip", "DiabolicUIPaperDollScannerTooltip", WorldFrame, "GameTooltipTemplate")
+local scannerName = scannerTip:GetName()
+
+-- Tooltip and scanning by Phanx @ http://www.wowinterface.com/forums/showthread.php?p=271406
+local S_ITEM_LEVEL = "^" .. string_gsub(_G.ITEM_LEVEL, "%%d", "(%%d+)")
+
 
 Module.InitializePaperDoll = function(self)
 	local config = self.config
@@ -83,6 +98,68 @@ Module.InitializePaperDoll = function(self)
 	self.borderCache = borderCache
 end
 
+Module.GetInventorySlotItemData = function(self, slotID)
+	local itemLink = GetInventoryItemLink("player", slotID) 
+	if itemLink then
+		local _, _, itemRarity, ilvl = GetItemInfo(itemLink)
+		if itemRarity then
+
+			-- Special checks are needed for artifact weapons in Legion
+			if ENGINE_LEGION and (itemRarity == 6) and ((slotID == _G.INVSLOT_MAINHAND) or (slotID == _G.INVSLOT_OFFHAND)) then
+
+				-- Legion Artifact offhanders report just the base itemLevel, without relic enhancements, 
+				-- so we're borrowing the itemLevel from the main hand weapon when this happens.
+				-- *The constants used are defined in FrameXML/Constants.lua
+				if (slotID == _G.INVSLOT_OFFHAND) then
+					local _,_,ilvl = self:GetInventorySlotItemData(_G.INVSLOT_MAINHAND)
+					return itemLink, itemRarity, ilvl
+				end
+
+				-- If we're in patch 7.3.0 with the upgraded relic item levels, 
+				-- we need to scan the tooltip for the proper item level, 
+				-- since it otherwise can't be properly scanned without being at the forge. 
+				local crucibleLevel
+				if (slotID == _G.INVSLOT_MAINHAND) and CRUCIBLE then
+					
+					scannerTip.owner = self
+					scannerTip:SetOwner(self, "ANCHOR_NONE")
+					scannerTip:SetBagItem(self:GetBag(), self:GetID())
+
+					local line = _G[scannerName.."TextLeft2"]
+					if line then
+						local msg = line:GetText()
+						if msg and string_find(msg, S_ITEM_LEVEL) then
+							local iLevel = string_match(msg, S_ITEM_LEVEL)
+							if iLevel and (tonumber(iLevel) > 0) then
+								return itemLink, itemRarity, iLevel
+							end
+						else
+							-- Check line 3, some artifacts have the ilevel there.
+							-- *an example is demon hunter artifacts, which have their names on 2 lines 
+							line = _G[scannerName.."TextLeft3"]
+							if line then
+								local msg = line:GetText()
+								if msg and string_find(msg, S_ITEM_LEVEL) then
+									local iLevel = string_match(msg, S_ITEM_LEVEL)
+									if iLevel and (tonumber(iLevel) > 0) then
+										return itemLink, itemRarity, iLevel
+									end
+								end
+							end
+						end
+					end
+				end
+
+			end
+
+			-- We're probably still in patch 7.1.5 or not in Legion at all if we made it to this point, so normal checks will suffice
+			local effectiveLevel, previewLevel, origLevel = GetDetailedItemLevelInfo and GetDetailedItemLevelInfo(itemLink)
+			ilvl = effectiveLevel or ilvl
+		end
+		return itemLink, itemRarity, ilvl
+	end
+end
+
 Module.UpdateEquippeditemLevels = function(self, event, ...)
 
 	if (event == "UNIT_INVENTORY_CHANGED") then
@@ -97,29 +174,9 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 		if normalTexture then
 			--normalTexture:SetVertexColor(unpack(C.General.UIBorder))
 		end
-
-		local slotID = itemButton:GetID()
-		local itemLink = GetInventoryItemLink("player", slotID) 
+		local itemLink, itemRarity, ilvl = self:GetInventorySlotItemData(itemButton:GetID())
 		if itemLink then
-			local _, _, itemRarity, ilvl = GetItemInfo(itemLink)
 			if itemRarity then
-				local effectiveLevel, previewLevel, origLevel = GetDetailedItemLevelInfo and GetDetailedItemLevelInfo(itemLink)
-				ilvl = effectiveLevel or ilvl
-
-				-- Legion Artifact offhanders report just the base itemLevel, without relic enhancements, 
-				-- so we're borrowing the itemLevel from the main hand weapon when this happens.
-				-- *The constants used are defined in FrameXML/Constants.lua
-				if ENGINE_LEGION and (itemButton:GetID() == _G.INVSLOT_OFFHAND) and (itemRarity == 6) then 
-					local mainHandLink = GetInventoryItemLink("player", _G.INVSLOT_MAINHAND)
-					local _, _, mainHandRarity, mainHandLevel = GetItemInfo(mainHandLink)
-					local effectiveLevel, previewLevel, origLevel = GetDetailedItemLevelInfo and GetDetailedItemLevelInfo(mainHandLink)
-
-					mainHandLevel = effectiveLevel or mainHandLevel
-
-					if (mainHandLevel and (mainHandLevel > ilvl)) and (mainHandRarity and (mainHandRarity == 6)) then
-						ilvl = mainHandLevel
-					end
-				end 
 
 				local r, g, b = unpack(C.Quality[itemRarity])
 				itemLevel:SetTextColor(r, g, b)
@@ -188,6 +245,14 @@ Module.UpdateEquippeditemLevels = function(self, event, ...)
 
 end
 
+Module.CrucibleAchievementListener = function(self, event, id)
+	if (id == 12072) then
+		CRUCIBLE = true
+		self:UnregisterEvent("ACHIEVEMENT_EARNED", "CrucibleAchievementListener")
+		self:UpdateEquippeditemLevels()
+	end
+end
+
 Module.OnInit = function(self)
 	self.config = Engine:GetDB("Blizzard").character
 
@@ -202,6 +267,11 @@ Module.OnInit = function(self)
 		end
 	else
 		self:RegisterEvent("UNIT_INVENTORY_CHANGED", "UpdateEquippeditemLevels")
+	end
+
+	-- Adding in compatibility with the 7.3.0 upgraded artifact relic itemlevels
+	if (ENGINE_LEGION_730 and (not CRUCIBLE)) then
+		self:RegisterEvent("ACHIEVEMENT_EARNED", "CrucibleAchievementListener")
 	end
 	
 end
