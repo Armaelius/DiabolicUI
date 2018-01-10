@@ -18,7 +18,6 @@ local unpack = unpack
 -- WoW API
 local BreakUpLargeNumbers = _G.BreakUpLargeNumbers
 local CreateFrame = _G.CreateFrame
-local GameTooltip = _G.GameTooltip
 local GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
 local GetHonorExhaustion = _G.GetHonorExhaustion
 local GetHonorRestState = _G.GetHonorRestState
@@ -41,6 +40,9 @@ local UnitLevel = _G.UnitLevel
 local UnitRace = _G.UnitRace
 local UnitXP = _G.UnitXP
 local UnitXPMax = _G.UnitXPMax
+
+-- WoW Frames & Objects
+local GameTooltip = _G.GameTooltip
 
 -- Legion!
 local C_ArtifactUI = _G.C_ArtifactUI
@@ -167,6 +169,10 @@ Bar_XP.OnEnter = function(self)
 	local data = self:UpdateData()
 	if not data.xpMax then return end
 
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	GameTooltip_SetDefaultAnchor(GameTooltip, self)
 	--GameTooltip:SetOwner(self.Controller, "ANCHOR_NONE")
 
@@ -211,7 +217,9 @@ Bar_XP.OnEnter = function(self)
 end
 
 Bar_XP.OnLeave = function(self)
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 
@@ -286,6 +294,10 @@ Bar_Artifact.OnEnter = function(self)
 	local data = self:UpdateData()
 	if not data.barMax then return end
 
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	GameTooltip_SetDefaultAnchor(GameTooltip, self)
 
 	-- artifactTier argument added in 7.2.0. 
@@ -323,7 +335,9 @@ Bar_Artifact.OnEnter = function(self)
 end
 
 Bar_Artifact.OnLeave = function(self)
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 
@@ -393,6 +407,10 @@ Bar_Honor.OnEnter = function(self)
 	local data = self:UpdateData()
 	if not data.honorMax then return end
 
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	GameTooltip_SetDefaultAnchor(GameTooltip, self)
 
 	local r, g, b = unpack(C.General.Highlight)
@@ -442,7 +460,9 @@ Bar_Honor.OnEnter = function(self)
 end
 
 Bar_Honor.OnLeave = function(self)
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 

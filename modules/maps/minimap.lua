@@ -495,19 +495,26 @@ Module.InitMBB = function(self)
 		over = true
 		_G.MBB_ShowTimeout = -1
 
-		GameTooltip:SetOwner(mapContent, "ANCHOR_PRESERVE")
-		GameTooltip:ClearAllPoints()
-		GameTooltip:SetPoint("TOPRIGHT", mapContent, "TOPLEFT", -10, -10)
-		GameTooltip:AddLine("MinimapButtonBag v" .. MBB_Version)
-		GameTooltip:AddLine(MBB_TOOLTIP1, 0, 1, 0)
-		GameTooltip:Show()
+		if (not GameTooltip:IsForbidden()) then
+			GameTooltip:SetOwner(mapContent, "ANCHOR_PRESERVE")
+			GameTooltip:ClearAllPoints()
+			GameTooltip:SetPoint("TOPRIGHT", mapContent, "TOPLEFT", -10, -10)
+			GameTooltip:AddLine("MinimapButtonBag v" .. MBB_Version)
+			GameTooltip:AddLine(MBB_TOOLTIP1, 0, 1, 0)
+			GameTooltip:Show()
+		end
+
 		setalpha()
 	end)
 
 	mbbFrame:SetScript("OnLeave", function(self) 
 		over = false
 		_G.MBB_ShowTimeout = 0
-		GameTooltip:Hide()
+
+		if (not GameTooltip:IsForbidden()) then
+			GameTooltip:Hide()
+		end
+
 		setalpha()
 	end)
 
@@ -715,8 +722,11 @@ Module.OnInit = function(self)
 	timeClick:SetAllPoints(time)
 	timeClick:RegisterForClicks("RightButtonUp", "LeftButtonUp")
 	timeClick.UpdateTooltip = function(self)
-		local localTime, realmTime
+		if GameTooltip:IsForbidden() then
+			return
+		end
 
+		local localTime, realmTime
 		local dateTable = date("*t")
 		local h, m = dateTable.hour,  dateTable.min 
 		local gH, gM = GetGameTime()
@@ -754,7 +764,11 @@ Module.OnInit = function(self)
 	end
 
 	timeClick:SetScript("OnEnter", timeClick.UpdateTooltip)
-	timeClick:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+	timeClick:SetScript("OnLeave", function(self) 
+		if (not GameTooltip:IsForbidden()) then
+			GameTooltip:Hide() 
+		end
+	end)
 	timeClick:SetScript("OnClick", function(self, mouseButton)
 		if (mouseButton == "LeftButton") then
 			ToggleCalendar()

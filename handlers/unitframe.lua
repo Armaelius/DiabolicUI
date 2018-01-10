@@ -291,15 +291,19 @@ UnitFrame.EnableFrequentUpdates = function(self, element, frequency)
 end
 
 UnitFrame.OnEnter = function(self)
-	GameTooltip:Hide()
-	GameTooltip_SetDefaultAnchor(GameTooltip, self)
-	GameTooltip:SetUnit(self.unit)
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+		GameTooltip_SetDefaultAnchor(GameTooltip, self)
+		GameTooltip:SetUnit(self.unit)
+	end
 	local r, g, b = GameTooltip_UnitColor(self.unit)
 	GameTooltipTextLeft1:SetTextColor(r, g, b)
 end
 
 UnitFrame.OnLeave = function(self)
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 UnitFrame.OnAttributeChanged = function(self, name, value)

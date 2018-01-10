@@ -15,6 +15,9 @@ local InCombatLockdown = _G.InCombatLockdown
 local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundKitID
 local UnitFactionGroup = _G.UnitFactionGroup
 
+-- WoW Frames & Objects
+local GameTooltip = _G.GameTooltip
+
 -- Client version constants
 local ENGINE_WOD 	= Engine:IsBuild("WoD")
 local ENGINE_MOP 	= Engine:IsBuild("MoP")
@@ -751,13 +754,16 @@ MenuWidget.OnEnable = function(self)
 	BagBarMenuWindow:SetBackdropBorderColor(unpack(bagbar_menu_config.backdrop_border_color))
 	
 	BagBarMenuButton.OnEnter = function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		if MicroMenuButton:GetButtonState() == "PUSHED"
 		or ActionBarMenuButton:GetButtonState() == "PUSHED"
 		or BagBarMenuButton:GetButtonState() == "PUSHED" then
 			GameTooltip:Hide()
 			return
 		end
---		GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", -6, 16)
+	--		GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", -6, 16)
 		GameTooltip_SetDefaultAnchor(GameTooltip, self)
 		GameTooltip:AddLine(L["Bags"])
 		GameTooltip:AddLine(L["<Left-click> to toggle bags."], 0, .7, 0)
@@ -768,6 +774,9 @@ MenuWidget.OnEnable = function(self)
 	BagBarMenuButton:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
 
 	ActionBarMenuButton.OnEnter = function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		if MicroMenuButton:GetButtonState() == "PUSHED"
 		or ActionBarMenuButton:GetButtonState() == "PUSHED"
 		or BagBarMenuButton:GetButtonState() == "PUSHED" then
@@ -789,6 +798,9 @@ MenuWidget.OnEnable = function(self)
 	end
 
 	MicroMenuButton.OnEnter = function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		if MicroMenuButton:GetButtonState() == "PUSHED"
 		or ActionBarMenuButton:GetButtonState() == "PUSHED"
 		or BagBarMenuButton:GetButtonState() == "PUSHED" then

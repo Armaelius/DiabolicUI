@@ -67,7 +67,8 @@ local UnitAura = AuraFunctions.UnitAura
 local UnitBuff = AuraFunctions.UnitBuff
 local UnitDebuff = AuraFunctions.UnitDebuff
 
--- WoW Frames & Tables
+-- WoW Frames & Objects
+local GameTooltip = _G.GameTooltip
 local UIParent = UIParent
 local WorldFrame = WorldFrame
 local RAID_CLASS_COLORS = RAID_CLASS_COLORS
@@ -283,7 +284,9 @@ Aura.OnEnter = function(self)
 end
 
 Aura.OnLeave = function(self)
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 Aura.CreateTimer = function(self, elapsed)

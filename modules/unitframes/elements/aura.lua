@@ -23,7 +23,7 @@ local UnitExists = _G.UnitExists
 local UnitHasVehicleUI = _G.UnitHasVehicleUI
 local UnitReaction = _G.UnitReaction
 
--- WOW frames and objects
+-- WoW Frames & Objects
 local GameTooltip = _G.GameTooltip
 
 -- Engine API
@@ -117,7 +117,9 @@ Aura.OnEnter = function(self)
 end
 
 Aura.OnLeave = function(self)
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 Aura.OnClick = ENGINE_CATA and function(self)

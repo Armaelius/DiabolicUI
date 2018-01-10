@@ -76,8 +76,9 @@ local UnitIsWildBattlePet = _G.UnitIsWildBattlePet
 -- WOW API (New in Legion, but added to previous clients by our own API)
 local UnitIsTapDenied = _G.UnitIsTapDenied 
 
--- WoW Objects & Tables
+-- WoW Frames & Objects
 local GameTooltip = _G.GameTooltip
+
 
 -- Blizzard textures we use 
 local BOSS_TEXTURE = "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:16:16:-2:1|t"
@@ -458,6 +459,10 @@ end
 
 -- Set Unit Info
 Module.SetUnitInfo = function(self, gear, spec)
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	if not(gear and spec) or not(IsShiftKeyDown()) then 
 		return 
 	end
@@ -796,6 +801,10 @@ local remainingTime = {
 }
 
 Module.Tooltip_SetUnitBuff = function(self, tooltip, unit, index, filter)
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId = UnitBuff(unit, index, filter)
 	local color = debuffType and C.Debuff[debuffType] or C.General.Title
 	local gray = C.General.Gray
@@ -845,6 +854,10 @@ Module.Tooltip_SetUnitBuff = function(self, tooltip, unit, index, filter)
 end
 
 Module.Tooltip_SetUnitDebuff = function(self, tooltip, unit, index, filter)
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, _, spellId  = UnitDebuff(unit, index, filter)
 	local color = debuffType and C.Debuff[debuffType] or C.General.Title
 	local gray = C.General.Gray
@@ -930,6 +943,9 @@ Module.Tooltip_OnHide = function(self, tooltip)
 end
 
 Module.Tooltip_SetDefaultAnchor = function(self, tooltip, owner)
+	if ((tooltip == GameTooltip) and (GameTooltip:IsForbidden())) then
+		return
+	end
 	if owner == UIParent then 
 		tooltip:ClearAllPoints()
 		tooltip:SetPoint(self.anchor:GetPoint())
@@ -1171,16 +1187,22 @@ end
 
 -- This requires both VARIABLES_LOADED and PLAYER_ENTERING_WORLD to have fired!
 Module.HookGameTooltip = function(self)
-	GameTooltip:HookScript("OnUpdate", function(...) self:Tooltip_OnUpdate(...) end)
-	GameTooltip:HookScript("OnShow", function(...) self:Tooltip_OnShow(...) end)
-	GameTooltip:HookScript("OnHide", function(...) self:Tooltip_OnHide(...) end)
-	--GameTooltip:HookScript("OnTooltipCleared", function(...) self:Tooltip_OnTooltipCleared(...) end)
-	--GameTooltip:HookScript("OnTooltipSetItem", function(...) self:Tooltip_OnTooltipSetItem(...) end)
-	GameTooltip:HookScript("OnTooltipSetUnit", function(...) self:Tooltip_OnTooltipSetUnit(...) end)
-	GameTooltip:HookScript("OnTooltipSetSpell", function(...) self:Tooltip_OnTooltipSetSpell(...) end)
-	hooksecurefunc("GameTooltip_SetDefaultAnchor", function(...) self:Tooltip_SetDefaultAnchor(...) end)
-	hooksecurefunc(GameTooltip, "SetUnitBuff", function(...) self:Tooltip_SetUnitBuff(...) end)
-	hooksecurefunc(GameTooltip, "SetUnitDebuff", function(...) self:Tooltip_SetUnitDebuff(...) end)
+
+	for _,tooltipName in pairs({ "GameTooltip" }) do 
+		local tooltip = _G[tooltipName]
+		if tooltip then
+			tooltip:HookScript("OnUpdate", function(...) self:Tooltip_OnUpdate(...) end)
+			tooltip:HookScript("OnShow", function(...) self:Tooltip_OnShow(...) end)
+			tooltip:HookScript("OnHide", function(...) self:Tooltip_OnHide(...) end)
+			--tooltip:HookScript("OnTooltipCleared", function(...) self:Tooltip_OnTooltipCleared(...) end)
+			--tooltip:HookScript("OnTooltipSetItem", function(...) self:Tooltip_OnTooltipSetItem(...) end)
+			tooltip:HookScript("OnTooltipSetUnit", function(...) self:Tooltip_OnTooltipSetUnit(...) end)
+			tooltip:HookScript("OnTooltipSetSpell", function(...) self:Tooltip_OnTooltipSetSpell(...) end)
+			hooksecurefunc("GameTooltip_SetDefaultAnchor", function(...) self:Tooltip_SetDefaultAnchor(...) end)
+			hooksecurefunc(tooltip, "SetUnitBuff", function(...) self:Tooltip_SetUnitBuff(...) end)
+			hooksecurefunc(tooltip, "SetUnitDebuff", function(...) self:Tooltip_SetUnitDebuff(...) end)
+		end 
+	end
 end
 
 Module.SkinDebugTools = function(self)
@@ -1220,6 +1242,9 @@ Module.OnEvent = function(self, event, ...)
 		self:ScanUnit(arg1, true)
 		
 	elseif (event == "MODIFIER_STATE_CHANGED") and ((arg1 == "LSHIFT") or (arg1 == "RSHIFT")) then
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		if GameTooltip:IsShown() then 
 			local unit = self:GetTooltipUnit(GameTooltip)
 			if (unit and currentUNIT and currentGUID) and (UnitIsUnit(unit, currentUNIT) and (UnitGUID(unit) == currentGUID)) then

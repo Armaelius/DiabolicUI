@@ -92,7 +92,8 @@ local ShowQuestComplete = _G.ShowQuestComplete
 local ShowQuestOffer = _G.ShowQuestOffer
 local WorldMap_GetWorldQuestRewardType = _G.WorldMap_GetWorldQuestRewardType
 
--- WoW Frames
+-- WoW Frames & Objects
+local GameTooltip = _G.GameTooltip
 local QuestFrame = _G.QuestFrame
 local QuestFrameAcceptButton = _G.QuestFrameAcceptButton
 local QuestFrameRewardPanel = _G.QuestFrameRewardPanel
@@ -652,6 +653,10 @@ MinMaxButton.OnClick = function(self, mouseButton)
 end
 
 MinMaxButton.OnEnter = function(self)
+	if GameTooltip:IsForbidden() then
+		return
+	end
+
 	do return end -- not today
 
 	local r, g, b = unpack(C.General.OffWhite)
@@ -702,7 +707,9 @@ end
 
 MinMaxButton.OnLeave = function(self)
 	do return end -- not today
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 end
 
 

@@ -495,7 +495,9 @@ end
 
 Button.OnLeave = function(self)
 	self._highlighted = nil
-	GameTooltip:Hide()
+	if (not GameTooltip:IsForbidden()) then
+		GameTooltip:Hide()
+	end
 	if self.PostMouseLeave then
 		return self:PostMouseLeave()
 	end	
@@ -1259,6 +1261,9 @@ PetActionButton.IsCurrentlyActive		= function(self) return select(5, GetPetActio
 PetActionButton.IsAutoRepeat			= function(self) return nil end -- select(7, GetPetActionInfo(self.id))
 PetActionButton.SetTooltip				= function(self) 
 	if (not self.tooltipName) then
+		return
+	end
+	if GameTooltip:IsForbidden() then
 		return
 	end
 

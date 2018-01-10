@@ -10,6 +10,9 @@ local setmetatable = setmetatable
 local CreateFrame = CreateFrame
 local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundKitID
 
+-- WoW Frames & Objects
+local GameTooltip = _G.GameTooltip
+
 MenuWidget.Skin = function(self, button, config, icon)
 	local icon_config = Module.config.visuals.menus.icons
 
@@ -106,6 +109,9 @@ MenuWidget.OnEnable = function(self)
 	FriendsWindow:HookScript("OnHide", function() SocialButton:SetButtonState("NORMAL") end)
 
 	ChatButton.OnEnter = function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		if ChatButton:GetButtonState() == "PUSHED"
 		or SocialButton:GetButtonState() == "PUSHED" then
 			GameTooltip:Hide()
@@ -117,7 +123,12 @@ MenuWidget.OnEnable = function(self)
 		GameTooltip:Show()
 	end
 	ChatButton:SetScript("OnEnter", ChatButton.OnEnter)
-	ChatButton:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+	ChatButton:SetScript("OnLeave", function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		GameTooltip:Hide() 
+	end)
 	
 	ChatButton.OnClick = function(self, button)
 		if InputBox:IsShown() then
@@ -134,13 +145,21 @@ MenuWidget.OnEnable = function(self)
 	
 	
 	SocialButton.OnEnter = function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 6, 16)
 		GameTooltip:AddLine(Engine:IsBuild("Cata") and FRIENDS or L["Friends & Guild"])
 		GameTooltip:AddLine(L["<Left-click> to toggle social frames."], 0, .7, 0)
 		GameTooltip:Show()
 	end
 	SocialButton:SetScript("OnEnter", SocialButton.OnEnter)
-	SocialButton:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+	SocialButton:SetScript("OnLeave", function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		GameTooltip:Hide() 
+	end)
 	
 	SocialButton.OnClick = FriendsMicroButton:GetScript("OnClick")
 	SocialButton:SetAttribute("_onclick", [[ control:CallMethod("OnClick", button); ]])

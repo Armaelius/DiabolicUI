@@ -536,6 +536,11 @@ if not ENGINE_MOP then
 			return IsActiveBattlefieldArena() or (GetRealNumRaidMembers() > 0) or (GetNumRaidMembers() > 0)
 		end
 	end)
+
+	-- This was added to all UI objects in 5.4.0
+	-- We're adding a dummy method that always returns false for the tooltips, 
+	-- to avoid having different checks prior to MoP.
+	addMetaMethod("GameTooltip", "IsForbidden", function(self) return false end)
 end
 
 
@@ -1121,8 +1126,10 @@ end
 
 -- Add meta methods
 local frameObject = CreateFrame("Frame")
+local tooltipObject = CreateFrame("GameTooltip")
 local objectTypes = {
 	Frame = frameObject, 
+	GameTooltip = tooltipObject,
 	Texture = frameObject:CreateTexture()
 }
 for objectType, methods in pairs(metaMethods) do

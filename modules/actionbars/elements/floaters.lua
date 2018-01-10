@@ -18,6 +18,9 @@ local TaxiRequestEarlyLanding = _G.TaxiRequestEarlyLanding
 local UnitOnTaxi = _G.UnitOnTaxi
 local UnregisterStateDriver = _G.UnregisterStateDriver
 
+-- WoW Frames & Objects
+local GameTooltip = _G.GameTooltip
+
 -- WoW Client Constants
 local ENGINE_WOTLK = Engine:IsBuild("WotLK")
 local ENGINE_CATA = Engine:IsBuild("Cata")
@@ -126,6 +129,9 @@ BarWidget.SpawnStanceBarButton = function(self)
 	StanceBarButton.Pushed:SetTexture(visualConfig.border.textures.highlight)
 
 	StanceBarButton.PostEnter = function(self)
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		GameTooltip_SetDefaultAnchor(GameTooltip, self)
 		GameTooltip:SetText(L["Stances"], 1, 1, 1)
 		GameTooltip:AddLine(L["<Left-click> to toggle stance bar."], unpack(C.General.OffGreen))
@@ -133,7 +139,9 @@ BarWidget.SpawnStanceBarButton = function(self)
 	end
 	
 	StanceBarButton.PostLeave = function(self) 
-		GameTooltip:Hide()
+		if (not GameTooltip:IsForbidden()) then
+			GameTooltip:Hide()
+		end
 	end
 
 	StanceBarButton:SetClickTarget(Module:GetWidget("Bar: Stance"):GetFrame())
@@ -183,6 +191,9 @@ BarWidget.SpawnVehicleExitButton = function(self)
 	VehicleExitButton.Disabled:SetTexture(visualConfig.textures.disabled)
 	
 	VehicleExitButton.PostEnter = function(self)
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		GameTooltip_SetDefaultAnchor(GameTooltip, self)
 		GameTooltip:SetText(LEAVE_VEHICLE, 1, 1, 1)
 		GameTooltip:AddLine(L["<Left-click> to leave the vehicle."], unpack(C.General.OffGreen))
@@ -190,7 +201,9 @@ BarWidget.SpawnVehicleExitButton = function(self)
 	end
 	
 	VehicleExitButton.PostLeave = function(self) 
-		GameTooltip:Hide()
+		if (not GameTooltip:IsForbidden()) then
+			GameTooltip:Hide()
+		end
 	end
 
 	VehicleExitButton:SetAttribute("type", "macro")
@@ -243,6 +256,9 @@ BarWidget.SpawnTaxiExitButton = function(self)
 	TaxiExitButton.Disabled:SetTexture(visualConfig.textures.disabled)
 	
 	TaxiExitButton.PostEnter = function(self)
+		if GameTooltip:IsForbidden() then
+			return
+		end
 		if UnitOnTaxi("player") then
 			GameTooltip_SetDefaultAnchor(GameTooltip, self)
 			GameTooltip:SetText(TAXI_CANCEL, 1, 1, 1)
@@ -252,7 +268,9 @@ BarWidget.SpawnTaxiExitButton = function(self)
 	end
 	
 	TaxiExitButton.PostLeave = function(self) 
-		GameTooltip:Hide()
+		if (not GameTooltip:IsForbidden()) then
+			GameTooltip:Hide()
+		end
 	end
 
 	TaxiExitButton.PostClick = function(self, button)

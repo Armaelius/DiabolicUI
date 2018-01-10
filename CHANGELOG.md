@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.78] 2017-01-10
+### Changed
+- No attempts should be made to show, hide or move the GameTooltip if it's become protected by Blizzard's faulty Legion 7.3 nameplates anymore.
+
 ## [1.3.77] 2017-01-07
 ### Added
 - Added /rl /reload and /reloadui as ReloadUI() chat commands to all client versions.
