@@ -252,6 +252,9 @@ end
 --------------------------------------------------------------------
 local UpdateTooltip
 UpdateTooltip = function(self)
+	if self:IsForbidden() then
+		return
+	end
 	if (GetCVar("UberTooltips") == "1") then
 		GameTooltip_SetDefaultAnchor(GameTooltip, self)
 	else
@@ -418,7 +421,7 @@ Button.Update = function(self)
 
 	self:UpdateFlyout()
 
-	if (GameTooltip:GetOwner() == self) then
+	if (not GameTooltip:IsForbidden()) and (GameTooltip:GetOwner() == self) then
 		UpdateTooltip(self)
 	end
 
@@ -1184,7 +1187,7 @@ ActionButton.IsAutoRepeat				= function(self) return IsAutoRepeatAction(self.act
 ActionButton.IsUsable					= function(self) return IsUsableAction(self.action_by_state) end
 ActionButton.IsConsumableOrStackable	= function(self) return IsConsumableAction(self.action_by_state) or IsStackableAction(self.action_by_state) or (ENGINE_MOP and (not IsItemAction(self.action_by_state) and GetActionCount(self.action_by_state) > 0)) end
 ActionButton.IsUnitInRange				= function(self, unit) return IsActionInRange(self.action_by_state, unit) end
-ActionButton.SetTooltip					= function(self) return GameTooltip:SetAction(self.action_by_state) end
+ActionButton.SetTooltip					= function(self) return (not GameTooltip:IsForbidden()) and GameTooltip:SetAction(self.action_by_state) end
 ActionButton.GetSpellId					= function(self)
 	local actionType, id, subType = GetActionInfo(self.action_by_state)
 	if (actionType == "spell") then
@@ -1213,7 +1216,7 @@ SpellButton.IsAutoRepeat				= function(self) return IsAutoRepeatSpell(FindSpellB
 SpellButton.IsUsable					= function(self) return IsUsableSpell(self.action_by_state) end
 SpellButton.IsConsumableOrStackable		= function(self) return IsConsumableSpell(self.action_by_state) end
 SpellButton.IsUnitInRange				= function(self, unit) return IsSpellInRange(FindSpellBookSlotBySpellID(self.action_by_state), "spell", unit) end -- needs spell book id as of 4.0.1.13066
-SpellButton.SetTooltip					= function(self) return GameTooltip:SetSpellByID(self.action_by_state) end
+SpellButton.SetTooltip					= function(self) return (not GameTooltip:IsForbidden()) and GameTooltip:SetSpellByID(self.action_by_state) end
 SpellButton.GetSpellId					= function(self) return self.action_by_state end
 
 
@@ -1233,7 +1236,7 @@ ItemButton.IsConsumableOrStackable		= function(self)
 	return IsConsumableItem(self.action_by_state) or (stackSize and (stackSize > 1))
 end
 ItemButton.IsUnitInRange				= function(self, unit) return IsItemInRange(self.action_by_state, unit) end
-ItemButton.SetTooltip					= function(self) return GameTooltip:SetHyperlink(self.action_by_state) end
+ItemButton.SetTooltip					= function(self) return (not GameTooltip:IsForbidden()) and GameTooltip:SetHyperlink(self.action_by_state) end
 ItemButton.GetSpellId					= function(self) return nil end
 
 
@@ -1297,7 +1300,7 @@ StanceButton.GetActionText 				= function(self) return select(2,GetShapeshiftFor
 StanceButton.GetTexture 				= function(self) return GetShapeshiftFormInfo(self.id) end
 StanceButton.IsCurrentlyActive 			= function(self) return select(3,GetShapeshiftFormInfo(self.id)) end
 StanceButton.IsUsable 					= function(self) return select(4,GetShapeshiftFormInfo(self.id)) end
-StanceButton.SetTooltip					= function(self) return GameTooltip:SetShapeshift(self.id) end
+StanceButton.SetTooltip					= function(self) return (not GameTooltip:IsForbidden()) and GameTooltip:SetShapeshift(self.id) end
 
 
 -- returns an iterator containing button frame handles as keys

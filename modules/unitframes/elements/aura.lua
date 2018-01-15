@@ -106,6 +106,9 @@ Aura.OnEnter = function(self)
 	if not UnitExists(unit) then
 		return
 	end
+	if GameTooltip:IsForbidden() then
+		return
+	end
 
 	GameTooltip_SetDefaultAnchor(GameTooltip, self)
 
@@ -399,6 +402,9 @@ local SetPosition = function(self, visible)
 end
 
 local UpdateTooltip = function(self, event, ...)
+	if GameTooltip:IsForbidden() then
+		return
+	end
 	if (event == "MODIFIER_STATE_CHANGED") and ((arg1 == "LSHIFT") or (arg1 == "RSHIFT")) then
 		if GameTooltip:IsShown() and auraCache[GameTooltip:GetOwner()] then 
 			GameTooltip:GetOwner():UpdateTooltip()

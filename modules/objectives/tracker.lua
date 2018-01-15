@@ -4,6 +4,11 @@ local L = Engine:GetLocale()
 local C = Engine:GetDB("Data: Colors")
 --local QuestZones = Engine:GetDB("Data: QuestZones") -- not currently in use
 
+-- Register incompabilities
+Module:SetIncompatible("!KalielsTracker")
+Module:SetIncompatible("EskaQuestTracker")
+Module:SetIncompatible("rObjectiveTracker")
+
 -- Lua API
 local _G = _G
 local bit_band = bit.band
@@ -645,6 +650,9 @@ MinMaxButton.OnClick = function(self, mouseButton)
 			self.currentState = "maximized"
 			self.title:Place(unpack(self.title.position))
 			PlaySoundKitID(SOUNDKIT.IG_QUEST_LIST_OPEN, "SFX")
+		end
+		if GameTooltip:IsForbidden() then
+			return
 		end
 		if GameTooltip:IsShown() and (GameTooltip:GetOwner() == self) then
 			self:OnEnter()

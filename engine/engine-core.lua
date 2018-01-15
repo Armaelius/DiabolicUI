@@ -99,6 +99,7 @@ local scale = {} -- screen resolution and UI scale data (not used?)
 local keyWords = {} -- keyword registry to translate words to frame handles used for anchoring or parenting
 
 local incompats = {} -- table holding module/widget/handler incompatibilities
+local dependencies = {} -- table holding module/widget/handler dependencies
 
 -------------------------------------------------------------
 -- Flags and other values meant to be read-only
@@ -975,7 +976,7 @@ local Update = function(self, event, ...)
 end
 
 local Init = function(self, ...)
-	if self:IsIncompatible() then
+	if (self:IsIncompatible() or self:DependencyFailed()) then
 		return
 	end
 	if (not initializedObjects[self]) then 
@@ -987,7 +988,7 @@ local Init = function(self, ...)
 end
 
 local Enable = function(self, ...)
-	if self:IsIncompatible() then
+	if (self:IsIncompatible() or self:DependencyFailed()) then
 		return
 	end
 	if (not enabledObjects[self]) then 
@@ -1052,6 +1053,27 @@ local IsIncompatible = function(self)
 	return false
 end
 
+local DependencyFailed = function(self)
+	if (not dependencies[self]) then
+		return false
+	end
+	local dependencyFailed = false
+	for addonName, condition in pairs(dependencies[self]) do
+		if (type(condition) == "function") then
+			if Engine:IsAddOnEnabled(addonName) then
+				if (not condition(self)) then
+					dependencyFailed = true
+				end
+			end
+		else
+			if (not Engine:IsAddOnEnabled(addonName)) then
+				dependencyFailed = true
+			end
+		end
+	end
+	return dependencyFailed
+end
+
 local SetIncompatible = function(self, ...)
 	if (not incompats[self]) then
 		incompats[self] = {}
@@ -1076,6 +1098,30 @@ local SetIncompatible = function(self, ...)
 	end
 end
 
+local SetDependency = function(self, ...)
+	if (not dependencies[self]) then
+		dependencies[self] = {}
+	end
+	local numArgs = select("#", ...)
+	local currentArg = 1
+
+	while currentArg <= numArgs do
+		local addonName = select(currentArg, ...)
+		self:Check(addonName, currentArg, "string")
+
+		local condition
+		if (numArgs > currentArg) then
+			local nextArg = select(currentArg + 1, ...)
+			if (type(nextArg) == "function") then
+				condition = nextArg
+				currentArg = currentArg + 1
+			end
+		end
+		currentArg = currentArg + 1
+		dependencies[self][addonName] = condition and condition or true
+	end
+end
+
 -- core object that all inherits from
 local corePrototype = {
 	Check = check,
@@ -1091,6 +1137,8 @@ local corePrototype = {
 	IsMessageRegistered = IsMessageRegistered,
 	SetIncompatible = SetIncompatible,
 	IsIncompatible = IsIncompatible,
+	SetDependency = SetDependency,
+	DependencyFailed = DependencyFailed,
 	SendMessage = Fire,
 	GetHandler = GetHandler,
 	GetModule = GetModule,
