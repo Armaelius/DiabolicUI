@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.81] 2017-01-17
+### Changed
+- Changed the quest sorting in the custom tracker. Primary Profession Quests in the current map zone will now appear at the top of the list, followed by any normal quests in the current map zone, followed by any World Quests in the current map zone, and finally Emissary and Elite World Quests in the current map zone. The philosophy behind this is that quests you have specifically picked up should have a higher visual priority than repeatable World Quests. Super tracking is not yet affected by this new filtering, but it will be updated in the near future.
+
 ## [1.3.80] 2017-01-17
 ### Fixed
 - Added updated Legion 7.3.5 Minimap Blip Textures. All the icons inside the Minimap like quest givers, vendors, mailbox and so on should work again now. 

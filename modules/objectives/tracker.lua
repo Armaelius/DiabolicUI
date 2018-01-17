@@ -632,6 +632,57 @@ local sortFunction = function(a,b)
 
 end
 
+local sortFunctionWQLast = function(a,b)
+
+	-- This happens, no idea why. Appears to have something to do with nested tables.
+	if (not b) then 
+		return true 
+	end
+
+	-- Emissary Quests(ALWAYS first) > World Quests > Normal Quests > Elite World Quests > Completed Quests(ALWAYS last)
+	if a.isComplete or b.isComplete then
+		if a.isComplete == b.isComplete then
+			return a.questTitle < b.questTitle
+		else
+			return not a.isComplete
+		end
+
+	elseif a.isNormalQuest or b.isNormalQuest then
+		if a.isNormalQuest == b.isNormalQuest then
+			if a.isProfessionQuest or b.isProfessionQuest then
+				if a.isProfessionQuest == b.isProfessionQuest then
+					return sortByLevelAndName(a,b)
+				else
+					return a.isProfessionQuest
+				end
+			else 
+				return sortByLevelAndName(a,b)
+			end
+		else
+			return a.isNormalQuest
+		end
+	else
+		local aWQ = a.isWorldQuest and (not a.isElite)
+		local bWQ = b.isWorldQuest and (not b.isElite)
+		if aWQ or bWQ then
+			if aWQ == bWQ then
+				return sortByProximity(a,b)
+			else
+				return aWQ
+			end
+		else
+			if a.isEmissaryQuest or b.isEmissaryQuest then
+				if a.isEmissaryQuest == b.isEmissaryQuest then
+					return sortByProximity(a,b)
+				else
+					return a.isEmissaryQuest
+				end
+			else
+				return sortByLevelAndName(a,b)
+			end
+		end
+	end
+end
 
 -- Maximize/Minimize button Template
 -----------------------------------------------------
@@ -1906,7 +1957,8 @@ Module.UpdateTrackerEntries = function(self)
 
 	-- Sort it to something more readable
 	if (#sortedTrackedQuests > 1) then
-		table_sort(sortedTrackedQuests, sortFunction)
+		--table_sort(sortedTrackedQuests, sortFunction)
+		table_sort(sortedTrackedQuests, sortFunctionWQLast)
 	end
 
 	-- Update the tracker display
@@ -2288,6 +2340,10 @@ Module.GatherQuestLogData = function(self, forced)
 	-- Store the user/wow selected quest in the questlog
 	local selection = GetQuestLogSelection()
 
+	-- Profession name info
+	local prof1, prof2 = GetProfessions()
+	local profName1, profName2 = prof1 and GetProfessionInfo(prof1), prof2 and GetProfessionInfo(prof2)
+
 	-- Debugging shows this is working succesfully, picking up both added and removed quests. 
 	-- My update problem is NOT here
 	for questLogIndex = 1, numEntries do
@@ -2431,6 +2487,7 @@ Module.GatherQuestLogData = function(self, forced)
 			currentQuestData.questLogIndex = questLogIndex 
 			currentQuestData.isEmissaryQuest = emissaryQuestIDs[questID]
 			currentQuestData.isNormalQuest = not emissaryQuestIDs[questID]
+			currentQuestData.isProfessionQuest = questHeader and (questHeader == profName1 or questHeader == profName2)
 
 			-- If anything was updated within this quest, report it back
 			if (currentQuestData.updateDescription) then
