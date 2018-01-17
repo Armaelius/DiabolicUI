@@ -2,8 +2,8 @@ local ADDON, Engine = ...
 local Module = Engine:NewModule("Blizzard: Containers")
 local C = Engine:GetDB("Data: Colors")
 
--- Bail out if the standalone is enabled
 Module:SetIncompatible("BlizzardBagsPlus")
+Module:SetIncompatible("Backpacker")
 
 -- Lua API
 local _G = _G

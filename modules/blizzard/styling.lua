@@ -10,6 +10,9 @@ local string_find = string.find
 local string_split = string.split
 local unpack = unpack
 
+-- Ignore the container frames if one of our standalone bag addons are loaded
+local Backpacker = not(Engine:IsAddOnEnabled("Backpacker") or Engine:IsAddOnEnabled("BlizzardBagsPlus")) or nil
+
 -- List of elements to be styled
 local elements = {
 	["CharacterFrame"] = true,
@@ -21,19 +24,19 @@ local elements = {
 	["CharacterFrameTab3"] = true,
 	["CharacterFrameTab4"] = true,
 	["CharacterFrameTab5"] = true,
-	["ContainerFrame1"] = true,
-	["ContainerFrame2"] = true,
-	["ContainerFrame3"] = true,
-	["ContainerFrame4"] = true,
-	["ContainerFrame5"] = true,
-	["ContainerFrame6"] = true,
-	["ContainerFrame7"] = true,
-	["ContainerFrame8"] = true,
-	["ContainerFrame9"] = true,
-	["ContainerFrame10"] = true,
-	["ContainerFrame11"] = true,
-	["ContainerFrame12"] = true,
-	["ContainerFrame13"] = true,
+	["ContainerFrame1"] = Backpacker,
+	["ContainerFrame2"] = Backpacker,
+	["ContainerFrame3"] = Backpacker,
+	["ContainerFrame4"] = Backpacker,
+	["ContainerFrame5"] = Backpacker,
+	["ContainerFrame6"] = Backpacker,
+	["ContainerFrame7"] = Backpacker,
+	["ContainerFrame8"] = Backpacker,
+	["ContainerFrame9"] = Backpacker,
+	["ContainerFrame10"] = Backpacker,
+	["ContainerFrame11"] = Backpacker,
+	["ContainerFrame12"] = Backpacker,
+	["ContainerFrame13"] = Backpacker,
 	["GroupFinderFrame"] = true, 
 	["GroupFinderFrameGroupButton1"] = true, 
 	["GroupFinderFrameGroupButton2"] = true, 
@@ -161,7 +164,6 @@ local whiteList = {
 	["SpellBookPage1"] = true,
 	["SpellBookPage2"] = true,
 
-
 	["PlayerTalentFramePortrait"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameSpecializationLearnButtonText"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameSpecializationSpellScrollFrameScrollChild.gradient"] = "Blizzard_TalentUI",
@@ -183,8 +185,6 @@ local whiteList = {
 	["PVPQueueFrameCategoryButton3.Icon"] = "Blizzard_PVPUI",
 	["PVPQueueFrameCategoryButton4.Icon"] = "Blizzard_PVPUI",
 	["WarGameStartButtonText"] = "Blizzard_PVPUI"
-
-
 } 
 
 -- Elements we'll hide
@@ -208,7 +208,6 @@ local blackList = {
 	["PlayerTalentFrameSpecializationSpecButton2Glow"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameSpecializationSpecButton3Glow"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameSpecializationSpecButton4Glow"] = "Blizzard_TalentUI"
-
 }
 
 -- Frames that'll have nameless child elements styled too.

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.80] 2017-01-17
+### Fixed
+- Added updated Legion 7.3.5 Minimap Blip Textures. All the icons inside the Minimap like quest givers, vendors, mailbox and so on should work again now. 
+
 ## [1.3.79] 2017-01-15
 ### Changed
 - More fixes to the GameTooltip to work around Blizzard's faulty Legion 7.3 nameplate protected tooltip bug.

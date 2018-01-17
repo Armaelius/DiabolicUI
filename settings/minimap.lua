@@ -3,6 +3,7 @@ local C = Engine:GetDB("Data: Colors")
 local path = ([[Interface\AddOns\%s\media\]]):format(Addon)
 
 -- WoW Client Constants
+local ENGINE_LEGION_735 = Engine:IsBuild("7.3.5")
 local ENGINE_LEGION_730 = Engine:IsBuild("7.3.0")
 local ENGINE_LEGION_725 = Engine:IsBuild("7.2.5")
 local ENGINE_LEGION_715 = Engine:IsBuild("7.1.5")
@@ -18,6 +19,15 @@ local mapSize = origSize * mapScale
 local mapTexSize = 512 * (mapSize / origSize)
 local mapOffset = math.floor((origSize - mapSize)/2)
 
+-- Show Blizzard's Blip Textures
+--local blips = UIParent:CreateTexture(nil, "ARTWORK")
+--blips:SetSize(512,512)
+--blips:SetTexture([[Interface\Minimap\ObjectIconsAtlas]])
+--blips:SetPoint("CENTER")
+--local blipBackdrop = UIParent:CreateTexture(nil, "BORDER")
+--blipBackdrop:SetAllPoints(blips)
+--blipBackdrop:SetColorTexture(.15,.15,.15,1)
+
 Engine:NewStaticConfig("Minimap", {
 	size = { mapSize, mapSize }, 
 	point = { "TOPRIGHT", "UICenter", "TOPRIGHT", -(20 + mapOffset), -84 }, 
@@ -25,7 +35,8 @@ Engine:NewStaticConfig("Minimap", {
 		size = { mapSize, mapSize }, 
 		point = { "CENTER", 0, 0 },
 		mask = path..[[textures\DiabolicUI_MinimapCircularMaskSemiTransparent.tga]],
-		blips = ENGINE_LEGION_730 and path..[[textures\Blip-Nandini-New-730.tga]] -- Legion 7.3.0
+		blips = ENGINE_LEGION_735 and path..[[textures\Blip-Nandini-New-735.tga]] -- Legion 7.3.5  -- [[Interface\Minimap\ObjectIconsAtlas]]
+			or ENGINE_LEGION_730 and path..[[textures\Blip-Nandini-New-730.tga]] -- Legion 7.3.0
 			or ENGINE_LEGION_725 and path..[[textures\Blip-Nandini-New-725.tga]] -- Legion 7.2.5 
 			or ENGINE_LEGION_715 and path..[[textures\Blip-Nandini-New-715.tga]] -- Legion 7.1.5 (WoW-Freakz)
 			or ENGINE_WOD and path..[[textures\Blip-Nandini-New-622.tga]] -- late WoD
