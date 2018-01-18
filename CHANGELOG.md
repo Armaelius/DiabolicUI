@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.83] 2017-01-19
+### Added
+- The WorldMap's map textures are now slightly toned down and colorized to allow the overlay objective icons to stand more out. 
+- The QueueStatusButton's tooltip in Legion should now be styled similarly to the rest of the UI.
+
 ## [1.3.82] 2017-01-18
 ### Changed
 - The DiabolicUI nameplates now also disable themselves if the addon TidyPlates_ThreatPlates is loaded.

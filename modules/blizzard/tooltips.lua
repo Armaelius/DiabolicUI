@@ -168,7 +168,8 @@ local tooltips = {
 	"EventTraceTooltip",
 	"FrameStackTooltip",
 	"PetBattlePrimaryUnitTooltip",
-	"PetBattlePrimaryAbilityTooltip"
+	"PetBattlePrimaryAbilityTooltip",
+	"QueueStatusFrame"
 }	
 
 -- Textures in the combat pet tooltips
