@@ -10,6 +10,7 @@ local UICenter = Engine:GetFrame()
 
 -- Register incompatibilities
 Module:SetIncompatible("TidyPlates")
+Module:SetIncompatible("TidyPlates_ThreatPlates")
 Module:SetIncompatible("Kui_Nameplates")
 
 -- Hack'ish manual disable switch. 
