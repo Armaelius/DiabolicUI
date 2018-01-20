@@ -894,7 +894,10 @@ Engine:NewStaticConfig("ActionBars", {
 							pushed = path .. [[textures\DiabolicUI_UIButton_61x55_Pushed.tga]]
 						}
 					},
-					
+					people = {
+						normalFont = DiabolicFont_SansBold10Gray,
+						position = { "BOTTOMLEFT", 6, -20  } -- relative to the chatmenu's menubutton
+					}
 				},
 				menu = {
 					button = {
@@ -911,8 +914,11 @@ Engine:NewStaticConfig("ActionBars", {
 							pushed = path .. [[textures\DiabolicUI_UIButton_61x55_Pushed.tga]]
 						}
 					},
-					
-				}
+					people = {
+						normalFont = DiabolicFont_SansBold14Title,
+						position = { "BOTTOMRIGHT", -12, 12  } -- relative to the socialmenu's menubutton
+					}
+				},
 			},
 			main = {
 				-- Top level objects are menubuttons onscreen

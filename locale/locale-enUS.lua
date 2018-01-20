@@ -80,6 +80,9 @@ L["Chat"] = true
 L["<Left-click> or <Enter> to chat."] = true
 L["Friends & Guild"] = true
 L["<Left-click> to toggle social frames."] = true
+L["<Right-click> to toggle Guild frame."] = true
+L["Guild Members Online:"] = true 
+L["Friends Online:"] = true
 
 -- actionbar menu
 --L["Action Bars"] = true

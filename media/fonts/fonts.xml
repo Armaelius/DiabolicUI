@@ -160,8 +160,11 @@
 			<Color r="0" g="0" b="0" a="1"/>
 		</Shadow>
 		<FontHeight><AbsValue val="14"/></FontHeight>
-	</Font>
-	<Font name="DiabolicFont_SansBold16" font="Interface\AddOns\DiabolicUI\media\fonts\NotoSans-Bold.ttf" justifyH="LEFT" virtual="true">
+		</Font>
+		<Font name="DiabolicFont_SansBold14Title" inherits="DiabolicFont_SansBold14" justifyH="CENTER" justifyV="BOTTOM" virtual="true">
+			<Color r="1.0" g="0.917647058824" b="0.537254901961"/>
+		</Font>
+	<Font name="DiabolicFont_SansBold16" font="Interface\AddOns\DiabolicUI\media\fonts\NotoSans-Bold.ttf" justifyH="LEFT" virtual="true">	
 		<Shadow>
 			<Offset><AbsDimension x="-1.0" y="-1.0"/></Offset>
 			<Color r="0" g="0" b="0" a="1"/>

@@ -108,7 +108,8 @@ Updater.OnUpdate = function(self, elapsed)
 	-- bubbles[bubble], bubbles[bubble].text = our custom bubble and message
 	local scale = WorldFrame:GetHeight()/UIParent:GetHeight()
 	for bubble in pairs(bubbles) do
-		if bubble:IsShown() then
+		local msg = bubble and bubble.text:GetText()
+		if bubble:IsShown() and msg and (msg ~= "") then
 			-- continuing the fight against overlaps blending into each other! 
 			bubbles[bubble]:SetFrameLevel(bubble:GetFrameLevel()) -- this works?
 			

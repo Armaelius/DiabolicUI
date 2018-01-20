@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.85] 2017-01-20
+### Added
+- The Friends & Guild menubutton in the bottom left corner of the screen will now show online guild members and friends in the tooltip, as well as showing a count for total number of online friends and guild members (yourself excluded) on the button itself.
+- Added your current money in gold/silver/copper beneath the chat/social menu buttons in the bottom left corner of the screen.
+
+### Changed
+- The chat bubble module will now hide its bubbles if the bubble message is nil or empty. This is to allow other addons and modules to filter or hide the DiabolicUI bubbles by modifying the text in the original blizzard bubble. 
+
 ## [1.3.84] 2017-01-20
 ### Added
 - The stance bar toggle button should now cancel any non-normal stance or form when right-clicked, while keeping it's normal toggle behavior when left-clicked as before. The tooltip updates dynamically to reflect whether or not there are any active forms or stances to cancel.

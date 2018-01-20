@@ -13,6 +13,9 @@ local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundK
 -- WoW Frames & Objects
 local GameTooltip = _G.GameTooltip
 
+-- WoW Client Constants
+local ENGINE_CATA = Engine:IsBuild("Cata")
+
 MenuWidget.Skin = function(self, button, config, icon)
 	local icon_config = Module.config.visuals.menus.icons
 
@@ -148,9 +151,27 @@ MenuWidget.OnEnable = function(self)
 		if GameTooltip:IsForbidden() then
 			return
 		end
+
+		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
+		local numberOfFriends, onlineFriends = GetNumFriends() 
+		local numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+
 		GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 6, 16)
-		GameTooltip:AddLine(Engine:IsBuild("Cata") and FRIENDS or L["Friends & Guild"])
+		GameTooltip:AddLine(((numTotalGuildMembers > 0) or (not ENGINE_CATA)) and L["Friends & Guild"] or FRIENDS)
+
+		if (numGuildies > 1) or (onlineFriends > 0) then
+			GameTooltip:AddLine(" ")
+			if (numGuildies > 1) then
+				GameTooltip:AddDoubleLine(L["Guild Members Online:"], numGuildies, 1,1,1,1,.82,0)
+			end
+			if (onlineFriends > 0) then
+				GameTooltip:AddDoubleLine(L["Friends Online:"], onlineFriends, 1,1,1,1,.82,0)
+			end
+			GameTooltip:AddLine(" ")
+		end
+
 		GameTooltip:AddLine(L["<Left-click> to toggle social frames."], 0, .7, 0)
+		GameTooltip:AddLine(L["<Right-click> to toggle Guild frame."], 0, .7, 0)
 		GameTooltip:Show()
 	end
 	SocialButton:SetScript("OnEnter", SocialButton.OnEnter)
@@ -161,7 +182,63 @@ MenuWidget.OnEnable = function(self)
 		GameTooltip:Hide() 
 	end)
 	
-	SocialButton.OnClick = FriendsMicroButton:GetScript("OnClick")
+	SocialButton.OnClick = function(self, button)
+		if (button == "LeftButton") then
+			FriendsMicroButton:GetScript("OnClick")(FriendsMicroButton, button)
+		elseif (button == "RightButton") then
+			GuildMicroButton:GetScript("OnClick")(GuildMicroButton, button)
+		end 
+	end
 	SocialButton:SetAttribute("_onclick", [[ control:CallMethod("OnClick", button); ]])
+
+
+	-- Texts
+	---------------------------------------------
+	local Gold = ChatButton:CreateFontString()
+	Gold:SetDrawLayer("ARTWORK")
+	Gold:SetFontObject(input_config.people.normalFont)
+	Gold:SetPoint(unpack(input_config.people.position))
+	ChatButton.Gold = Gold
+
+	ChatButton:SetScript("OnEvent", function(self, event, ...) 
+		local money = GetMoney()
+		self.Gold:SetFormattedText(("%d|cffc98910g|r %d|cffa8a8a8s|r %d|cffb87333c|r"):format(money / 100 / 100, (money / 100) % 100, money % 100))
+		--self.Gold:SetFormattedText(("|cffc98910%d|r . |cffa8a8a8%d|r . |cffb87333%d|r"):format(money / 100 / 100, (money / 100) % 100, money % 100))
+	end)
+
+	ChatButton:RegisterEvent("PLAYER_MONEY")
+	ChatButton:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+
+	local People = SocialButton:CreateFontString()
+	People:SetDrawLayer("ARTWORK")
+	People:SetFontObject(menu_config.people.normalFont)
+	People:SetPoint(unpack(menu_config.people.position))
+
+	local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
+	local numberOfFriends, onlineFriends = GetNumFriends() 
+
+	SocialButton.numFriends = onlineFriends
+	SocialButton.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+	SocialButton.totalGuildies = numTotalGuildMembers
+	SocialButton.People = People
+
+	SocialButton:SetScript("OnEvent", function(self, event, ...) 
+		local arg1 = ...
+
+		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
+		local numberOfFriends, onlineFriends = GetNumFriends() 
+		local numPeople = self.numFriends + self.numGuildies
+
+		self.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+		self.totalGuildies = numTotalGuildMembers
+		self.numFriends = onlineFriends
+		self.People:SetText(numPeople > 1 and numPeople or "")
+	end)
+
+	SocialButton:RegisterEvent("GUILD_ROSTER_UPDATE")
+	SocialButton:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+
 
 end
