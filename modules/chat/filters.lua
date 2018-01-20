@@ -9,9 +9,6 @@ local ChatFrame_AddMessageEventFilter = _G.ChatFrame_AddMessageEventFilter
 local ChatFrame_RemoveMessageEventFilter = _G.ChatFrame_RemoveMessageEventFilter
 
 
--- WoW Client Constants
-local ENGINE_LEGION_FELSONG = Engine:IsBuild("7.1.5") and (not Engine:IsBuild("7.2.0")) and (GetRealmName() == "Felsong")
-
 Module.SetupRealmExceptions = ENGINE_LEGION_FELSONG and function(self)
 end
 

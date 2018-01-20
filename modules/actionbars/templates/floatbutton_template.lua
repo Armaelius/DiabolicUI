@@ -163,6 +163,11 @@ local buttonEmbeds = {
 		OnClick = FloatButton.OnClick,
 		SetClickTarget = FloatButton.SetClickTarget,
 		UpdateLayers = FloatButton.UpdateLayers
+	},
+	ActionClick = {
+		OnClick = FloatButton.OnClick,
+		SetClickTarget = FloatButton.SetClickTarget,
+		UpdateLayers = FloatButton.UpdateLayers
 	}
 }
 

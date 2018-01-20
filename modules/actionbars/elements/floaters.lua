@@ -106,7 +106,7 @@ end
 BarWidget.SpawnStanceBarButton = function(self)
 	local visualConfig = Module.config.visuals.floaters.stance
 
-	local StanceBarButton = FloatButton:New("Click", self:GetFrame(), "EngineStanceBarButton")
+	local StanceBarButton = FloatButton:New("Click", self:GetFrame(), "EngineStanceBarButton") 
 	StanceBarButton:Hide()
 	StanceBarButton:SetFrameLevel(10)
 	StanceBarButton:SetSize(unpack(visualConfig.size))
@@ -135,6 +135,12 @@ BarWidget.SpawnStanceBarButton = function(self)
 		GameTooltip_SetDefaultAnchor(GameTooltip, self)
 		GameTooltip:SetText(L["Stances"], 1, 1, 1)
 		GameTooltip:AddLine(L["<Left-click> to toggle stance bar."], unpack(C.General.OffGreen))
+
+		local form = GetShapeshiftForm(true)
+		if (form and (form ~= 0)) then 
+			GameTooltip:AddLine(L["<Right-click> to cancel current form."], unpack(C.General.OffGreen))
+		end
+
 		GameTooltip:Show()
 	end
 	
@@ -145,6 +151,28 @@ BarWidget.SpawnStanceBarButton = function(self)
 	end
 
 	StanceBarButton:SetClickTarget(Module:GetWidget("Bar: Stance"):GetFrame())
+
+	local ProxyButton = CreateFrame("Button", nil, StanceBarButton, "SecureActionButtonTemplate")
+	ProxyButton:RegisterForClicks("AnyUp")
+	ProxyButton:SetAllPoints()
+	ProxyButton:SetAttribute("type1", "click")
+	ProxyButton:SetAttribute("clickbutton1", StanceBarButton)
+	ProxyButton:SetAttribute("type2", "macro")
+	ProxyButton:SetAttribute("macrotext", "/cancelform [form]")
+	ProxyButton:SetScript("OnEnter", function() StanceBarButton:GetScript("OnEnter")(StanceBarButton) end)
+	ProxyButton:SetScript("OnLeave", function() StanceBarButton:GetScript("OnLeave")(StanceBarButton) end)
+
+	ProxyButton:SetScript("OnEvent", function(self)
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		if (GameTooltip:GetOwner() == StanceBarButton) then
+			self:GetScript("OnEnter")()
+		end
+	end)
+	ProxyButton:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
+	ProxyButton:RegisterEvent("UPDATE_SHAPESHIFT_FORMS")
+	ProxyButton:RegisterEvent("UPDATE_SHAPESHIFT_USABLE")
 
 	-- Events needed to track stance button visibilty
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateStanceButtonVisibility")

@@ -43,6 +43,7 @@ There are thousands of users, but most are content to simply download and use th
 
 * Discord: [Mqnrr8t](https://discord.gg/Mqnrr8t)
 * Facebook: [@cogwerkz](https://www.facebook.com/cogwerkz)
+* Twitter: [@CogwerkzUI](https://twitter.com/CogwerkzUI)
 
 ## Buy me a beer
 

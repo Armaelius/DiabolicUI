@@ -112,6 +112,7 @@ L["<Left-Click to toggle Honor Talents Window>"] = true
 -- floating buttons
 L["Stances"] = true
 L["<Left-click> to toggle stance bar."] = true
+L["<Right-click> to cancel current form."] = true
 L["<Left-click> to leave the vehicle."] = true
 
 -- added to the interface options menu in WotLK

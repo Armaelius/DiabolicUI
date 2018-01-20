@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.84] 2017-01-20
+### Added
+- The stance bar toggle button should now cancel any non-normal stance or form when right-clicked, while keeping it's normal toggle behavior when left-clicked as before. The tooltip updates dynamically to reflect whether or not there are any active forms or stances to cancel.
+- Added a twitter link to the GitHub README file.
+
+### Removed
+- Removed the fix for the "Not enough players" spam on the Felsong realm, as this has been moved to a separate addon specifically targeting Felsong bugs and annoyances. Get it at https://github.com/cogwerkz/Felsong_Companion
+
 ## [1.3.83] 2017-01-19
 ### Added
 - The WorldMap's map textures are now slightly toned down and colorized to allow the overlay objective icons to stand more out. 

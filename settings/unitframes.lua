@@ -19,6 +19,8 @@ local NUM_VEHICLE_SLOTS = Engine:GetConstant("NUM_VEHICLE_SLOTS") -- number of v
 local padding, bar_padding = 2, 4 -- for the auras
 local petOffset = 10 + BUTTON_SIZE_TRIPLE - 3 -- copied from 'petskulloffset' in the actionbar settings
 
+local orbOffsetX, orbOffsetY = 0, 0 -- -4
+
 Engine:NewStaticConfig("UnitFrames", {
 	structure = {
 		
@@ -29,13 +31,13 @@ Engine:NewStaticConfig("UnitFrames", {
 			health = {
 				shade = {
 					size = { 256, 256 },
-					position = { "BOTTOMLEFT", -256 + (256 - 160)/2 -8, -(256 - 160)/2 -6},
+					position = { "BOTTOMLEFT", orbOffsetX + -256 + (256 - 160)/2 -8, orbOffsetY + -(256 - 160)/2 -6},
 					texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Backdrop.tga]],
 					color = { 0, 0, 0, 1 }
 				},
 				overlay = {
 					size = { 256, 256 },
-					position = { "BOTTOMLEFT", -256 + (256 - 160)/2 -8, -(256 - 160)/2 -6},
+					position = { "BOTTOMLEFT", orbOffsetX + -256 + (256 - 160)/2 -8, orbOffsetY + -(256 - 160)/2 -6},
 					texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Border.tga]],
 					color = { 1, 1, 1, 1 }
 				}
@@ -43,13 +45,13 @@ Engine:NewStaticConfig("UnitFrames", {
 			power = {
 				shade = {
 					size = { 256, 256 },
-					position = { "BOTTOMRIGHT", 256 - (256 - 160)/2 +8, -(256 - 160)/2 -6},
+					position = { "BOTTOMRIGHT", -orbOffsetX + 256 - (256 - 160)/2 +8, orbOffsetY + -(256 - 160)/2 -6},
 					texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Backdrop.tga]],
 					color = { 0, 0, 0, 1 }
 				},
 				overlay = {
 					size = { 256, 256 },
-					position = { "BOTTOMRIGHT", 256 - (256 - 160)/2 +8, -(256 - 160)/2 -6},
+					position = { "BOTTOMRIGHT", -orbOffsetX + 256 - (256 - 160)/2 +8, orbOffsetY + -(256 - 160)/2 -6},
 					texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Border.tga]],
 					color = { 1, 1, 1, 1 }
 				}
@@ -257,7 +259,7 @@ Engine:NewStaticConfig("UnitFrames", {
 				},
 				left = {
 					size = { 140, 140 }, 
-					position = { "BOTTOMLEFT", "Main", "BOTTOMLEFT", -140 + (140 - 160)/2 -8, -(140 - 160)/2 -6 },
+					position = { "BOTTOMLEFT", "Main", "BOTTOMLEFT", orbOffsetX -140 + (140 - 160)/2 -8, orbOffsetY -(140 - 160)/2 -6 },
 					health = {
 						size = { 150, 150 },
 						position = { "CENTER" },
@@ -293,7 +295,7 @@ Engine:NewStaticConfig("UnitFrames", {
 				},
 				right = {
 					size = { 140, 140 },
-					position = { "BOTTOMRIGHT", "Main", "BOTTOMRIGHT", 140 - (140 - 160)/2 +8, -(140 - 160)/2 -6 },
+					position = { "BOTTOMRIGHT", "Main", "BOTTOMRIGHT", orbOffsetX + 140 - (140 - 160)/2 +8, orbOffsetY -(140 - 160)/2 -6 },
 					power = {
 						size = { 150, 150 },
 						position = { "CENTER" },
