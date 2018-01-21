@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.87] 2017-01-21
+### Added
+- Added Mac'Aree, Antoran Wastes, Krokuun and Argus as Legion zones to the tracker. World Quests should be visible while in Argus now. 
+
+### Changed
+- Trying some experimental changes to show Highmountain World Quests while inside Thunder Totem. 
+
 ## [1.3.86] 2017-01-21
 ### Changed
 - Changed how the social button in the bottom left corner displays online Guild Members. It should be updated on first login now. 

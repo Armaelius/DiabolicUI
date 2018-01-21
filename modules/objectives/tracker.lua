@@ -188,8 +188,18 @@ local brokenIslesZones = {
 	1024,	-- Highmountain
 	1017,	-- Stormheim
 	1033,	-- Suramar
-	1018	-- Val'sharah
+	1018,	-- Val'sharah
+	1170, 	-- Mac'Aree
+	1171, 	-- Antoran Wastes
+	1135, 	-- Krokuun
+	1184, 	-- Argus 
+	1080 	-- Thunder Totem
 }
+
+local proxyZones = {
+	[1080] = 1024
+}
+
 
 -- Create a faster lookup table to figure out if we're in a Legion outdoors zone
 -- We're including the main continent map in this lookup table too, 
@@ -1983,6 +1993,7 @@ Module.GatherQuestZoneData = function(self)
 
 		-- Update what zone the player is actually in
 		CURRENT_PLAYER_ZONE = self:GetCurrentMapAreaID() 
+		CURRENT_PLAYER_ZONE = proxyZones[CURRENT_PLAYER_ZONE] or CURRENT_PLAYER_ZONE
 
 	--	needUpdate = true
 	--end
@@ -2011,7 +2022,9 @@ Module.UpdateZoneTracking = function(self)
 	local questMapID = self:GetCurrentMapAreaID()
 
 	-- Store the current map zone
-	CURRENT_MAP_ZONE = questMapID
+	--CURRENT_MAP_ZONE = questMapID
+	CURRENT_MAP_ZONE = proxyZones[questMapID] or questMapID
+	
 
 	local currentZone = CURRENT_MAP_ZONE or CURRENT_PLAYER_ZONE
 

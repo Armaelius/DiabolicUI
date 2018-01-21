@@ -216,6 +216,8 @@ MenuWidget.OnEnable = function(self)
 	People:SetPoint(unpack(menu_config.people.position))
 
 	SocialButton:SetScript("OnEvent", function(self, event, ...) 
+		local arg1 = ...
+
 		if (event == "PLAYER_ENTERING_WORLD") then
 			if IsInGuild() then 
 				GuildRoster()
@@ -223,21 +225,27 @@ MenuWidget.OnEnable = function(self)
 			ShowFriends()
 		end
 
-		local arg1 = ...
-
 		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 		local numberOfFriends, onlineFriends = GetNumFriends() 
-		local numPeople = numberOfFriends + numOnlineAndMobileMembers
-
-		self.People:SetText(numPeople > 1 and numPeople or "")
+	
+		self.numGuildies = numOnlineAndMobileMembers
+		self.numFriends = onlineFriends
+		self.numPeople = self.numFriends + self.numGuildies
+	
+		self.People:SetText(self.numPeople > 1 and self.numPeople or "")
 	end)
 
 	local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 	local numberOfFriends, onlineFriends = GetNumFriends() 
-	local numPeople = numberOfFriends + numOnlineAndMobileMembers
+	local numPeople = onlineFriends + numOnlineAndMobileMembers
+
+	SocialButton.numFriends = onlineFriends
+	SocialButton.numGuildies = numOnlineAndMobileMembers
+	SocialButton.numPeople = onlineFriends + numOnlineAndMobileMembers
 
 	SocialButton.People = People
-	SocialButton.People:SetText(numPeople > 1 and numPeople or "")
+	SocialButton.People:SetText(SocialButton.numPeople > 1 and SocialButton.numPeople or "")
+	
 	SocialButton:RegisterEvent("FRIENDLIST_UPDATE")
 	SocialButton:RegisterEvent("GUILD_RANKS_UPDATE")
 	SocialButton:RegisterEvent("GUILD_ROSTER_UPDATE")
