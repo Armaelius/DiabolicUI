@@ -29,6 +29,8 @@ The following addons will either enhance the functionality of DiabolicUI, or hel
 * [Masque: Goldpaw](http://www.curse.com/addons/wow/masque_goldpaw) - _Button skin pack that can be configured to match DiabolicUI._
 * [Engraved](https://mods.curse.com/addons/wow/engraved) - _Adds combo points, holy power, soul shards etc._ 
 * [MythicPlusTimer](https://mods.curse.com/addons/wow/mythicplustimer) - _Adds mythic+ timer and affix information._ 
+* [Kaliel's Tracker](https://www.curseforge.com/wow/addons/kaliels-tracker) - _Old style manual objectives tracker where you can choose what to track and show, if you dislike the clean, built-in automatic system in DiabolicUI._
+
 
 ## Report bugs, suggest features, development progress
 

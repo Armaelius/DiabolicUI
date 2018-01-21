@@ -215,30 +215,35 @@ MenuWidget.OnEnable = function(self)
 	People:SetFontObject(menu_config.people.normalFont)
 	People:SetPoint(unpack(menu_config.people.position))
 
-	local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
-	local numberOfFriends, onlineFriends = GetNumFriends() 
-
-	SocialButton.numFriends = onlineFriends
-	SocialButton.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
-	SocialButton.totalGuildies = numTotalGuildMembers
-	SocialButton.People = People
-
 	SocialButton:SetScript("OnEvent", function(self, event, ...) 
+		if (event == "PLAYER_ENTERING_WORLD") then
+			if IsInGuild() then 
+				GuildRoster()
+			end
+			ShowFriends()
+		end
+
 		local arg1 = ...
 
 		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 		local numberOfFriends, onlineFriends = GetNumFriends() 
-		local numPeople = self.numFriends + self.numGuildies
+		local numPeople = numberOfFriends + numOnlineAndMobileMembers
 
-		self.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
-		self.totalGuildies = numTotalGuildMembers
-		self.numFriends = onlineFriends
 		self.People:SetText(numPeople > 1 and numPeople or "")
 	end)
 
+	local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
+	local numberOfFriends, onlineFriends = GetNumFriends() 
+	local numPeople = numberOfFriends + numOnlineAndMobileMembers
+
+	SocialButton.People = People
+	SocialButton.People:SetText(numPeople > 1 and numPeople or "")
+	SocialButton:RegisterEvent("FRIENDLIST_UPDATE")
+	SocialButton:RegisterEvent("GUILD_RANKS_UPDATE")
 	SocialButton:RegisterEvent("GUILD_ROSTER_UPDATE")
+	SocialButton:RegisterEvent("GUILDTABARD_UPDATE")
+	SocialButton:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT")
 	SocialButton:RegisterEvent("PLAYER_ENTERING_WORLD")
-
-
+	SocialButton:RegisterEvent("PLAYER_GUILD_UPDATE")
 
 end

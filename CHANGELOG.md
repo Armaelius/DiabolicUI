@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.86] 2017-01-21
+### Changed
+- Changed how the social button in the bottom left corner displays online Guild Members. It should be updated on first login now. 
+
 ## [1.3.85] 2017-01-20
 ### Added
 - The Friends & Guild menubutton in the bottom left corner of the screen will now show online guild members and friends in the tooltip, as well as showing a count for total number of online friends and guild members (yourself excluded) on the button itself.
