@@ -252,7 +252,7 @@ end
 --------------------------------------------------------------------
 local UpdateTooltip
 UpdateTooltip = function(self)
-	if self:IsForbidden() then
+	if GameTooltip:IsForbidden() then
 		return
 	end
 	if (GetCVar("UberTooltips") == "1") then

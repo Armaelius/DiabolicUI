@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.89] 2017-01-25
+### Fixed
+- Fixed a tooltip-related actionbar bug in clients prior to Legion.
+
 ## [1.3.88] 2017-01-25
 ### Changed
 - Improved the money display in the bottom left corner slightly. 
