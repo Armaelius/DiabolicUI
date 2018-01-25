@@ -2354,8 +2354,11 @@ Module.GatherQuestLogData = function(self, forced)
 	local selection = GetQuestLogSelection()
 
 	-- Profession name info
-	local prof1, prof2 = GetProfessions()
-	local profName1, profName2 = prof1 and GetProfessionInfo(prof1), prof2 and GetProfessionInfo(prof2)
+	local prof1, prof2, profName1, profName2
+	if (GetProfessions and GetProfessionInfo) then
+		prof1, prof2 = GetProfessions()
+		profName1, profName2 = prof1 and GetProfessionInfo(prof1), prof2 and GetProfessionInfo(prof2)
+	end
 
 	-- Debugging shows this is working succesfully, picking up both added and removed quests. 
 	-- My update problem is NOT here

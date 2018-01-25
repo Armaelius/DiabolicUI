@@ -4,6 +4,7 @@ local MenuWidget = Module:SetWidget("Menu: Chat")
 local L = Engine:GetLocale()
 
 -- Lua API
+local math_floor = math.floor
 local setmetatable = setmetatable
 
 -- WoW API
@@ -14,6 +15,7 @@ local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundK
 local GameTooltip = _G.GameTooltip
 
 -- WoW Client Constants
+local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_CATA = Engine:IsBuild("Cata")
 
 MenuWidget.Skin = function(self, button, config, icon)
@@ -155,17 +157,18 @@ MenuWidget.OnEnable = function(self)
 		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 		local numberOfFriends, onlineFriends = GetNumFriends() 
 		local numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+		local numFriends = onlineFriends or 0
 
 		GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT", 6, 16)
 		GameTooltip:AddLine(((numTotalGuildMembers > 0) or (not ENGINE_CATA)) and L["Friends & Guild"] or FRIENDS)
 
-		if (numGuildies > 1) or (onlineFriends > 0) then
+		if (numGuildies > 1) or (numFriends > 0) then
 			GameTooltip:AddLine(" ")
 			if (numGuildies > 1) then
 				GameTooltip:AddDoubleLine(L["Guild Members Online:"], numGuildies, 1,1,1,1,.82,0)
 			end
-			if (onlineFriends > 0) then
-				GameTooltip:AddDoubleLine(L["Friends Online:"], onlineFriends, 1,1,1,1,.82,0)
+			if (numFriends > 0) then
+				GameTooltip:AddDoubleLine(L["Friends Online:"], numFriends, 1,1,1,1,.82,0)
 			end
 			GameTooltip:AddLine(" ")
 		end
@@ -202,8 +205,16 @@ MenuWidget.OnEnable = function(self)
 
 	ChatButton:SetScript("OnEvent", function(self, event, ...) 
 		local money = GetMoney()
-		self.Gold:SetFormattedText(("%d|cffc98910g|r %d|cffa8a8a8s|r %d|cffb87333c|r"):format(money / 100 / 100, (money / 100) % 100, money % 100))
-		--self.Gold:SetFormattedText(("|cffc98910%d|r . |cffa8a8a8%d|r . |cffb87333%d|r"):format(money / 100 / 100, (money / 100) % 100, money % 100))
+		local gold = math_floor(money / 100 / 100)
+		local silver = math_floor((money / 100) % 100)
+		local copper = money % 100
+		if (gold > 0) then
+			self.Gold:SetFormattedText("%d|cffc98910g|r %d|cffa8a8a8s|r %d|cffb87333c|r", gold, silver, copper)
+		elseif (silver > 0) then
+			self.Gold:SetFormattedText("%d|cffa8a8a8s|r %d|cffb87333c|r", silver, copper)
+		else 
+			self.Gold:SetFormattedText("%d|cffb87333c|r", copper)
+		end
 	end)
 
 	ChatButton:RegisterEvent("PLAYER_MONEY")
@@ -218,7 +229,7 @@ MenuWidget.OnEnable = function(self)
 	SocialButton:SetScript("OnEvent", function(self, event, ...) 
 		local arg1 = ...
 
-		if (event == "PLAYER_ENTERING_WORLD") then
+		if (event == "PLAYER_ENTERING_WORLD") or (event == "PLAYER_GUILD_UPDATE") then
 			if IsInGuild() then 
 				GuildRoster()
 			end
@@ -228,23 +239,22 @@ MenuWidget.OnEnable = function(self)
 		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 		local numberOfFriends, onlineFriends = GetNumFriends() 
 	
-		self.numGuildies = numOnlineAndMobileMembers
-		self.numFriends = onlineFriends
+		self.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+		self.numFriends = onlineFriends or 0
 		self.numPeople = self.numFriends + self.numGuildies
 	
-		self.People:SetText(self.numPeople > 1 and self.numPeople or "")
+		self.People:SetText(((self.numGuildies > 1) or (self.numFriends > 0)) and self.numPeople or "")
 	end)
 
 	local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 	local numberOfFriends, onlineFriends = GetNumFriends() 
-	local numPeople = onlineFriends + numOnlineAndMobileMembers
 
-	SocialButton.numFriends = onlineFriends
-	SocialButton.numGuildies = numOnlineAndMobileMembers
-	SocialButton.numPeople = onlineFriends + numOnlineAndMobileMembers
+	SocialButton.numFriends = onlineFriends or 0
+	SocialButton.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+	SocialButton.numPeople = SocialButton.numFriends + SocialButton.numGuildies
 
 	SocialButton.People = People
-	SocialButton.People:SetText(SocialButton.numPeople > 1 and SocialButton.numPeople or "")
+	SocialButton.People:SetText(((SocialButton.numGuildies > 1) or (SocialButton.numFriends > 0)) and SocialButton.numPeople or "")
 	
 	SocialButton:RegisterEvent("FRIENDLIST_UPDATE")
 	SocialButton:RegisterEvent("GUILD_RANKS_UPDATE")

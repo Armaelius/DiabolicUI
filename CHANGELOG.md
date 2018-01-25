@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.88] 2017-01-25
+### Changed
+- Improved the money display in the bottom left corner slightly. 
+
+### Fixed
+- The UI should once again work for WotLK and Cata, as incompabilities in the tracker and social button modules have been sorted out.
+
 ## [1.3.87] 2017-01-21
 ### Added
 - Added Mac'Aree, Antoran Wastes, Krokuun and Argus as Legion zones to the tracker. World Quests should be visible while in Argus now. 
