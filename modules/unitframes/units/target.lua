@@ -455,14 +455,14 @@ local PostUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavaila
 			local _, class = UnitClass(unit)
 			r, g, b = unpack(class and C.Class[class] or C.Class.UNKNOWN)
 		elseif UnitPlayerControlled(unit) then
-			if UnitIsFriend(unit, "player") then
+			if UnitIsFriend("player", unit) then
 				r, g, b = unpack(C.Reaction[5])
 			elseif UnitIsEnemy(unit, "player") then
 				r, g, b = unpack(C.Reaction[1])
 			else
 				r, g, b = unpack(C.Reaction[4])
 			end
-		elseif (not UnitIsFriend(unit, "player")) and UnitIsTapDenied(unit) then
+		elseif (not UnitIsFriend("player", unit)) and UnitIsTapDenied(unit) then
 			r, g, b = unpack(C.Status.Tapped)
 		elseif UnitReaction(unit, "player") then
 			r, g, b = unpack(C.Reaction[UnitReaction(unit, "player")])

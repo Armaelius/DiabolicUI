@@ -286,7 +286,24 @@ local elements = {
 			MainMenuExpBar:SetAlpha(0)
 			MainMenuExpBar:SetScale(0.00001)
 			MainMenuExpBar:SetParent(UIHider)
-			
+
+			-- Trying to work around a bug sometimes happening
+			-- on level 20 starter edition characters. 
+			MainMenuExpBar:SetScript("OnShow", nil)
+			MainMenuExpBar:SetScript("OnHide", nil)
+			MainMenuExpBar:SetScript("OnEvent", nil)
+			MainMenuExpBar:SetScript("OnUpdate", nil)
+			MainMenuExpBar:SetScript("OnEnter", nil)
+			MainMenuExpBar:SetScript("OnLeave", nil)
+			MainMenuExpBar:SetScript("OnValueChanged", nil)
+
+			-- Not strictly certain when they added this, 
+			-- so we're going with the most recent expansion only. 
+			-- Chances are this is the only place starter edition accounts exist.
+			if ENGINE_LEGION then
+				SetCVar("xpBarText", 0)
+			end
+
 			if (not ENGINE_MOP) then
 				local BonusActionBarFrame = _G.BonusActionBarFrame
 				local VehicleMenuBar = _G.VehicleMenuBar

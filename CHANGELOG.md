@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.90] 2017-01-27
+### Added
+- Battleground scores, dungeon waves and similar has been added! Visible at the top of the screen, hidden when a target is selected to keep the UI clean. Not movable. Not optional. 
+
+### Changed
+- Changed how the unitframes in some places decided whether or not a unit was friendly to decide bar coloring. This was just a visual change to fix the issue with the NPC nameplates sometimes being differently colored from the unitframes. 
+
+### Fixed
+- Empty actionbuttons in Cata and WotLK clients will no longer have their checked, empty and highlight textures visible all at once until hovered over.
+- Trying to work around a Blizzard XP bar text issue causing a nil bug for Starter Edition characters at level 20 when the UI is reloaded.
+
 ## [1.3.89] 2017-01-25
 ### Fixed
 - Fixed a tooltip-related actionbar bug in clients prior to Legion.

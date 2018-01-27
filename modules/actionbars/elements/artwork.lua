@@ -126,7 +126,7 @@ end
 
 -- Called whenever the visibility of the artwork layers need
 -- to be updated, like when the button is hovered over or checked.
-Button.PostUpdate = function(self)
+Button.PostUpdate = function(self, forced)
 	local hasAction = self:HasAction()
 	local isChecked = self._checked
 	local isHighlighted = self._highlighted
@@ -136,7 +136,7 @@ Button.PostUpdate = function(self)
 	local isHighlightShown = self.isHighlightShown
 
 	-- Bail out if there's no change
-	if (isChecked == isCheckedShown) and (isHighlighted == isHighlightShown) and (hasAction == isActionShown) then
+	if (not forced) and ((isChecked == isCheckedShown) and (isHighlighted == isHighlightShown) and (hasAction == isActionShown)) then
 		return
 	end
 
@@ -260,7 +260,7 @@ Button.UpdateStyle = function(self, STYLE)
 	-- checked border
 	SetTexture(self.border.checked, STYLE.border_checked)
 	SetTexture(self.border.checked_highlight, STYLE.border_checked_highlight)
-	
+
 	-- keybind
 	SetFont(self.keybind, STYLE.keybind)
 	
@@ -275,7 +275,10 @@ Button.UpdateStyle = function(self, STYLE)
 
 	-- Need a post update to adjust alpha values upon bar layout changes, 
 	-- or we'll end with a situation where all the layers are visible at once.
-	self:PostUpdate()
+	-- * 	this still happens in cata. weird. 
+	-- ** 	added a 'forced' flag to the post update to make sure the one called
+	-- 		called from this styling function always gets through. 
+	self:PostUpdate(true)
 end
 
 Button.PostCreate = function(self, buttonType)

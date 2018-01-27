@@ -152,7 +152,26 @@ Engine:NewStaticConfig("Objectives", {
 	-- waves of enemies in dungeons and raid instances, 
 	-- as well as class order hall information. 
 	zoneinfo = {
+		orderhall = {
 
+		},
+		worldstate = {
+			size = { 200, 32 },
+			place = { "TOP", "UICENTER", "TOP", 0, -300 }, -- can't be there, just for testing
+			height = 24, -- custom frameheight for each worldstate item. not implemented from here yet.
+			texPath = path .. [[textures\DiabolicUI_Texture_32x32_WorldStateGrid_Warcraft.tga]],
+			texSize = { 32, 32 },
+			texHitRects = { 4, 4, 4, 4 }, -- custom hitrects for icons
+			texCoords = {
+				alliance 		= {   0/128,  32/128,   0/128,  32/128 }, 
+				horde 			= {  32/128,  64/128,   0/128,  32/128 }, 
+				allianceflag 	= {  64/128,  96/128,   0/128,  32/128 }, 
+				hordeflag 		= {  96/128, 128/128,   0/128,  32/128 }, 
+				alliancetower 	= {   0/128,  32/128,  32/128,  64/128 }, 
+				hordetower 		= {  32/128,  64/128,  32/128,  64/128 }, 
+				neutraltower 	= {  64/128,  96/128,  32/128,  64/128 }
+			}
+		}
 	}
 	
 })

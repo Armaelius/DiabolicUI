@@ -1,13 +1,15 @@
 local _, Engine = ...
+if (not Engine:IsBuild("Legion")) then
+	return 
+end
 local Module = Engine:NewModule("OrderHall")
 
-
 Module.UpdateOrderHallUI = function(self, event, ...)
-	local config = self:GetDB("Objectives").orderhall
+	local config = self.config
 end
 
 Module.CreateOrderHallUI = function(self, event, ...)
-	local config = self:GetDB("Objectives").orderhall
+	local config = self.config
 
 	self:RegisterEvent("DISPLAY_SIZE_CHANGED", "UpdateOrderHallUI")
 	self:RegisterEvent("UI_SCALE_CHANGED", "UpdateOrderHallUI")
@@ -29,10 +31,7 @@ Module.Blizzard_Loaded = function(self, event, addon, ...)
 end
 
 Module.OnInit = function(self)
-	-- Class Order Halls were introduced in Legion
-	if not Engine:IsBuild("Legion") then
-		return
-	end
+	self.config = self:GetDB("Objectives").zoneinfo.orderhall
 
 	if IsAddOnLoaded("Blizzard_OrderHallUI") then
 		self:KillBlizzard()
@@ -41,3 +40,18 @@ Module.OnInit = function(self)
 	end
 
 end
+
+Module.OnEnable = function(self)
+
+	local parent = Engine:CreateFrame("Frame", nil, "UICenter", "SecureHandlerAttributeTemplate")
+	parent:SetSize(2,2)
+	parent:SetPoint("TOP")
+
+	RegisterStateDriver(parent, "visibility", "[@target,exists]hide;show")
+
+	self.frame = parent:CreateFrame("Frame")
+	self.frame:Hide()
+	self.frame:Place("TOP", "UICenter", "TOP", 0, -30)
+	self.frame:SetSize(32, 32)
+
+end 

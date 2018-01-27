@@ -229,11 +229,16 @@ MenuWidget.OnEnable = function(self)
 	SocialButton:SetScript("OnEvent", function(self, event, ...) 
 		local arg1 = ...
 
-		if (event == "PLAYER_ENTERING_WORLD") or (event == "PLAYER_GUILD_UPDATE") then
+		if ((event == "PLAYER_ENTERING_WORLD") or (event == "PLAYER_GUILD_UPDATE")) then
 			if IsInGuild() then 
 				GuildRoster()
 			end
 			ShowFriends()
+
+		elseif (event == "GUILD_ROSTER_UPDATE") then
+			if (arg1 and IsInGuild()) then
+				GuildRoster()
+			end
 		end
 
 		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
