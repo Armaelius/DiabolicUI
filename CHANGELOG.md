@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.91] 2017-01-27
+### Fixed
+- Fixed an annoying nil bug in the new Battleground Score module that would fire whenever a timer was visible. Oops!
+
 ## [1.3.90] 2017-01-27
 ### Added
 - Battleground scores, dungeon waves and similar has been added! Visible at the top of the screen, hidden when a target is selected to keep the UI clean. Not movable. Not optional. 

@@ -94,7 +94,8 @@ WorldStateUI:SetScript("OnUpdate", function(self, elapsed)
 			-- update the text of active timers
 			if activeTimers[timer.msg].enabled then
 				if timer.ui then
-					timer.ui.text:SetText(timer.msg .. formatTime(math_floor(timer.timeLeft)))
+					timer.ui.text:SetText(formatTime(math_floor(timer.timeLeft)))
+					--timer.ui.text:SetText(timer.msg .. formatTime(math_floor(timer.timeLeft)))
 				end
 			end
 
@@ -324,7 +325,7 @@ Module.UpdateStates = function(self)
 				-- ui:SetIcon("icon", icon, true)
 				ui:SetIcon("icon", "", true) -- only show icons we have customs for
 				ui.icon:Place("TOPLEFT", 0, 0)
-				ui.text:Place("CENTER", 0, 0) -- center the timer?
+				ui.text:Place("LEFT", 0, 0) -- center the timer?
 				--ui.text:Place("LEFT", 32, 0)
 				ui.tooltip = tooltip
 
@@ -337,7 +338,7 @@ Module.UpdateStates = function(self)
 					timerInfo[timerIndex] = {}
 				end
 				timerInfo[timerIndex].ui = ui
-				timerInfo[timerIndex].msg = "" -- msg -- just ignore the timer message? Keep it neat?
+				timerInfo[timerIndex].msg = msg -- just ignore the timer message? Keep it neat?
 				timerInfo[timerIndex].timeLeft = seconds
 				timerInfo[timerIndex].timeEnding = GetTime() + seconds
 				

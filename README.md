@@ -1,3 +1,5 @@
+[ ![Support me on Patreon](http://i.imgur.com/kVU2d3f.png) ](https://www.patreon.com/cogwerkz)
+
 ![DiabolicUI](http://i.imgur.com/VhvOlh3.png)
 
 This is a custom Diablo III styled user interface for World of Warcraft, put into a single addon that works in WotLK, Cata, MoP, WoD and Legion!
@@ -6,7 +8,6 @@ It features both custom artwork and artwork based on my own screenshots from Dia
 
 It's frequently tested on Warmane's WotLK-, Cata- and MoP clients, as well as retail Legion and PTR realms.
 
-[ ![Support me on Patreon](http://i.imgur.com/kVU2d3f.png) ](https://www.patreon.com/cogwerkz)
 
 ## How to install
 
