@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.92] 2017-01-28
+### Fixed
+- Added regular Guild Roster updates to keep the online guild member count on the bottom left corner social button properly updated. 
+
 ## [1.3.91] 2017-01-27
 ### Fixed
 - Fixed an annoying nil bug in the new Battleground Score module that would fire whenever a timer was visible. Oops!

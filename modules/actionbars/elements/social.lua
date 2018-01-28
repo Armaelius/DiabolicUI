@@ -4,11 +4,16 @@ local MenuWidget = Module:SetWidget("Menu: Chat")
 local L = Engine:GetLocale()
 
 -- Lua API
+local _G = _G
 local math_floor = math.floor
 local setmetatable = setmetatable
 
 -- WoW API
-local CreateFrame = CreateFrame
+local CreateFrame = _G.CreateFrame
+local GetNumFriends = _G.GetNumFriends
+local GetNumGuildMembers = _G.GetNumGuildMembers
+local GetTime = _G.GetTime
+local GuildRoster = _G.GuildRoster
 local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundKitID
 
 -- WoW Frames & Objects
@@ -250,6 +255,23 @@ MenuWidget.OnEnable = function(self)
 	
 		self.People:SetText(((self.numGuildies > 1) or (self.numFriends > 0)) and self.numPeople or "")
 	end)
+
+	SocialButton.elapsed = 0
+	SocialButton:SetScript("OnUpdate", function(self, elapsed) 
+
+		-- Throttle the checks to once every 5 secs
+		self.elapsed = self.elapsed + elapsed
+		if (self.elapsed < 15) then
+			return
+		end
+
+		-- Force an event update
+		GuildRoster()
+
+		-- Reset throttle counter
+		self.elapsed = 0
+	end)
+
 
 	local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 	local numberOfFriends, onlineFriends = GetNumFriends() 
