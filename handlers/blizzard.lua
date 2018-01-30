@@ -406,11 +406,13 @@ local elements = {
 				StanceBarRight:Hide()
 				StanceBarRight:SetAlpha(0)
 				
-				--OverrideActionBar:SetParent(UIHider)
+				-- If I'm not hiding this, it will become visible (though transparent)
+				-- and cover our own custom vehicle/possess action bar. 
+				OverrideActionBar:SetParent(UIHider)
 				OverrideActionBar:EnableMouse(false)
 				OverrideActionBar:UnregisterAllEvents()
-				OverrideActionBar:Hide()
-				OverrideActionBar:SetAlpha(0)
+				--OverrideActionBar:Hide()
+				--OverrideActionBar:SetAlpha(0)
 
 				if not ENGINE_WOD then
 					local CompanionsMicroButtonAlert = _G.CompanionsMicroButtonAlert 
@@ -424,6 +426,7 @@ local elements = {
 				for i = 1,6 do
 					_G["OverrideActionBarButton"..i]:UnregisterAllEvents()
 					_G["OverrideActionBarButton"..i]:SetAttribute("statehidden", true)
+					_G["OverrideActionBarButton"..i]:EnableMouse(false) -- just in case it's still there
 				end
 			end
 			

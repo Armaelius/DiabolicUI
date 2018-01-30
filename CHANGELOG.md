@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.93] 2017-01-30
+### Added
+- Added secondary profession quests to the priority list visible in all zones in the quest tracker.
+
+### Fixed
+- Changed how the override action bar (vehicles) is hidden to avoid the old bar (though transparent) covering it and causing wrong clicks and tooltips.
+
 ## [1.3.92] 2017-01-28
 ### Fixed
 - Added regular Guild Roster updates to keep the online guild member count on the bottom left corner social button properly updated. 

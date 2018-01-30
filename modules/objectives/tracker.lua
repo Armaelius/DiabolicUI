@@ -2354,10 +2354,16 @@ Module.GatherQuestLogData = function(self, forced)
 	local selection = GetQuestLogSelection()
 
 	-- Profession name info
-	local prof1, prof2, profName1, profName2
+	local prof1, prof2, archaeology, fishing, cooking, firstAid
+	local profName1, profName2, archaeologyName, fishingName, cookingName, firstAidName
 	if (GetProfessions and GetProfessionInfo) then
-		prof1, prof2 = GetProfessions()
-		profName1, profName2 = prof1 and GetProfessionInfo(prof1), prof2 and GetProfessionInfo(prof2)
+		prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
+		profName1 = prof1 and GetProfessionInfo(prof1)
+		profName2 = prof2 and GetProfessionInfo(prof2)
+		archaeology = archaeology and GetProfessionInfo(archaeology)
+		fishingName = fishing and GetProfessionInfo(fishing)
+		cookingName = cooking and GetProfessionInfo(cooking)
+		firstAidName = firstAid and GetProfessionInfo(firstAid)
 	end
 
 	-- Debugging shows this is working succesfully, picking up both added and removed quests. 
@@ -2503,7 +2509,13 @@ Module.GatherQuestLogData = function(self, forced)
 			currentQuestData.questLogIndex = questLogIndex 
 			currentQuestData.isEmissaryQuest = emissaryQuestIDs[questID]
 			currentQuestData.isNormalQuest = not emissaryQuestIDs[questID]
-			currentQuestData.isProfessionQuest = questHeader and (questHeader == profName1 or questHeader == profName2)
+			currentQuestData.isProfessionQuest = questHeader and (
+				questHeader == profName1 or
+				questHeader == profName2 or 
+				questHeader == archaeologyName or 
+				questHeader == cookingName or 
+				questHeader == fishingName or 
+				questHeader == firstAidName) 
 
 			-- If anything was updated within this quest, report it back
 			if (currentQuestData.updateDescription) then
