@@ -167,6 +167,7 @@ local tooltips = {
 	"hbGameTooltip",
 	"EventTraceTooltip",
 	"FrameStackTooltip",
+	"FloatingGarrisonFollowerTooltip",
 	"PetBattlePrimaryUnitTooltip",
 	"PetBattlePrimaryAbilityTooltip",
 	"QueueStatusFrame"

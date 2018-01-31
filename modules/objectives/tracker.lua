@@ -587,7 +587,17 @@ local sortByProximity = function(a,b)
 
 	-- Figure out which is closest, if we have current or stored player coordinates available
 	if (posX and posY) and (a.x and a.y and b.x and b.y) then
-		return C_TaskQuest.GetDistanceSqToQuest(a.questID) < C_TaskQuest.GetDistanceSqToQuest(b.questID)
+		local distanceA = C_TaskQuest.GetDistanceSqToQuest(a.questID)
+		local distanceB = C_TaskQuest.GetDistanceSqToQuest(b.questID)
+		if (distanceA or distanceB) then
+			if (distanceA and distanceB) then
+				return (distanceA < distanceB)
+			elseif distanceA then 
+				return true
+			end
+		else
+			return sortByLevelAndName(a,b)
+		end 
 
 		-- Is something off here? It returns... consistent but totally wrong results!?
 		-- Edit: Of course it's off! Positions are from 0 to 1, but who says that zones are square? DOH!!!!

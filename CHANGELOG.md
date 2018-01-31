@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.94] 2017-01-31
+### Added
+- Added new Order Hall follower tooltips to the list of styled tooltips. 
+
+### Fixed
+- Fixed an issue in Legion clients where the quest tracker's sorting function sometimes would cause an error while trying to figure out the closest one quest.
+
 ## [1.3.93] 2017-01-30
 ### Added
 - Added secondary profession quests to the priority list visible in all zones in the quest tracker.
