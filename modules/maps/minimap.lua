@@ -894,6 +894,22 @@ Module.OnInit = function(self)
 		buttonBag.hiddenButtons = {}
 		buttonBag.checkedButtons = {}
 		buttonBag.ignoredButtons = {
+			-- New icon list added Feb 1st 2018 (imported from gUI4)
+			BookOfTracksFrame = true,
+			CartographerNotesPOI = true,
+			DA_Minimap = true,
+			FWGMinimapPOI = true,
+			GatherArchNote = true,
+			GatherMatePin = true,
+			GatherNote = true,
+			HandyNotesPin = true,
+			MiniNotePOI = true,
+			poiMinimap = true,
+			QuestPointerPOI = true,	
+			RecipeRadarMinimapIcon = true,
+			TDial_TrackButton = true,
+			TDial_TrackingIcon = true,
+
 			--FishingExtravaganzaMini = true,
 			MBB_MinimapButtonFrame = true,
 			MinimapButtonFrame = true,

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.95] 2017-02-01
+### Fixed
+- Added a lot of items to the Minimap's icon whitelist, to allow elements from Gatherer and HandyNotes, Zygor Guides and several others to be shown.
+
 ## [1.3.94] 2017-01-31
 ### Added
 - Added new Order Hall follower tooltips to the list of styled tooltips. 
