@@ -1661,15 +1661,24 @@ end
 
 Module.UpdateTrackerVisibility = function(self, numZoneQuests)
 	if SUSPENDED then
+		--print("|cffff8800Hiding tracker, debug info:|r")
+		--print("Reason: ", "Tracker SUSPENDED")
 		return self.tracker:Hide()
 	end
 	local isInInstance, instanceType = IsInInstance()
 	if isInInstance and (instanceType == "pvp" or instanceType == "arena") then
+		--print("|cffff8800Hiding tracker, debug info:|r")
+		--print("Reason: ", instanceType)
+		--print("numZoneQuests", numZoneQuests)
+		--print("#sortedTrackedQuests", #sortedTrackedQuests)
 		return self.tracker:Hide()
 	end
 	if ((numZoneQuests and (numZoneQuests > 0)) or (#sortedTrackedQuests > 0)) then
 		return self.tracker:Show()
 	else
+		--print("|cffff8800Hiding tracker, debug info:|r")
+		--print("numZoneQuests", numZoneQuests)
+		--print("#sortedTrackedQuests", #sortedTrackedQuests)
 		return self.tracker:Hide()
 	end
 end
@@ -1678,8 +1687,9 @@ end
 -- on it later to avoid overriding user choices. 
 -- Based on self:QuestSuperTracking_ChooseClosestQuest()
 Module.UpdateSuperTracking = function(self)
-	local closestQuestID
+	local closestQuestID, closestFinishedQuestID
 	local minDistSqr = math_huge
+	local minDistSqrFinished = minDistSqr
 
 	-- World quest watches got introduced in Legion
 	-- 
@@ -1689,13 +1699,14 @@ Module.UpdateSuperTracking = function(self)
 	-- pointing the player to a different objective than what the tracker shows. 
 	-- 
 	if ENGINE_LEGION then
+		local closestQuest
 		for i = 1, GetNumWorldQuestWatches() do
 			local watchedWorldQuestID = GetWorldQuestWatchInfo(i)
 			if watchedWorldQuestID then
 				local currentQuestData = questData[watchedWorldQuestID]
-				if currentQuestData and (not currentQuestData.isComplete) then
+				if (currentQuestData and (not currentQuestData.isComplete)) then
 					local distanceSq = C_TaskQuest.GetDistanceSqToQuest(watchedWorldQuestID)
-					if distanceSq and distanceSq <= minDistSqr then
+					if (distanceSq and (distanceSq <= minDistSqr)) then
 						minDistSqr = distanceSq
 						closestQuestID = watchedWorldQuestID
 					end
@@ -1710,7 +1721,7 @@ Module.UpdateSuperTracking = function(self)
 				local questID, title, questLogIndex = GetQuestWatchInfo(i)
 				if ( questID and QuestHasPOIInfo(questID) ) then
 					local distSqr, onContinent = GetDistanceSqToQuest(questLogIndex)
-					if ( onContinent and distSqr <= minDistSqr ) then
+					if (onContinent and distSqr <= minDistSqr) then
 						minDistSqr = distSqr
 						closestQuestID = questID
 					end
@@ -2043,15 +2054,17 @@ Module.UpdateZoneTracking = function(self)
 
 		-- Get the quest data for the current questlog entry
 		local data = questData[questID]
+		if data then 
+			
+			-- Figure out if it should be tracked or not
+			local shouldBeTracked = (not data.isWorldQuest) and ((data.questMapID == currentZone) or (data.isComplete)) 
 
-		-- Figure out if it should be tracked or not
-		local shouldBeTracked = data and (data.questMapID == currentZone) and (not data.isWorldQuest)
-
-		-- Add it to the questwatch update queue
-		if shouldBeTracked then
-			if (not questWatchQueue[questID]) then
-				questWatchQueue[questID] = questLogIndex
-				needUpdate = true -- something was changed, an update is needed
+			-- Add it to the questwatch update queue
+			if shouldBeTracked then
+				if (not questWatchQueue[questID]) then
+					questWatchQueue[questID] = questLogIndex
+					needUpdate = true -- something was changed, an update is needed
+				end
 			end
 		end
 	end

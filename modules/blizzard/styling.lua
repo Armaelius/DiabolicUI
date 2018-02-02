@@ -147,7 +147,13 @@ local elements = {
 	["PlayerTalentFrameSpecializationSpecButton3"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameSpecializationSpecButton4"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameSpecializationLearnButton"] = "Blizzard_TalentUI",
-	["PlayerTalentFrameTalents"] = "Blizzard_TalentUI"
+	["PlayerTalentFrameTalents"] = "Blizzard_TalentUI",
+
+	-- These can't be styled, as they are :IsForbidden()
+	--["SecureTransferDialog"] = true,
+	--["SecureTransferDialogButton1"] = true,
+	--["SecureTransferDialogButton2"] = true
+
 }
 
 -- Elements we won't skin

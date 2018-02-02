@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.96] 2017-02-02
+### Changed
+- Added new colors for NPCs you have a Honored or higher standing with. From Honored to Exalted the colors move slightly towards cyan.
+- Added the same new colors for Friendship standings from Friend to Best Friend as was used for Honored to Exalted reputation standings.
+- NPCs that are friendly or neutral to the player now have their nameplates colored in the same color as their unitframes.
+- Completed Quests are now displayed in the objective tracker regardless of current map zone.
+
+### Fixed 
+- Fixed a bug that would occur when scanning the item levels of crucible upgraded Artifact relics from the character window.
+
 ## [1.3.95] 2017-02-01
 ### Fixed
 - Added a lot of items to the Minimap's icon whitelist, to allow elements from Gatherer and HandyNotes, Zygor Guides and several others to be shown.

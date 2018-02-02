@@ -122,8 +122,8 @@ Module.GetInventorySlotItemData = function(self, slotID)
 				if (slotID == _G.INVSLOT_MAINHAND) and CRUCIBLE then
 					
 					scannerTip.owner = self
-					scannerTip:SetOwner(self, "ANCHOR_NONE")
-					scannerTip:SetBagItem(self:GetBag(), self:GetID())
+					scannerTip:SetOwner(UIParent, "ANCHOR_NONE")
+					scannerTip:SetInventoryItem("player", slotID)
 
 					local line = _G[scannerName.."TextLeft2"]
 					if line then

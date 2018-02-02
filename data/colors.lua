@@ -119,11 +119,11 @@ local C = {
 		[1] = prepare( 192/255,  68/255,   0/255 ), -- Stranger
 		[2] = prepare( 249/255, 178/255,  35/255 ), -- Acquaintance 
 		[3] = prepare(  64/255, 131/255,  38/255 ), -- Buddy
-		[4] = prepare(  64/255, 131/255,  38/255 ), -- Friend 
-		[5] = prepare(  64/255, 131/255,  38/255 ), -- Good Friend
-		[6] = prepare(  64/255, 131/255,  38/255 ), -- Best Friend
-		[7] = prepare(  64/255, 131/255,  38/255 ), -- Best Friend (brawler's stuff)
-		[8] = prepare(  64/255, 131/255,  38/255 ) -- Best Friend (brawler's stuff)
+		[4]	= prepare(  64/255, 131/255,  69/255 ), -- Friend (honored color)
+		[5]	= prepare(  64/255, 131/255, 104/255 ), -- Good Friend (revered color)
+		[6]	= prepare(  64/255, 131/255, 131/255 ), -- Best Friend (exalted color)
+		[7]	= prepare(  64/255, 131/255, 131/255 ), -- Best Friend (exalted color) - brawler's stuff
+		[8]	= prepare(  64/255, 131/255, 131/255 ), -- Best Friend (exalted color) - brawler's stuff
 	},
 
 	-- Orb color groups
@@ -428,9 +428,9 @@ local C = {
 		[3] 			= prepare( 192/255,  68/255,   0/255 ), -- unfriendly
 		[4] 			= prepare( 249/255, 158/255,  35/255 ), -- neutral 
 		[5] 			= prepare(  64/255, 131/255,  38/255 ), -- friendly
-		[6] 			= prepare(  64/255, 131/255,  38/255 ), -- honored
-		[7] 			= prepare(  64/255, 131/255,  38/255 ), -- revered
-		[8] 			= prepare(  64/255, 131/255,  38/255 ), -- exalted
+		[6] 			= prepare(  64/255, 131/255,  69/255 ), -- honored
+		[7] 			= prepare(  64/255, 131/255, 104/255 ), -- revered
+		[8] 			= prepare(  64/255, 131/255, 131/255 ), -- exalted
 		civilian 		= prepare(  64/255, 131/255,  38/255 )  -- used for friendly player nameplates
 		--civilian 		= prepare(  38/255,  96/255, 229/255 )  -- used for friendly player nameplates
 	},

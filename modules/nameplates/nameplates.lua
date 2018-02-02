@@ -101,6 +101,13 @@ local FRAMELEVEL_IMPORTANT = 124 -- rares, bosses, etc
 local FRAMELEVEL_CURRENT, FRAMELEVEL_MIN, FRAMELEVEL_MAX, FRAMELEVEL_STEP = 21, 21, 125, 2
 local FRAMELEVEL_TRIVAL_CURRENT, FRAMELEVEL_TRIVIAL_MIN, FRAMELEVEL_TRIVIAL_MAX, FRAMELEVEL_TRIVIAL_STEP = 1, 1, 20, 2
 
+-- Opacity Settings
+local ALPHA_TARGET = 1 -- For the current target, if any
+local ALPHA_FULL = .7 -- For players when not having a target, also for World Bosses when not targeted
+local ALPHA_LOW = .35 -- For non-targeted players when having a target
+local ALPHA_TRIVIAL = .25 -- For non-targeted trivial mobs
+local ALPHA_MINIMAL = .15 -- For non-targeted NPCs 
+
 -- Update and fading frequencies
 local HZ = 1/30
 local FADE_IN = 3/4 -- time in seconds to fade in
@@ -648,18 +655,18 @@ NamePlate_WotLK.UpdateAlpha = function(self)
 			self.targetAlpha = 0 -- just fade out the dead units fast, they tend to get stuck. weird. 
 		elseif TARGET then
 			if info.isTarget then
-				self.targetAlpha = 1 
+				self.targetAlpha = ALPHA_TARGET
 			elseif info.isPlayer then
-				self.targetAlpha = .35
+				self.targetAlpha = ALPHA_LOW
 			else
-				self.targetAlpha = .15 
+				self.targetAlpha = ALPHA_MINIMAL 
 			end
 		elseif info.isPlayer then
-			self.targetAlpha = .7 
+			self.targetAlpha = ALPHA_FULL 
 		elseif info.isFriendly then
-			self.targetAlpha = .15
+			self.targetAlpha = ALPHA_MINIMAL
 		else
-			self.targetAlpha = .7 
+			self.targetAlpha = ALPHA_FULL
 		end
 	else
 		self.targetAlpha = 0 -- fade out hidden frames
@@ -899,35 +906,35 @@ NamePlate_Legion.UpdateAlpha = function(self)
 	if self.visiblePlates[self] then
 		if UnitExists("target") then
 			if UnitIsUnit(unit, "target") then
-				self.targetAlpha = 1 
+				self.targetAlpha = ALPHA_TARGET 
 			elseif UnitIsTrivial(unit) then 
-				self.targetAlpha = .15 
+				self.targetAlpha = ALPHA_MINIMAL
 			elseif UnitIsPlayer(unit) then
 				self.targetAlpha = .35 
 			elseif UnitIsFriend("player", unit) then
-				self.targetAlpha = .15 
+				self.targetAlpha = ALPHA_MINIMAL
 			else
 				local level = UnitLevel(unit)
 				local classificiation = UnitClassification(unit)
 				if (classificiation == "worldboss") or (classificiation == "rare") or (classificiation == "rareelite") or (level and level < 1) then
-					self.targetAlpha = .7
+					self.targetAlpha = ALPHA_FULL
 				else
-					self.targetAlpha = .35
+					self.targetAlpha = ALPHA_LOW
 				end	
 			end
 		elseif UnitIsTrivial(unit) then 
-			self.targetAlpha = .25 
+			self.targetAlpha = ALPHA_TRIVIAL
 		elseif UnitIsPlayer(unit) then
-			self.targetAlpha = .7 
+			self.targetAlpha = ALPHA_FULL
 		elseif UnitIsFriend("player", unit) then
-			self.targetAlpha = .15 
+			self.targetAlpha = ALPHA_MINIMAL
 		else
 			local level = UnitLevel(unit)
 			local classificiation = UnitClassification(unit)
 			if (classificiation == "worldboss") or (classificiation == "rare") or (classificiation == "rareelite") or (level and level < 1) then
-				self.targetAlpha = 1
+				self.targetAlpha = ALPHA_TARGET
 			else
-				self.targetAlpha = .7
+				self.targetAlpha = ALPHA_FULL
 			end	
 		end
 	else
@@ -1053,7 +1060,8 @@ NamePlate_Legion.UpdateColor = function(self)
 			end
 		end
 	elseif UnitIsFriend("player", unit) then
-		self.Health:SetStatusBarColor(unpack(C.Reaction[5]))
+		--self.Health:SetStatusBarColor(unpack(C.Reaction[5])) -- all are Friendly colored
+		self.Health:SetStatusBarColor(unpack(C.Reaction[UnitReaction(unit, "player") or 5])) -- All levels of reaction coloring
 	elseif UnitIsTapDenied(unit) then
 		self.Health:SetStatusBarColor(unpack(C.Status.Tapped))
 	else
