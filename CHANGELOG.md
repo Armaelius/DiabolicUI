@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.97] 2017-02-04
+### Changed
+- Rewrote a lot of the tracker's update cycle to avoid flickering, disappearances and so on.
+- Rewrote most of the tracker's internal anchoring, to avoid the weird indendted "tree" view that some users were experiencing. 
+- Added in an extra set of updates for the tracker's quest item buttons, to avoid them getting the wrong ID and becoming unusable after a while. More might be needed, I will monitor the situation closely on my alts!
+
 ## [1.3.96] 2017-02-02
 ### Changed
 - Added new colors for NPCs you have a Honored or higher standing with. From Honored to Exalted the colors move slightly towards cyan.

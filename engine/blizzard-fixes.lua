@@ -8,6 +8,69 @@ local BUILD = tonumber((select(2, GetBuildInfo())))
 -- Shortcuts to identify client versions
 local LEGION_730 = BUILD >= 24500 
 
+-- Fix the bug where trainer window bugs out 
+-- after being automatically opened when a quest window close.
+--[[
+Message: ...ace\AddOns\Blizzard_TrainerUI\Blizzard_TrainerUI.lua:184: attempt to compare number with nil
+Time: 02/03/18 08:30:56
+Count: 1
+Stack: ...ace\AddOns\Blizzard_TrainerUI\Blizzard_TrainerUI.lua:184: in function `ClassTrainerFrame_SetServiceButton'
+...ace\AddOns\Blizzard_TrainerUI\Blizzard_TrainerUI.lua:128: in function `ClassTrainerFrame_Update'
+...ace\AddOns\Blizzard_TrainerUI\Blizzard_TrainerUI.lua:92: in function <...ace\AddOns\Blizzard_TrainerUI\Blizzard_TrainerUI.lua:84>
+[C]: in function `Show'
+Interface\FrameXML\UIParent.lua:2374: in function `SetUIPanel'
+Interface\FrameXML\UIParent.lua:2270: in function `ShowUIPanel'
+Interface\FrameXML\UIParent.lua:2086: in function <Interface\FrameXML\UIParent.lua:2082>
+[C]: in function `SetAttribute'
+Interface\FrameXML\UIParent.lua:2868: in function `ShowUIPanel'
+...ace\AddOns\Blizzard_TrainerUI\Blizzard_TrainerUI.lua:42: in function `ClassTrainerFrame_Show'
+Interface\FrameXML\UIParent.lua:1476: in function <Interface\FrameXML\UIParent.lua:907>
+
+Locals: skillButton = ClassTrainerFrameSkillStepButton {
+ 0 = <userdata>
+ disabledBG = <unnamed> {
+ }
+ name = ClassTrainerFrameSkillStepButtonName {
+ }
+ selectedTex = <unnamed> {
+ }
+ money = ClassTrainerFrameSkillStepButtonMoneyFrame {
+ }
+ lock = <unnamed> {
+ }
+ icon = ClassTrainerFrameSkillStepButtonIcon {
+ }
+ subText = ClassTrainerFrameSkillStepButtonSubText {
+ }
+}
+skillIndex = 13
+playerMoney = 188783859
+selected = nil
+isTradeSkill = true
+unavailable = false
+serviceName = "Unknown"
+serviceSubText = nil
+serviceType = nil
+texture = nil
+reqLevel = nil
+requirements = ""
+separator = ""
+(*temporary) = nil
+(*temporary) = true
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = nil
+(*temporary) = "attempt to compare number with nil"
+]]
+--LoadAddOn("Blizzard_TrainerUI")
+
 -- Garbage collection is being overused and misused,
 -- and it's causing lag and performance drops. 
 blizzardCollectgarbage("setpause", 110)
