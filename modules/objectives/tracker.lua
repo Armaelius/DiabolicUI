@@ -323,6 +323,7 @@ local stripString = function(msg)
 		return ""
 	end
 	msg = string_gsub(msg, "\|n", "")
+	msg = string_gsub(msg, "\\n", "") -- this one is vital, a lot of quest texts use it!
 	msg = string_gsub(msg, "|n", "")
 	return msg
 end

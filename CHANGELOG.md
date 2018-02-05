@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.98] 2017-02-04
+### Changed
+- Changed how the quest tracker handles quest texts to better reformat line breaks.
+
 ## [1.3.97] 2017-02-04
 ### Changed
 - Rewrote a lot of the tracker's update cycle to avoid flickering, disappearances and so on.
