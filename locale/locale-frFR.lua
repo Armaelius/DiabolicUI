@@ -62,3 +62,8 @@ L["Down Arrow"] = "BA"
 L["Left Arrow"] = "GA"
 L["Right Arrow"] = "DA"
 L["Up Arrow"] = "HA"
+
+-- minimap 
+L["Calendar"] = "Calendrier"
+L["New Event!"] = "Nouvel événement"
+L["New Mail!"] = "Nouveau courrier"

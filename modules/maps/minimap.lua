@@ -44,11 +44,13 @@ local GetCursorPosition = _G.GetCursorPosition
 local GetDifficultyInfo = _G.GetDifficultyInfo
 local GetGameTime = _G.GetGameTime
 local GetInstanceInfo = _G.GetInstanceInfo
+local GetLatestThreeSenders = _G.GetLatestThreeSenders
 local GetMinimapZoneText = _G.GetMinimapZoneText
 local GetPlayerMapPosition = _G.GetPlayerMapPosition
 local GetSubZoneText = _G.GetSubZoneText
 local GetZonePVPInfo = _G.GetZonePVPInfo
 local GetZoneText = _G.GetZoneText
+local HasNewMail = _G.HasNewMail
 local IsAddOnLoaded = _G.IsAddOnLoaded
 local IsInInstance = _G.IsInInstance
 local RegisterStateDriver = _G.RegisterStateDriver
@@ -85,6 +87,10 @@ local TIMEMANAGER_PM = _G.TIMEMANAGER_PM
 local TIMEMANAGER_TITLE = _G.TIMEMANAGER_TITLE
 local TIMEMANAGER_TOOLTIP_LOCALTIME = _G.TIMEMANAGER_TOOLTIP_LOCALTIME
 local TIMEMANAGER_TOOLTIP_REALMTIME = _G.TIMEMANAGER_TOOLTIP_REALMTIME
+
+-- Mail 
+local HAVE_MAIL = _G.HAVE_MAIL
+local HAVE_MAIL_FROM = _G.HAVE_MAIL_FROM
 
 -- Difficulty and group sizes
 local SOLO = SOLO
@@ -398,6 +404,19 @@ Module.GetFrame = function(self)
 end
 
 Module.OnEvent = function(self, event, ...)
+	if (event == "UPDATE_PENDING_MAIL") or (event == "PLAYER_ENTERING_WORLD") then 
+		local playerMailFrame = self.frame.widgets.mail
+		if HasNewMail() then
+			playerMailFrame:Show()
+			playerMailFrame:UpdateTooltip()
+		else
+			playerMailFrame:Hide()
+		end
+		if (event == "UPDATE_PENDING_MAIL") then 
+			return 
+		end
+	end
+
 	self:AlignMinimap(event, ...)
 	self:UpdateZoneData(event, ...)
 end
@@ -696,6 +715,70 @@ Module.OnInit = function(self)
 	playerCoordinates:SetDrawLayer("OVERLAY", 3)
 	playerCoordinates:Place(unpack(config.text.coordinates.point))
 	playerCoordinates:SetJustifyV("BOTTOM")
+	
+	-- mail notifications
+	local playerMailFrame = border:CreateFrame("Frame")
+	playerMailFrame:SetPoint("BOTTOM", playerCoordinates, "TOP", 0, 2)
+	playerMailFrame:Hide()
+
+	local playerMail = playerMailFrame:CreateFontString()
+	playerMail:SetFontObject(config.text.coordinates.normalFont)
+	playerMail:SetTextColor(unpack(C.General.Title))
+	playerMail:SetDrawLayer("OVERLAY", 3)
+	playerMail:SetPoint("BOTTOM", playerCoordinates, "TOP", 0, 2)
+	playerMail:SetJustifyV("BOTTOM")
+	playerMail:SetText(L["New Mail!"])
+	playerMail:SetTextColor(1, 1, 1, 1)
+
+	playerMailFrame.OnEnter = function()
+		if (GameTooltip:IsForbidden()) then 
+			return 
+		end
+		GameTooltip:SetOwner(mapContent, "ANCHOR_PRESERVE")
+		GameTooltip:ClearAllPoints()
+		GameTooltip:SetPoint("TOPRIGHT", mapContent, "TOPLEFT", -10, -10)
+		self:UpdateTooltip()
+	end
+	
+	playerMailFrame.OnLeave = function()
+		if (GameTooltip:IsForbidden()) then 
+			return 
+		end
+		GameTooltip:Hide()
+	end 
+
+	playerMailFrame.UpdateTooltip = function(self)
+		if (GameTooltip:IsForbidden()) or (not GameTooltip:IsOwned(mapContent)) then 
+			return 
+		end
+
+		local sender1,sender2,sender3 = GetLatestThreeSenders()
+		local toolText
+		
+		if( sender1 or sender2 or sender3 ) then
+			toolText = HAVE_MAIL_FROM
+		else
+			toolText = HAVE_MAIL
+		end
+		
+		if sender1 then
+			toolText = toolText.."|n"..sender1
+		end
+		if sender2 then
+			toolText = toolText.."|n"..sender2
+		end
+		if sender3 then
+			toolText = toolText.."|n"..sender3
+		end
+		GameTooltip:SetText(toolText)
+	end
+
+	playerMailFrame:SetPoint("LEFT", playerMail, "LEFT", 0, 0)
+	playerMailFrame:SetPoint("RIGHT", playerMail, "RIGHT", 0, 0)
+	playerMailFrame:SetPoint("TOP", playerMail, "TOP", 0, 0)
+	playerMailFrame:SetScript("OnEnter",playerMailFrame.OnEnter )
+	playerMailFrame:SetScript("OnLeave", playerMailFrame.OnLeave)
+
 
 	-- Holder frame for widgets that should remain visible 
 	-- even when the minimap is hidden.
@@ -955,6 +1038,7 @@ Module.OnInit = function(self)
 	self.frame.widgets.zone = zoneName
 	self.frame.widgets.difficulty = zoneDifficulty
 	self.frame.widgets.coordinates = playerCoordinates
+	self.frame.widgets.mail = playerMailFrame
 	self.frame.widgets.finder = finder
 
 	self.frame.old = old 
@@ -976,6 +1060,7 @@ Module.OnEnable = function(self)
 	self:RegisterEvent("ZONE_CHANGED_INDOORS", "OnEvent")
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
 	self:RegisterEvent("VARIABLES_LOADED", "OnEvent")
+	self:RegisterEvent("UPDATE_PENDING_MAIL", "OnEvent")
 
 	self:UpdateZoneData()
 

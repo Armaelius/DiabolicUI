@@ -131,6 +131,11 @@ L["You can re-enable the auto positioning by typing |cff448800/diabolic autoposi
 L["Auto positioning of chat windows has been enabled."] = "聊天窗口自動定位已啟用"
 L["Auto positioning of chat windows has been disabled."] = "聊天窗口自動定位已禁用"
 
+-- minimap 
+L["Calendar"] = "行事曆"
+L["New Event!"] = "新事件"
+L["New Mail!"] = "新郵件"
+
 --Tooltip
 L["BoA"] = "件傳家寶"
 L["PvP"] = "件PVP裝"

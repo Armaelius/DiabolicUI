@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.3.98] 2017-02-04
+## [1.3.99] 2017-02-06
+### Added
+- Added text based new mail notification to the minimap.
+
+## [1.3.98] 2017-02-05
 ### Changed
 - Changed how the quest tracker handles quest texts to better reformat line breaks.
 

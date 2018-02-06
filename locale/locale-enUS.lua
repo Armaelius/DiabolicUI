@@ -194,7 +194,9 @@ L["Auto positioning of chat windows has been disabled."] = true
 L["<Left-click> to toggle calendar."] = true
 L["<Middle-click> to toggle stopwatch."] = true
 L["<Right-click> to configure clock."] = true
-
+L["Calendar"] = true
+L["New Event!"] = true
+L["New Mail!"] = true
 
 -- tooltips
 ---------------------------------------------------------------------
