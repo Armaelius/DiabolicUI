@@ -22,7 +22,7 @@ If you're familiar with git, simply clone the repository to a folder named **Dia
 * PayPal Me: [www.paypal.me/larsnorberg](https://www.paypal.me/larsnorberg)
 * Patreon: [www.patreon.com/cogwerkz](https://www.patreon.com/cogwerkz)
 
-Regards
+Regards   
 Lars *"Goldpaw"* Norberg
 
 ![DiabolicUI Fishing](https://github.com/cogwerkz/DiabolicUI/wiki/images/Screenshot%20from%202018-02-06%2011-23-28.png) 
