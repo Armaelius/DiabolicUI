@@ -18,10 +18,11 @@ If you're familiar with git, simply clone the repository to a folder named **Dia
 
 ## Support my work
 
-* PayPal: [paypal@cogwerkz.org](https://www.paypal.com/cgi-bin/webscr?hosted_button_id=NYTWF68FKGLL6&item_name=DiabolicUI+%28By+Lars+Norberg%29&cmd=_s-xclick) (click to go straight to PayPal)
+* PayPal: [paypal@cogwerkz.org](https://www.paypal.com/cgi-bin/webscr?hosted_button_id=NYTWF68FKGLL6&item_name=DiabolicUI+%28By+Lars+Norberg%29&cmd=_s-xclick) 
 * PayPal Me: [www.paypal.me/larsnorberg](https://www.paypal.me/larsnorberg)
 * Patreon: [www.patreon.com/cogwerkz](https://www.patreon.com/cogwerkz)
 
 Regards
 Lars *"Goldpaw"* Norberg
 
+![DiabolicUI Fishing](https://github.com/cogwerkz/DiabolicUI/wiki/images/Screenshot%20from%202018-02-06%2011-23-28.png) 
