@@ -11,11 +11,13 @@
 <Script file='gamemenu.lua'/>
 <Script file='ghostframe.lua'/>
 <Script file='levelup.lua'/>
+<Script file='merchant.lua'/>
 <Script file='mirrortimers.lua'/>
 <Script file='popups.lua'/>
 <Script file='talkinghead.lua'/>
 <Script file='tooltips.lua'/>
 <Script file='totembar.lua'/>
+<Script file='tradeskill.lua'/>
 <Script file='vehicleseat.lua'/>
 
 

@@ -80,11 +80,9 @@ local C = {
 
 	-- Unit Class Coloring (slightly different from Blizzard's)
 	Class = {
-		--DEATHKNIGHT 	= prepare( 196/255,  31/255,  59/255 ),
 		DEATHKNIGHT 	= prepare( 176/255,  31/255,  79/255 ), -- slightly more blue, less red, to stand out from angry mobs better
 		DEMONHUNTER 	= prepare( 163/255,  48/255, 201/255 ),
 		DRUID 			= prepare( 255/255, 125/255,  10/255 ),
-		--HUNTER 			= prepare( 171/255, 212/255, 115/255 ),
 		HUNTER 			= prepare( 191/255, 232/255, 115/255 ), -- slightly more green and yellow, to stand more out from friendly players/npcs
 		MAGE 			= prepare( 105/255, 204/255, 240/255 ),
 		MONK 			= prepare(   0/255, 255/255, 150/255 ),
@@ -421,8 +419,6 @@ local C = {
 
 	-- Unit Reactions
 	Reaction = {
-		--[1] 			= prepare( 175/255,  76/255,  56/255 ), -- hated
-		--[2] 			= prepare( 175/255,  76/255,  56/255 ), -- hostile
 		[1] 			= prepare( 205/255,  46/255,  36/255 ), -- hated
 		[2] 			= prepare( 205/255,  46/255,  36/255 ), -- hostile
 		[3] 			= prepare( 192/255,  68/255,   0/255 ), -- unfriendly
@@ -432,7 +428,6 @@ local C = {
 		[7] 			= prepare(  64/255, 131/255, 104/255 ), -- revered
 		[8] 			= prepare(  64/255, 131/255, 131/255 ), -- exalted
 		civilian 		= prepare(  64/255, 131/255,  38/255 )  -- used for friendly player nameplates
-		--civilian 		= prepare(  38/255,  96/255, 229/255 )  -- used for friendly player nameplates
 	},
 
 	-- Various Unit statuses

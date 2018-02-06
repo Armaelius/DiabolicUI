@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.100] 2017-02-06
+### Added
+- Added a button in the Blizzard TradeSkillUI for Enchanters to directly enchant vellums in their bags.
+
+### Fixed
+- Fixed a bug in the Minimap's new mail notification when hovered over.
+
 ## [1.3.99] 2017-02-06
 ### Added
 - Added text based new mail notification to the minimap.

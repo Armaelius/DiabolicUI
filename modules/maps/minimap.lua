@@ -730,7 +730,7 @@ Module.OnInit = function(self)
 	playerMail:SetText(L["New Mail!"])
 	playerMail:SetTextColor(1, 1, 1, 1)
 
-	playerMailFrame.OnEnter = function()
+	playerMailFrame.OnEnter = function(self)
 		if (GameTooltip:IsForbidden()) then 
 			return 
 		end
@@ -740,7 +740,7 @@ Module.OnInit = function(self)
 		self:UpdateTooltip()
 	end
 	
-	playerMailFrame.OnLeave = function()
+	playerMailFrame.OnLeave = function(self)
 		if (GameTooltip:IsForbidden()) then 
 			return 
 		end
