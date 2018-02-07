@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.101] 2017-02-07
+### Added 
+- Started styling the trade skill frame the way some other Blizzard frames have been styled. Unfinished, just the basic backdrop coloring done so far.
+
+### Changed
+- Aura timers should now show time values rounded up instead of down, thus making them more consistent with tooltips, Blizzard and other addons in general. 
+- Loot toasts should once again be visible. Only Ancient Mana in quantities of less than 10 gets its toast removed now.
+- Added a few more tracker updates to rememedy item/kill counts sometimes not being updated, as well as quest item buttons getting stuck at the wrong ID thus preventing them from functioning properly.
+
 ## [1.3.100] 2017-02-06
 ### Added
 - Added a button in the Blizzard TradeSkillUI for Enchanters to directly enchant vellums in their bags.

@@ -149,6 +149,8 @@ local elements = {
 	["PlayerTalentFrameSpecializationLearnButton"] = "Blizzard_TalentUI",
 	["PlayerTalentFrameTalents"] = "Blizzard_TalentUI",
 
+	["TradeSkillFrame"] = "Blizzard_TradeSkillUI"
+
 	-- These can't be styled, as they are :IsForbidden()
 	--["SecureTransferDialog"] = true,
 	--["SecureTransferDialogButton1"] = true,

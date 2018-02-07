@@ -8,6 +8,7 @@ local UICenter = Engine:GetFrame()
 
 -- Lua API
 local _G = _G
+local math_ceil = math.ceil
 local math_floor = math.floor
 local math_min = math.min
 local select = select
@@ -59,13 +60,13 @@ local DAY, HOUR, MINUTE = 86400, 3600, 60
 
 local formatTime = function(time)
 	if time > DAY then -- more than a day
-		return "%1d%s", math_floor(time / DAY), day
+		return "%1d%s", math_ceil(time / DAY), day
 	elseif time > HOUR then -- more than an hour
-		return "%1d%s", math_floor(time / HOUR), hour
+		return "%1d%s", math_ceil(time / HOUR), hour
 	elseif time > MINUTE then -- more than a minute
-		return "%1d%s", math_floor(time / MINUTE), minute
+		return "%1d%s", math_ceil(time / MINUTE), minute
 	elseif time > 5 then -- more than 5 seconds
-		return "%d", math_floor(time)
+		return "%d", math_ceil(time)
 	elseif time > 0 then
 		return "|cffff0000%.1f|r", time
 	else

@@ -1254,7 +1254,7 @@ Entry.UpdateQuestItem = function(self, questID)
 	-- This is needed to get the correct log index, 
 	-- or the item won't function properly until a /reload! 
 	if ENGINE_CATA then
-		questLogIndex = GetQuestLogIndexByID(questID)
+		questLogIndex = GetQuestLogIndexByID(questID) 
 	else
 		questLogIndex = questLogCache[questID]
 	end
@@ -2521,18 +2521,22 @@ Module.OnEvent = function(self, event, ...)
 
 		self:UpdateZoneTracking() -- parse the zone for what to track
 
+	elseif (event == "QUEST_LOG_UPDATE") then 
+		self:GatherQuestLogData() -- parse the quest log for changes to quests
+		self:UpdateItemButtons() -- update item buttons in case of changed log indices
+
+		self:GatherWorldQuestData() -- parse for world quests
+		self:UpdateZoneTracking() -- parse the zone for what to track
+
 	elseif (event == "QUEST_AUTOCOMPLETE") then
 		-- from cata and up
 		-- Auto completion and auto offering of quests
 		PlaySoundKitID(SOUNDKIT.UI_AUTO_QUEST_COMPLETE, "SFX")
 		ShowQuestComplete(GetQuestLogIndexByID((...)))
 
-	elseif (event == "QUEST_LOG_UPDATE") then
-		self:GatherWorldQuestData() -- parse for world quests
-		self:UpdateZoneTracking() -- parse the zone for what to track
-
 	elseif (event == "QUEST_POI_UPDATE") then
 		self:GatherQuestLogData() -- parse the quest log
+		self:UpdateItemButtons() -- update item buttons in case of changed log indices
 		self:GatherWorldQuestData() -- parse for world quests
 
 	elseif (event == "QUEST_TURNED_IN") then 
@@ -2586,7 +2590,9 @@ Module.OnEvent = function(self, event, ...)
 		self:ParseAutoQuests() -- parse automatic quests
 
 	elseif (event == "BAG_UPDATE_COOLDOWN") then
+		self:UpdateItemButtons() -- update item buttons in case of changed log indices
 		self:UpdateItemCooldowns() -- quest item cooldowns
+
 	end
 
 	self:UpdateTrackerWatches() 
