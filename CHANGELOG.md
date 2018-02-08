@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.102] 2017-02-08
+### Removed
+- Removed all AlertFrame filtering for now. Appears what I experienced as spammy and wanted to filter out is a Felsong-only bug, and thus shouldn't even be monitored on retail clients or through this UI in general. Moved that functionality to my Felsong_Companion addon instead. 
+
 ## [1.3.101] 2017-02-07
 ### Added 
 - Started styling the trade skill frame the way some other Blizzard frames have been styled. Unfinished, just the basic backdrop coloring done so far.
