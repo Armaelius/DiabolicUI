@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.103] 2017-02-09
+### Added
+- Added styling for the trade skill interface and the merchant frame.
+
+### Changed
+- The Nameplate module should now disable itself if people choose to run Goldpaw's NamePlates. 
+
+### Fixed
+- Fixed the item level displayed on heirlooms in the character frame when you're above their maximum level.
+
 ## [1.3.102] 2017-02-08
 ### Removed
 - Removed all AlertFrame filtering for now. Appears what I experienced as spammy and wanted to filter out is a Felsong-only bug, and thus shouldn't even be monitored on retail clients or through this UI in general. Moved that functionality to my Felsong_Companion addon instead. 

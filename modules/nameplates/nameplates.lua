@@ -9,9 +9,10 @@ local AuraFunctions = Engine:GetDB("Library: AuraFunctions")
 local UICenter = Engine:GetFrame()
 
 -- Register incompatibilities
+Module:SetIncompatible("gUI4_NamePlates")
+Module:SetIncompatible("Kui_Nameplates")
 Module:SetIncompatible("TidyPlates")
 Module:SetIncompatible("TidyPlates_ThreatPlates")
-Module:SetIncompatible("Kui_Nameplates")
 
 -- Hack'ish manual disable switch. 
 -- Will be implemented as a user choice later.
