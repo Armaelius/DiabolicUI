@@ -12,7 +12,7 @@ local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_CATA = Engine:IsBuild("Cata")
 
 -- Just me trying out stuff
-local targetSize = 290 -- 230
+local targetSize = 260 -- 230 should be min, 290 max
 local origSize = 290
 local mapScale = targetSize/origSize
 local mapSize = origSize * mapScale

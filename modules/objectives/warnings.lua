@@ -13,9 +13,17 @@ local GetTime = _G.GetTime
 -- WoW Client Constants
 local ENGINE_LEGION = Engine:IsBuild("Legion")
 
+-- Crazy personal fishing fix
+local FELSONG = ENGINE_LEGION and (GetRealmName() == "Felsong") and (UnitName("player") == "Goldpaw")
+local INTERRUPTED = _G.INTERRUPTED
 
 local OnUpdate = function(self, elapsed)
 	if self.new_message then
+		-- My personal fishing fix on the Felsong realm.
+		if FELSONG and (self.new_message == INTERRUPTED) and (not IsEquippedItemType("Daggers")) then 
+			self.new_message = nil
+			return 
+		end 
 		self.showing_message = self.new_message
 		self.message:SetText(self.new_message)
 		self.message:SetAlpha(1)

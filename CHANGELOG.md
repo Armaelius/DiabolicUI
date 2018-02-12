@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.104] 2017-02-12
+### Added
+- Added professions tabs at the side of the tradeskill frame, to quickly switch from one profession to another.
+- Added a "Click to Complete" functionality for auto completable quests in the tracker. Work in progress, missing some opacity updates. 
+
+### Changed 
+- Debuffs and Crowd Control are now only hidden from the target frame if the target is an enemy player with a visible nameplate, not from NPCs. This is because on physically large bosses the nameplate would often be moved to the sides out of sight, and thus you wouldn't be able to see your debuffs on it. Fixed! 
+- The energy orb color for Druids and Monks has been slighty changed to better fit the rest of their coloring. 
+- The font size used in the chat bubbles is now +1 larger than the chat frame font size, as they simply need to be a bit larger to be readable. Might increase more, will monitor the situation.
+- The Minimap has lost roughly a tenth of its size.  
+- The Artifact bar should now be hidden for maxed out Artifacts.
+- The Honor bar is now visible at max level for characters with maxed out Artifacts and a Prestige level of 1 or higher. 
+- The Honor bar tooltip now shows the current Prestige rank in brackets after the current Honor level.
+
+### Fixed
+- You shouldn't be told you're not in a Guild every 5th second on WotLK realms anymore. 
+
 ## [1.3.103] 2017-02-09
 ### Added
 - Added styling for the trade skill interface and the merchant frame.

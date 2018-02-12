@@ -197,7 +197,7 @@ Updater.InitBubble = function(self, bubble)
 	bubbles[bubble].text = bubbles[bubble]:CreateFontString()
 	bubbles[bubble].text:SetPoint("BOTTOMLEFT", space, space)
 	bubbles[bubble].text:SetFontObject(ChatFontNormal)
-	bubbles[bubble].text:SetFont(ChatFontNormal:GetFont(), fontsize, "")
+	bubbles[bubble].text:SetFont(ChatFontNormal:GetFont(), fontsize + 1, "")
 	bubbles[bubble].text:SetShadowOffset(-.75, -.75)
 	bubbles[bubble].text:SetShadowColor(0, 0, 0, 1)
 	

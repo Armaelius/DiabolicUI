@@ -273,6 +273,7 @@ local BLIZZ_LOCALE = {
 	OBJECTIVES = _G.OBJECTIVES_TRACKER_LABEL,
 	QUEST_COMPLETE = _G.QUEST_WATCH_QUEST_READY or _G.QUEST_WATCH_QUEST_COMPLETE or _G.QUEST_COMPLETE,
 	QUEST_FAILED = _G.QUEST_FAILED,
+	QUEST_WATCH_CLICK_TO_COMPLETE = _G.QUEST_WATCH_CLICK_TO_COMPLETE,
 	QUEST = ENGINE_LEGION and GetItemSubClassInfo(_G.LE_ITEM_CLASS_QUESTITEM, (select(1, GetAuctionItemSubClasses(_G.LE_ITEM_CLASS_QUESTITEM)))) or ENGINE_CATA and (select(10, GetAuctionItemClasses())) or (select(12, GetAuctionItemClasses())) or "Quest", -- the fallback isn't actually needed
 	UPDATE = _G.UPDATE,
 	WORLD_QUEST_COMPLETE = _G.WORLD_QUEST_COMPLETE
@@ -826,7 +827,11 @@ Title.OnClick = function(self, mouseButton)
 	elseif not(mouseButton == "RightButton") and (not currentQuestData.isWorldQuest) then
 		CloseDropDownMenus()
 		if ENGINE_WOD then
-			QuestLogPopupDetailFrame_Show(questLogIndex)
+			if currentQuestData.isAutoComplete then 
+				ShowQuestComplete(questLogIndex)
+			else 
+				QuestLogPopupDetailFrame_Show(questLogIndex)
+			end 
 		else
 			QuestLog_OpenToQuest(questLogIndex)
 		end
@@ -1111,11 +1116,21 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 		-- Clear away all objectives to avoid overlapping texts
 		self:ClearObjectives()
 
-		-- Change quest description to the completion text
-		local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or BLIZZ_LOCALE.QUEST_COMPLETE
-		local height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
-		completionText:SetHeight(height)
-		completionText.dot:Show()
+		local height
+		if currentQuestData.isAutoComplete then 
+			-- Change quest description to the 
+			local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or BLIZZ_LOCALE.QUEST_WATCH_CLICK_TO_COMPLETE
+			height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
+			completionText:SetHeight(height)
+			completionText.dot:Show()
+		else 
+			-- Change quest description to the completion text
+			local completeMsg = (currentQuestData.completionText and currentQuestData.completionText ~= "") and currentQuestData.completionText or BLIZZ_LOCALE.QUEST_COMPLETE
+			height = setTextAndGetSize(completionText, completeMsg, completionText.standardWidth, completionText.standardHeight)
+			completionText:SetHeight(height)
+			completionText.dot:Show()
+		end 
+
 
 		entryHeight = entryHeight + completionText.topOffset + height + completionText.bottomMargin
 
@@ -1933,6 +1948,17 @@ Module.UpdateTrackerWatches = function(self)
 					or nil
 			end
 		end
+
+		for i = 1, GetNumQuestWatches() do
+			local questID, title, questLogIndex, numObjectives, requiredMoney, isComplete, startEvent, isAutoComplete, failureTime, timeElapsed, questType, isTask, isBounty, isStory, isOnMap, hasLocalPOI = GetQuestWatchInfo(i)
+
+			-- Need to add in this to allow for clicking the quest to complete it.
+			if allTrackedQuests[questID] then 
+				local currentQuestData = questData[questID]
+				currentQuestData.isAutoComplete = isAutoComplete
+			end 
+		end 
+
 	end
 
 	-- Wipe the table, it's only a bunch of references anyway

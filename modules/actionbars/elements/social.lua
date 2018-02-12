@@ -266,7 +266,9 @@ MenuWidget.OnEnable = function(self)
 		end
 
 		-- Force an event update
-		GuildRoster()
+		if IsInGuild() then
+			GuildRoster()
+		end
 
 		-- Reset throttle counter
 		self.elapsed = 0

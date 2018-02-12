@@ -267,26 +267,17 @@ local Filter_UnitIsHostileNPC = Filter.UnitIsHostileNPC
 local buffFilter = function(self, name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, spellId, isBossDebuff, isCastByPlayer)
 
 	local unit = self.unit
-	if isBossDebuff then
+	if (isBossDebuff) 
+	or (isStealable) 
+	or (isCastByPlayer or (unitCaster == "vehicle"))
+	or ((unitCaster and UnitIsUnit(unit, unitCaster)) and duration and (duration > 0) and (duration < TIME_LIMIT)) then
 		return true
 
-	elseif isStealable then
-		return true
-
-	elseif isCastByPlayer then
-		return true
-
-	elseif (unitCaster == "vehicle") then
-		return true
-
-	elseif (unitCaster and UnitIsUnit(unit, unitCaster)) and duration and (duration > 0) and (duration < TIME_LIMIT) then
-		return true
-
-	elseif (not unitCaster) and (not IsInInstance()) then
+	elseif (not unitCaster) and (not IsInInstance()) then -- cache this
 		-- EXPERIMENTAL: ignore debuffs from players outside the group, eg. world bosses
 		return
 
-	elseif (UnitCanAttack("player", unit)) and (not UnitPlayerControlled(unit)) then
+	elseif (UnitCanAttack("player", unit) and (not UnitPlayerControlled(unit))) then
 		-- Hostile NPC.
 		-- Show auras cast by the unit, and auras of unknown origin.
 		return (not unitCaster) or (unitCaster == unit)
@@ -300,8 +291,8 @@ local buffFilter = function(self, name, rank, icon, count, debuffType, duration,
 		-- Need to make a whitelist of certain pvp related player shields, cooldowns and stuff here
 		return spellId and AuraData[spellId] or false
 
-	elseif duration and (duration > 0) then
-		if duration > TIME_LIMIT then
+	elseif (duration and (duration > 0)) then
+		if (duration > TIME_LIMIT) then
 			return false
 		end
 		return true
@@ -340,7 +331,8 @@ local debuffFilter = function(self, name, rank, icon, count, debuffType, duratio
 		return true
 
 	-- Hide Loss of Control CC from the target when enemy plates are visible
-	elseif ENEMY_PLATES and isLoC then
+	--elseif ENEMY_PLATES and isLoC then
+	elseif ENEMY_PLATES and unitIsHostilePlayer and isShortDuration then 
 		return false
 
 	-- Show debuffs cast by the player, unless it's currently visible on a nameplate
@@ -348,7 +340,8 @@ local debuffFilter = function(self, name, rank, icon, count, debuffType, duratio
 
 		-- Enemy plates are visible (implies Legion)and the target is hostile.
 		-- Filter out debuffs shown on the nameplates. This must match the nameplate filter.
-		if ENEMY_PLATES and (unitIsHostilePlayer or unitIsHostileNPC) and isShortDuration then 
+		--if ENEMY_PLATES and (unitIsHostilePlayer or unitIsHostileNPC) and isShortDuration then 
+		if ENEMY_PLATES and unitIsHostilePlayer and isShortDuration then 
 			return false
 		end
 		return true

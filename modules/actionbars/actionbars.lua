@@ -30,54 +30,84 @@ local UnitLevel = _G.UnitLevel
 local UnitXP = _G.UnitXP
 local UnitXPMax = _G.UnitXPMax
 
+local C_ArtifactUI = _G.C_ArtifactUI
+local GetArtifactArtInfo = C_ArtifactUI and C_ArtifactUI.GetArtifactArtInfo
+local GetArtifactKnowledgeLevel = C_ArtifactUI and C_ArtifactUI.GetArtifactKnowledgeLevel
+local GetArtifactKnowledgeMultiplier = C_ArtifactUI and C_ArtifactUI.GetArtifactKnowledgeMultiplier
+local GetCostForPointAtRank = C_ArtifactUI and C_ArtifactUI.GetCostForPointAtRank
+local GetEquippedArtifactInfo = C_ArtifactUI and C_ArtifactUI.GetEquippedArtifactInfo
+local GetTotalPurchasedRanks = C_ArtifactUI and C_ArtifactUI.GetTotalPurchasedRanks
+
 -- WoW tables and objects
 local GameTooltip = _G.GameTooltip
 local MAX_PLAYER_LEVEL_TABLE = _G.MAX_PLAYER_LEVEL_TABLE
 
 -- Client version constants
-local ENGINE_LEGION 	= Engine:IsBuild("Legion")
-local ENGINE_WOD 		= Engine:IsBuild("WoD")
-local ENGINE_MOP 		= Engine:IsBuild("MoP")
-local ENGINE_CATA 		= Engine:IsBuild("Cata")
+local ENGINE_LEGION_730 	= Engine:IsBuild("7.3.0")
+local ENGINE_LEGION 		= Engine:IsBuild("Legion")
+local ENGINE_WOD 			= Engine:IsBuild("WoD")
+local ENGINE_MOP 			= Engine:IsBuild("MoP")
+local ENGINE_CATA 			= Engine:IsBuild("Cata")
+
+
+local GetEquippedArtifactXP = function(pointsSpent, artifactXP, artifactTier)
+	local numPoints = 0
+	local xpForNextPoint = GetCostForPointAtRank(pointsSpent, artifactTier)
+	while ((artifactXP >= xpForNextPoint) and (xpForNextPoint > 0)) do
+		artifactXP = artifactXP - xpForNextPoint
+		pointsSpent = pointsSpent + 1
+		numPoints = numPoints + 1
+		xpForNextPoint = GetCostForPointAtRank(pointsSpent, artifactTier)
+	end
+	return numPoints, artifactXP, xpForNextPoint
+end
 
 -- Whether or not the XP bar area is used.
 -- This will return true for the artifact bar as well, 
 -- and for reputation when we introduce reputation tracking.
+-- @return xp, artifact, honor -- where 'xp' relates to any bar at all
 Module.IsXPVisible = ENGINE_LEGION and function(self)
-	local expacMax = MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT or #MAX_PLAYER_LEVEL_TABLE]
-	local playerMax = MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel() or #MAX_PLAYER_LEVEL_TABLE]
-	local playerLevel = UnitLevel("player")
 
-	if (playerLevel == playerMax) or (playerLevel >= expacMax) then
+	if UnitHasVehicleUI("player") or UnitHasVehiclePlayerFrameUI("player") then
+		return false -- hide all bars in vehicles
+	else
+		local playerLevel = UnitLevel("player")
+		local expacMax = MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT or #MAX_PLAYER_LEVEL_TABLE]
+		local playerMax = MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel() or #MAX_PLAYER_LEVEL_TABLE]
+		local noXP = (playerLevel == playerMax) or (playerLevel >= expacMax) 
 
-		-- honor bar if in a BG
-		local hasHonorBar
-		if (playerLevel >= expacMax) then
+		if noXP then 
+			local prestige = ENGINE_LEGION and UnitPrestige("player") or 0
 			local isInInstance, instanceType = IsInInstance()
-			if (instanceType == "pvp") or (instanceType == "arena") then
-				hasHonorBar = true
+			local hasHonorBar = (instanceType == "pvp") or (instanceType == "arena") or (prestige > 0)
+
+			if HasArtifactEquipped() then 
+				local itemID, altItemID, name, icon, totalXP, usedPoints, quality, _, _, _, _, _, artifactTier = C_ArtifactUI.GetEquippedArtifactInfo()
+				local unusedPoints, value, max = GetEquippedArtifactXP(usedPoints, totalXP, artifactTier)
+				local artifactMaxed = ENGINE_LEGION_730 and C_ArtifactUI.IsEquippedArtifactMaxed() or (usedPoints >= 54)
+				local hasArtifactBar = not artifactMaxed
+
+				return hasArtifactBar or hasHonorBar, hasArtifactBar, hasHonorBar
+			else 
+				return hasHonorBar, false, hasHonorBar
+			end 
+
+		else
+			-- If user has chosen to disable XP gains at a lower level, 
+			-- we assume they wish to see Honor if in a PvP instance.
+			if IsXPUserDisabled() then 
+				local isInInstance, instanceType = IsInInstance()
+				if (instanceType == "pvp") or (instanceType == "arena") then
+					return true, false, true
+				else 
+					return false
+				end 
+			else 
+				return true, false, false
 			end 
 		end
-
-		if UnitHasVehicleUI("player") or UnitHasVehiclePlayerFrameUI("player") then
-			return false
-		elseif HasArtifactEquipped() then
-			return true, true, hasHonorBar
-		else
-			return hasHonorBar, false, hasHonorBar
-		end
-
-	else
-
-		if IsXPUserDisabled() then
-			return false
-		elseif UnitHasVehicleUI("player") or UnitHasVehiclePlayerFrameUI("player") then
-			return false
-		else
-			return true
-		end
-
-	end
+	
+	end 
 
 end or ENGINE_CATA and function(self)
 	if ((MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel() or #MAX_PLAYER_LEVEL_TABLE] or MAX_PLAYER_LEVEL_TABLE[#MAX_PLAYER_LEVEL_TABLE]) == UnitLevel("player")) then

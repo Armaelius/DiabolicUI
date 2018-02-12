@@ -9,20 +9,30 @@ Module:SetIncompatible("OneClickEnchantScroll")
 -- Lua API
 local _G = _G
 local setmetatable = setmetatable
+local string_format = string.format
 
 -- WoW API
 local CraftRecipe = _G.C_TradeSkillUI.CraftRecipe
+local CreateFrame = _G.CreateFrame
 local GetItemCount = _G.GetItemCount
 local GetLocale = _G.GetLocale
+local GetProfessionInfo = _G.GetProfessionInfo
+local GetProfessions = _G.GetProfessions
 local GetRecipeInfo = _G.C_TradeSkillUI.GetRecipeInfo
+local GetSpellBookItemName = _G.GetSpellBookItemName
+local GetSpellBookItemTexture = _G.GetSpellBookItemTexture
 local GetSpellInfo = _G.GetSpellInfo
 local GetTradeSkillLine = _G.C_TradeSkillUI.GetTradeSkillLine
 local hooksecurefunc = _G.hooksecurefunc
+local InCombatLockdown = _G.InCombatLockdown
+local IsCurrentSpell = _G.IsCurrentSpell
 local IsNPCCrafting = _G.C_TradeSkillUI.IsNPCCrafting
+local IsSpellKnown = _G.IsSpellKnown
 local IsTradeSkillGuild = _G.C_TradeSkillUI.IsTradeSkillGuild
 local IsTradeSkillLinked = _G.C_TradeSkillUI.IsTradeSkillLinked
+local PlayerHasToy = _G.PlayerHasToy
 local UseItemByName = _G.UseItemByName
-
+ 
 -- ItemID of enchanter vellums
 local ENCHANTING_TEXT = GetSpellInfo(7411)
 local SCROLL_ID = 38682
@@ -40,6 +50,38 @@ local SCROLL_TEXT = (setmetatable({
 	zhTW = "卷軸"
 }, { __index = function(t,v) return "Scroll" end}))[(GetLocale())]
 
+local ranks = PROFESSION_RANKS
+local tabs, spells = {}, {}
+
+local defaults = {
+	-- Primary Professions
+	[164] = {true, false},  -- Blacksmithing
+	[165] = {true, false},  -- Leatherworking
+	[171] = {true, false},  -- Alchemy
+	[182] = {false, false}, -- Herbalism
+	[186] = {true, false},  -- Mining
+	[197] = {true, false},  -- Tailoring
+	[202] = {true, false},  -- Engineering
+	[333] = {true, true},   -- Enchanting
+	[393] = {false, false}, -- Skinning
+	[755] = {true, true},   -- Jewelcrafting
+	[773] = {true, true},   -- Inscription
+ 
+	-- Secondary Professions
+	[129] = {true, false},  -- First Aid
+	[185] = {true, true},   -- Cooking
+	[356] = {false, false}, -- Fishing
+	[794] = {false, false}, -- Archaeology
+}
+
+local playerClass = UnitClass("player")
+if (playerClass == "DEATHKNIGHT") then
+	spells[#spells + 1] = 53428 -- Runeforging
+end
+ 
+if (playerClass == "ROGUE") then
+	spells[#spells + 1] = 1804 -- Pick Lock
+end
 
 Module.EnableScrollButton = function(self)
 	local TradeSkillFrame = _G.TradeSkillFrame
@@ -89,19 +131,183 @@ Module.EnableScrollButton = function(self)
 	end)
 end
 
+Module.UpdateSelectedTabs = function(self, object)
+	Module:RegisterEvent("CURRENT_SPELL_CAST_CHANGED")
+	for index = 1, #tabs[object] do
+		local tab = tabs[object][index]
+		tab:SetChecked(IsCurrentSpell(tab.name))
+	end
+end
+ 
+Module.ResetTabs = function(self, object)
+	for index = 1, #tabs[object] do
+		tabs[object][index]:Hide()
+	end
+ 	tabs[object].index = 0
+end
+
+Module.UpdateTab = function(self, object, name, rank, texture, hat)
+	local index = tabs[object].index + 1
+	local tab = tabs[object][index] or CreateFrame("CheckButton", "ProTabs"..tabs[object].index, object, "SpellBookSkillLineTabTemplate SecureActionButtonTemplate")
+ 
+	tab:ClearAllPoints()
+ 
+	tab:SetPoint("TOPLEFT", object, "TOPRIGHT", 0, (-44 * index) + 18)
+	tab:SetNormalTexture(texture)
+ 
+	if hat then
+		tab:SetAttribute("type", "toy")
+		tab:SetAttribute("toy", 134020)
+	else
+		tab:SetAttribute("type", "spell")
+		tab:SetAttribute("spell", name)
+	end
+ 
+	tab:Show()
+ 
+	tab.name = name
+	tab.tooltip = rank and rank ~= "" and string_format("%s (%s)", name, rank) or name
+ 
+	tabs[object][index] = tabs[object][index] or tab
+	tabs[object].index = tabs[object].index + 1
+end
+
+Module.GetProfessionRank = function(self, currentSkill)
+	if (currentSkill <= 74) then
+		return APPRENTICE
+	end
+ 
+	for index = #ranks, 1, -1 do
+		local requiredSkill, title = ranks[index][1], ranks[index][2]
+ 
+		if (currentSkill >= requiredSkill) then
+			return title
+		end
+	end
+end
+
+Module.HandleProfession = function(self, object, professionID, hat)
+	if professionID then
+		local _, _, currentSkill, _, numAbilities, offset, skillID = GetProfessionInfo(professionID)
+ 
+		if defaults[skillID] then
+			for index = 1, numAbilities do
+				if defaults[skillID][index] then
+					local name = GetSpellBookItemName(offset + index, "profession")
+					local rank = self:GetProfessionRank(currentSkill)
+					local texture = GetSpellBookItemTexture(offset + index, "profession")
+ 
+					if name and rank and texture then
+						self:UpdateTab(object, name, rank, texture)
+					end
+				end
+			end
+		end
+ 
+		if (hat and PlayerHasToy(134020)) then
+			self:UpdateTab(object, GetSpellInfo(67556), nil, 236571, true)
+		end
+	end
+end
+
+Module.HandleTabs = function(self, object)
+	tabs[object] = tabs[object] or {}
+ 
+	if InCombatLockdown() then
+		Module:RegisterEvent("PLAYER_REGEN_ENABLED")
+	else
+		local firstProfession, secondProfession, archaeology, fishing, cooking, firstAid = GetProfessions()
+ 
+		self:ResetTabs(object)
+ 
+		self:HandleProfession(object, firstProfession)
+		self:HandleProfession(object, secondProfession)
+		self:HandleProfession(object, archaeology)
+		self:HandleProfession(object, fishing)
+		self:HandleProfession(object, cooking, true)
+		self:HandleProfession(object, firstAid)
+ 
+		for index = 1, #spells do
+			if IsSpellKnown(spells[index]) then
+				local name, rank, texture = GetSpellInfo(spells[index])
+				self:UpdateTab(object, name, rank, texture)
+			end
+		end
+	end
+ 
+	self:UpdateSelectedTabs(object)
+end
+
+Module.StartUp = function(self, event, ...)
+	self:EnableScrollButton()
+
+	self:RegisterEvent("TRADE_SKILL_SHOW")
+	self:RegisterEvent("TRADE_SKILL_CLOSE")
+	self:RegisterEvent("TRADE_SHOW")
+	self:RegisterEvent("SKILL_LINES_CHANGED")
+	self:RegisterEvent("CURRENT_SPELL_CAST_CHANGED")
+end
+
 Module.OnEvent = function(self, event, ...)
 	if (event == "ADDON_LOADED") then 
 		local arg = ... 
 		if (arg == "Blizzard_TradeSkillUI") then 
-			self:EnableScrollButton()
+			self:StartUp()
 			self:UnregisterEvent("ADDON_LOADED", "OnEvent")
 		end 
+	elseif (event == "CURRENT_SPELL_CAST_CHANGED") then 
+		local numShown = 0
+		for object in pairs(tabs) do
+			if object:IsShown() then
+				numShown = numShown + 1
+				self:UpdateSelectedTabs(object)
+			end
+		end
+		if (numShown == 0) then
+			self:UnregisterEvent(event)
+		end
+	elseif (event == "SKILL_LINES_CHANGED") then
+		for object in pairs(tabs) do
+			self:HandleTabs(object)
+		end
+	elseif (event == "TRADE_SHOW") then 
+		local owner = TradeFrame
+		if (self.handledTradeFrame) then 
+			self:UpdateSelectedTabs(owner)
+		else 
+			self.handledTradeFrame = true
+			self:HandleTabs(TradeFrame)
+		end 
+	elseif (event == "TRADE_SKILL_SHOW") then 
+		local owner = ATSWFrame or MRTSkillFrame or SkilletFrame or TradeSkillFrame
+ 
+		if Engine:IsAddOnEnabled("TradeSkillDW") and (owner == TradeSkillFrame) then
+			self:UnregisterEvent(event)
+		else
+			self:HandleTabs(owner)
+			self[event] = function()
+				for object in pairs(tabs) do
+					self:UpdateSelectedTabs(object)
+				end
+			end
+		end
+	elseif (event == "TRADE_SKILL_CLOSE") then 
+		for object in pairs(tabs) do
+			if object:IsShown() then
+				self:UpdateSelectedTabs(object)
+			end
+		end
+	elseif (event == "PLAYER_REGEN_ENABLED") then 
+		self:UnregisterEvent(event)
+		for object in pairs(tabs) do
+			self:HandleTabs(object)
+		end
 	end 
 end
 
 Module.OnInit = function(self)
 	if IsAddOnLoaded("Blizzard_TradeSkillUI") then 
-		self:EnableScrollButton()
+		self:StartUp()
 	else 
 		self:RegisterEvent("ADDON_LOADED", "OnEvent")
 	end 

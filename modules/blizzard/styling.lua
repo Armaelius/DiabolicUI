@@ -1,5 +1,5 @@
 local ADDON, Engine = ...
-local Module = Engine:NewModule("Blizzard: Styling")
+local Module = Engine:NewModule("Blizzard: Styling", "LOW")
 local C = Engine:GetDB("Data: Colors")
 
 -- Lua API
@@ -236,6 +236,8 @@ local elements = {
 	["MerchantBuyBackItem"] = true,
 	["MerchantNextPageButton"] = true,
 	["MerchantPrevPageButton"] = true,
+
+	["FloatingBattlePetTooltip"] = true
 
 	-- These can't be styled, as they are :IsForbidden()
 	--["SecureTransferDialog"] = true,

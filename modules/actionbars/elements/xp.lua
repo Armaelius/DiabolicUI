@@ -350,6 +350,7 @@ Bar_Honor.UpdateData = function(self)
 	local max = UnitHonorMax("player")
 	local level = UnitHonorLevel("player")
 	local levelMax = GetMaxPlayerHonorLevel()
+	local prestige = ENGINE_LEGION and UnitPrestige("player") or 0
 	local exhaustionStateID, exhaustionStateName, exhaustionStateMultiplier = GetHonorRestState()
 	local exhaustionThreshold = GetHonorExhaustion()
 
@@ -361,6 +362,7 @@ Bar_Honor.UpdateData = function(self)
 
 	data.color = C.General.Honor
 	data.honor = current
+	data.prestige = prestige
 	data.honorMax = max
 	data.honorLevel = level
 	data.honorLevelMax = levelMax
@@ -417,7 +419,11 @@ Bar_Honor.OnEnter = function(self)
 	local r2, g2, b2 = unpack(C.General.OffWhite)
 	local nameR, nameG, nameB = unpack(data.color)
 
-	GameTooltip:AddDoubleLine(HONOR, data.honorLevel, nameR, nameG, nameB, r, g, b)
+	if (data.prestige > 0) then 
+		GameTooltip:AddDoubleLine(HONOR, data.honorLevel .. " ("..F.Colorize(data.prestige, "Normal") ..")", nameR, nameG, nameB, r, g, b)
+	else 
+		GameTooltip:AddDoubleLine(HONOR, data.honorLevel, nameR, nameG, nameB, r, g, b)
+	end 
 	GameTooltip:AddDoubleLine(L["Current Honor Points: "], longXPString:format(F.Colorize(F.Short(data.honor), "Normal"), F.Colorize(F.Short(data.honorMax), "Normal")), r2, g2, b2, r2, g2, b2)
 	
 	--GameTooltip:AddLine(fullXPString:format(F.Colorize(F.Short(data.honor), "Normal"), F.Colorize(F.Short(data.honorMax), "Normal"), F.Colorize(F.Short(math_floor(data.honor/data.honorMax*100)), "Normal")))
@@ -658,7 +664,7 @@ BarWidget.OnEnable = function(self)
 
 	if ENGINE_LEGION then
 		self:RegisterEvent("ARTIFACT_XP_UPDATE", "Update")
-		--self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", "Update") -- not really needed
+		self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", "Update") -- not really needed
 		self:RegisterEvent("HONOR_LEVEL_UPDATE", "Update")
 		self:RegisterEvent("HONOR_PRESTIGE_UPDATE", "Update")
 	end
