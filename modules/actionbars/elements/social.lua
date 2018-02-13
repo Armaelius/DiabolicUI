@@ -248,10 +248,11 @@ MenuWidget.OnEnable = function(self)
 
 		local numTotalGuildMembers, numOnlineGuildMembers, numOnlineAndMobileMembers = GetNumGuildMembers()
 		local numberOfFriends, onlineFriends = GetNumFriends() 
-	
+		
 		self.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
+		self.numOtherGuildies = (self.numGuildies > 1) and (self.numGuildies - 1) or 0
 		self.numFriends = onlineFriends or 0
-		self.numPeople = self.numFriends + self.numGuildies
+		self.numPeople = self.numFriends + self.numOtherGuildies
 	
 		self.People:SetText(((self.numGuildies > 1) or (self.numFriends > 0)) and self.numPeople or "")
 	end)
@@ -280,7 +281,8 @@ MenuWidget.OnEnable = function(self)
 
 	SocialButton.numFriends = onlineFriends or 0
 	SocialButton.numGuildies = numOnlineAndMobileMembers or numOnlineGuildMembers or 0
-	SocialButton.numPeople = SocialButton.numFriends + SocialButton.numGuildies
+	SocialButton.numOtherGuildies = (SocialButton.numGuildies > 1) and (SocialButton.numGuildies - 1) or 0
+	SocialButton.numPeople = SocialButton.numFriends + SocialButton.numOtherGuildies
 
 	SocialButton.People = People
 	SocialButton.People:SetText(((SocialButton.numGuildies > 1) or (SocialButton.numFriends > 0)) and SocialButton.numPeople or "")

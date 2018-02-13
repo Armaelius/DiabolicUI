@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.105] 2017-02-13
+### Fixed
+- Changed how the actionbars decided whether or not the Artifact or Honor bar should be shown. Artifacts that aren't maxed should be shown as intended when equipped now. 
+
 ## [1.3.104] 2017-02-12
 ### Added
 - Added professions tabs at the side of the tradeskill frame, to quickly switch from one profession to another.

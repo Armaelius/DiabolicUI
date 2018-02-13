@@ -77,17 +77,17 @@ Module.IsXPVisible = ENGINE_LEGION and function(self)
 		local noXP = (playerLevel == playerMax) or (playerLevel >= expacMax) 
 
 		if noXP then 
-			local prestige = ENGINE_LEGION and UnitPrestige("player") or 0
 			local isInInstance, instanceType = IsInInstance()
-			local hasHonorBar = (instanceType == "pvp") or (instanceType == "arena") or (prestige > 0)
+			local hasHonorBar = (instanceType == "pvp") or (instanceType == "arena") 
+			local hasPrestige = (ENGINE_LEGION and UnitPrestige("player") or 0) > 0
 
 			if HasArtifactEquipped() then 
 				local itemID, altItemID, name, icon, totalXP, usedPoints, quality, _, _, _, _, _, artifactTier = C_ArtifactUI.GetEquippedArtifactInfo()
 				local unusedPoints, value, max = GetEquippedArtifactXP(usedPoints, totalXP, artifactTier)
 				local artifactMaxed = ENGINE_LEGION_730 and C_ArtifactUI.IsEquippedArtifactMaxed() or (usedPoints >= 54)
-				local hasArtifactBar = not artifactMaxed
+				local showHonorBar = hasHonorBar or (artifactMaxed and hasPrestige)
 
-				return hasArtifactBar or hasHonorBar, hasArtifactBar, hasHonorBar
+				return (not artifactMaxed) or showHonorBar, not artifactMaxed, showHonorBar
 			else 
 				return hasHonorBar, false, hasHonorBar
 			end 
