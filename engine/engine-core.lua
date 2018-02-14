@@ -22,6 +22,7 @@ local print = print
 local select = select
 local setmetatable = setmetatable
 local string_join = string.join
+local string_lower = string.lower
 local string_match = string.match
 local table_concat = table.concat
 local tonumber = tonumber
@@ -1515,10 +1516,15 @@ end
 
 -- Check if an addon exists in the addon listing and loadable on demand
 Engine.IsAddOnLoadable = function(self, target)
-	local target = strlower(target)
+	local target = string_lower(target)
 	for i = 1,GetNumAddOns() do
 		local name, title, notes, enabled, loadable, reason, security = self:GetAddOnInfo(i)
-		if strlower(name) == target then
+		if (string_lower(name) == target) then
+			-- If its dependency is disabled, it can't be loaded.
+			-- *an exception might be if the dependency is ondemand too. But really...
+			if (reason and (reason == "DISABLED" or reason == "DEP_DISABLED")) then 
+				return 
+			end 
 			if loadable then
 				return true
 			end
@@ -1535,15 +1541,20 @@ Engine.GetAddOnInfo = function(self, index)
 	else
 		name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index)
 	end
+	-- Unlike the blizz API call, we want our "enabled" return to explain
+	-- wether or not the addon is actually going to be loaded. 
+	if (reason and (reason == "DISABLED" or reason == "DEP_DISABLED")) then 
+		enabled = nil
+	end 
 	return name, title, notes, enabled, loadable, reason, security
 end
 
 -- Check if an addon is enabled	in the addon listing
 Engine.IsAddOnEnabled = function(self, target)
-	local target = strlower(target)
+	local target = string_lower(target)
 	for i = 1,GetNumAddOns() do
 		local name, title, notes, enabled, loadable, reason, security = self:GetAddOnInfo(i)
-		if strlower(name) == target then
+		if (string_lower(name) == target) then
 			if enabled then
 				return true
 			end

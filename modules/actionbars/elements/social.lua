@@ -170,7 +170,7 @@ MenuWidget.OnEnable = function(self)
 		if (numGuildies > 1) or (numFriends > 0) then
 			GameTooltip:AddLine(" ")
 			if (numGuildies > 1) then
-				GameTooltip:AddDoubleLine(L["Guild Members Online:"], numGuildies, 1,1,1,1,.82,0)
+				GameTooltip:AddDoubleLine(L["Guild Members Online:"], numGuildies - 1, 1,1,1,1,.82,0)
 			end
 			if (numFriends > 0) then
 				GameTooltip:AddDoubleLine(L["Friends Online:"], numFriends, 1,1,1,1,.82,0)

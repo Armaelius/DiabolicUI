@@ -157,7 +157,7 @@ local Update = function(self, event, ...)
 		end
 				
 		if Power.PostUpdate then
-			Power:PostUpdate()
+			Power:PostUpdate(power, powermax)
 		end		
 	end
 
@@ -216,7 +216,7 @@ local Update = function(self, event, ...)
 			end
 
 			if Mana.PostUpdate then
-				Mana:PostUpdate()
+				Mana:PostUpdate(mana, manamax)
 			end		
 		end
 	end

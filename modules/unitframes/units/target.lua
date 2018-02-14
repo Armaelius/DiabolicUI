@@ -588,7 +588,19 @@ local Style = function(self, unit)
 	power:SetPoint(unpack(config.power.position))
 	power:SetStatusBarTexture(config.power.texture)
 	power.frequent = 1/120
-	
+
+	-- Add a postupdate to dynamically toggle powerbar artwork when needed
+	power.PostUpdate = function(power, min, max)
+		local unit = self.unit
+		if (not unit) then
+			return
+		end
+		local showPower = (UnitIsPlayer(unit) or not(min == 0 or max == 0))
+		if (showPower == self.haspower) then 
+			return 
+		end 
+		PostUpdateArtwork(self)
+	end 
 
 
 	-- CastBar

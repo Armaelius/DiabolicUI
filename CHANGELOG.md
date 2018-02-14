@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.106] 2017-02-14
+### Added
+- The Minimap clock can now be right-clicked to toggle 12/24 hour time mode, and middle-clicked to toggle between your local time and game time.
+
+### Fixed
+- Changed how the UI checks for whether or not an addon is enabled and will be loaded. Previously it just checked for the enabled checkmark in the addon listing, which would cause crazy issues like the DiabolicUI nameplates not being loaded if you had Goldpaw's NamePlates enabled in your addon listing but the Goldpaw's UI Core disabled. The new behavior makes sure the addon in question will actually be loaded, meaning its dependencies must also be enabled. 
+- The bottom left corner social button's tooltip now exclude yourself from the count of online guild members, the same way the button's own count does. Because you're well aware you're online, it's who else is there with you that matters. 
+
 ## [1.3.105] 2017-02-13
 ### Fixed
 - Changed how the actionbars decided whether or not the Artifact or Honor bar should be shown. Artifacts that aren't maxed should be shown as intended when equipped now. 

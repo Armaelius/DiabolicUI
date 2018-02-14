@@ -192,8 +192,10 @@ L["Auto positioning of chat windows has been disabled."] = true
 -- minimap module
 ---------------------------------------------------------------------
 L["<Left-click> to toggle calendar."] = true
-L["<Middle-click> to toggle stopwatch."] = true
-L["<Right-click> to configure clock."] = true
+L["<Middle-click> to toggle local/game time."] = true
+L["<Right-click> to toggle 12/24-hour clock."] = true
+--L["<Middle-click> to toggle stopwatch."] = true
+--L["<Right-click> to configure clock."] = true
 L["Calendar"] = true
 L["New Event!"] = true
 L["New Mail!"] = true

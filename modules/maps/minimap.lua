@@ -53,6 +53,7 @@ local GetZoneText = _G.GetZoneText
 local HasNewMail = _G.HasNewMail
 local IsAddOnLoaded = _G.IsAddOnLoaded
 local IsInInstance = _G.IsInInstance
+local PlaySoundKitID = Engine:IsBuild("7.3.0") and _G.PlaySound or _G.PlaySoundKitID
 local RegisterStateDriver = _G.RegisterStateDriver
 local SetMapToCurrentZone = _G.SetMapToCurrentZone
 local ToggleDropDownMenu = _G.ToggleDropDownMenu
@@ -119,6 +120,7 @@ end
 local onMouseUp = function(self, button)
 	if (button == "RightButton") then
 		ToggleDropDownMenu(1, nil,  _G.MiniMapTrackingDropDown, self)
+		PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON, "SFX")
 	else
 		local effectiveScale = self:GetEffectiveScale()
 
@@ -139,7 +141,7 @@ end
 local onUpdate = function(self, elapsed)
 	-- Update clock
 	self.elapsedTime = (self.elapsedTime or 0) + elapsed
-	if self.elapsedTime > 1 then 
+	if (self.elapsedTime > 1) or (self.refreshTime) then 
 
 		local db = self.db
 		local time = self.widgets.time
@@ -152,7 +154,7 @@ local onUpdate = function(self, elapsed)
 			h = dateTable.hour
 			m = dateTable.min 
 		end
-
+		
 		if db.use24hrClock then
 			time:SetFormattedText("%02d:%02d", h, m)
 		else
@@ -176,6 +178,7 @@ local onUpdate = function(self, elapsed)
 		end
 
 		self.elapsedTime = 0
+		self.refreshTime = nil
 	end
 
 	-- Update player coordinates
@@ -803,7 +806,7 @@ Module.OnInit = function(self)
 
 	local timeClick = info:CreateFrame("Button")
 	timeClick:SetAllPoints(time)
-	timeClick:RegisterForClicks("RightButtonUp", "LeftButtonUp")
+	timeClick:RegisterForClicks("RightButtonUp", "LeftButtonUp", "MiddleButtonUp")
 	timeClick.UpdateTooltip = function(self)
 		if GameTooltip:IsForbidden() then
 			return
@@ -826,11 +829,11 @@ Module.OnInit = function(self)
 				localTime = string_format("%d:%02d%s", h, m, TIMEMANAGER_AM)
 			end
 			if (gH > 12) then 
-				realmTime = string_format("%d:%02d%s", h - 12, m, TIMEMANAGER_PM)
+				realmTime = string_format("%d:%02d%s", gH - 12, gM, TIMEMANAGER_PM)
 			elseif (gH < 1) then
-				realmTime = string_format("%d:%02d%s", h + 12, m, TIMEMANAGER_AM)
+				realmTime = string_format("%d:%02d%s", gH + 12, gM, TIMEMANAGER_AM)
 			else
-				realmTime = string_format("%d:%02d%s", h, m, TIMEMANAGER_AM)
+				realmTime = string_format("%d:%02d%s", gH, gM, TIMEMANAGER_AM)
 			end
 		end
 
@@ -840,9 +843,13 @@ Module.OnInit = function(self)
 		GameTooltip:ClearAllPoints()
 		GameTooltip:SetPoint("TOPRIGHT", mapContent, "TOPLEFT", -10, -10)
 		GameTooltip:AddLine(TIMEMANAGER_TITLE)
+		GameTooltip:AddLine(" ")
 		GameTooltip:AddDoubleLine(TIMEMANAGER_TOOLTIP_LOCALTIME, localTime, r, g, b)
 		GameTooltip:AddDoubleLine(TIMEMANAGER_TOOLTIP_REALMTIME, realmTime, r, g, b)
+		GameTooltip:AddLine(" ")
 		GameTooltip:AddLine(L["<Left-click> to toggle calendar."], unpack(C.General.OffGreen))
+		GameTooltip:AddLine(L["<Right-click> to toggle 12/24-hour clock."], unpack(C.General.OffGreen))
+		GameTooltip:AddLine(L["<Middle-click> to toggle local/game time."], unpack(C.General.OffGreen))
 		GameTooltip:Show()
 	end
 
@@ -852,9 +859,17 @@ Module.OnInit = function(self)
 			GameTooltip:Hide() 
 		end
 	end)
-	timeClick:SetScript("OnClick", function(self, mouseButton)
+	timeClick:SetScript("OnClick", function(_, mouseButton)
 		if (mouseButton == "LeftButton") then
 			ToggleCalendar()
+		elseif (mouseButton == "MiddleButton") then 
+			db.use24hrClock = not db.use24hrClock
+			timeClick:UpdateTooltip()
+			self.frame.refreshTime = true
+		elseif (mouseButton == "RightButton") then 
+			db.useGameTime = not db.useGameTime
+			timeClick:UpdateTooltip()
+			self.frame.refreshTime = true
 		end
 	end)
 

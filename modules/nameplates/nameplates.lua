@@ -2150,7 +2150,6 @@ or ENGINE_WOTLK and function(self, event, ...)
 		end
 		self:UpdateAllScales()
 		self.Updater:SetScript("OnUpdate", function(_, ...) self:OnUpdate(...) end)
-
 	--elseif (event == "PLAYER_CONTROL_GAINED") then
 		--for baseFrame, plate in pairs(self.allPlates) do
 		--	plate:UpdateAll()
@@ -2889,7 +2888,9 @@ Module.OnInit = function(self)
 	self.visiblePlates = VisiblePlates
 end
 
+
 Module.OnEnable = function(self)
+
 	if (not self.Updater) then
 		-- We parent our update frame to the WorldFrame, 
 		-- as we need it to run even if the user has hidden the UI.
