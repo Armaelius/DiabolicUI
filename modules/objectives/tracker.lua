@@ -1109,7 +1109,8 @@ Entry.SetQuest = function(self, questLogIndex, questID)
 	entryHeight = entryHeight + titleHeight
 
 	-- Tone down completed entries
-	self:SetAlpha(currentQuestData.isComplete and .5 or 1)
+	self:SetAlpha((currentQuestData.isComplete and currentQuestData.numQuestObjectives > 0) and .5 or 1)
+	--self:SetAlpha(currentQuestData.isComplete and .5 or 1)
 
 	-- Update objective descriptions and completion text
 	if currentQuestData.isComplete then
@@ -1512,7 +1513,6 @@ Tracker.Update = function(self)
 		end
 		SetSuperTrackedQuestID(superTrackID or 0)
 	end
-
 	
 	self.oldZone = self.currentZone -- What zone was prevously shown?
 	self.oldNumVisibleEntries = self.numVisibleEntries -- How many visible entries did we have?
@@ -1559,7 +1559,6 @@ Tracker.Update = function(self)
 			end
 		end
 	end
-
 
 	-- Make a copy of the tracker display list
 	local displayCache = table_wipe(self.displayCache)
@@ -2375,7 +2374,7 @@ Module.GatherQuestLogData = function(self, forced)
 			local questDescription, questObjectivesDescription = GetQuestLogQuestText()
 
 			local requiredMoney = GetQuestLogRequiredMoney(questLogIndex) or 0
-			if (numQuestObjectives == 0) and (playerMoney >= requiredMoney) then
+			if (numQuestObjectives == 0) and (requiredMoney > 0) and (playerMoney >= requiredMoney) then
 				isComplete = true
 			end
 
@@ -2449,7 +2448,7 @@ Module.GatherQuestLogData = function(self, forced)
 			currentQuestData.suggestedGroup = suggestedGroup
 
 			-- This should fire, since it requires itself to be turned in
-			local currentQuestIsComplete = isComplete or (numObjectivesCompleted == numQuestObjectives) 
+			local currentQuestIsComplete = isComplete or (numQuestObjectives > 0 and numObjectivesCompleted == numQuestObjectives) 
 
 			-- Need to change this to display a better suited text. "Ready for turn-in" just doesn't do it. 
 			-- Also, we don't need this until we replace the Blizzard alert frame system. 

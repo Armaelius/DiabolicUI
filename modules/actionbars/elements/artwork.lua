@@ -438,25 +438,27 @@ Widget.LoadArtwork = function(self)
 	-- artwork overlaying the globes (demon and angel)
 	local overlay = Main:CreateFrame("Frame")
 	overlay:SetFrameStrata("MEDIUM")
-	overlay:SetFrameLevel(10) -- room for the player unit frame and actionbuttons
+	overlay:SetFrameLevel(35) -- room for the player unit frame and actionbuttons
 	overlay:SetAllPoints()
 
 	local artworkCache = {}
 
 	for element in pairs(config) do
 		local e = config[element]
+		if (not e.disableAutomation) then 
 
-		local artwork = (e.layer == "BACKGROUND" and background or e.layer == "OVERLAY" and overlay):CreateTexture(nil, "ARTWORK")
-		artwork:SetSize(unpack(e.size))
-		artwork.Update = e.callback == "position" and "Place" or e.callback == "texture" and "SetTexture"
+			local artwork = (e.layer == "BACKGROUND" and background or e.layer == "OVERLAY" and overlay):CreateTexture(nil, "ARTWORK")
+			artwork:SetSize(unpack(e.size))
+			artwork.Update = e.callback == "position" and "Place" or e.callback == "texture" and "SetTexture"
 
-		if e.callback == "position" then
-			artwork:SetTexture(e.texture)
-		elseif e.callback == "texture" then
-			artwork:SetPoint(unpack(e.position))
-		end
+			if e.callback == "position" then
+				artwork:SetTexture(e.texture)
+			elseif e.callback == "texture" then
+				artwork:SetPoint(unpack(e.position))
+			end
 
-		artworkCache[artwork] = e[e.callback]
+			artworkCache[artwork] = e[e.callback]
+		end 
 	end
 	
 	return artworkCache
@@ -470,9 +472,11 @@ Widget.LoadPetBarArtwork = function(self)
 	
 	-- Hooking the visibility to the bar, the position to the controller
 	local artworkHolder = Module:GetWidget("Bar: Pet"):GetFrame():CreateFrame("Frame")
-	--artworkHolder:SetAllPoints()
+	artworkHolder:SetAllPoints()
 	artworkHolder:SetFrameStrata("BACKGROUND")
 	artworkHolder:SetFrameLevel(5)
+	
+	--[=[
 	artworkHolder:SetPoint("TOPLEFT", -8, 8)
 	artworkHolder:SetPoint("BOTTOMRIGHT", 8, -8)
 	artworkHolder:SetBackdrop({
@@ -487,12 +491,14 @@ Widget.LoadPetBarArtwork = function(self)
 		}
 	})
 	artworkHolder:SetBackdropColor(0, 0, 0, 1)
+	]=]
 
-	--local artwork = artworkHolder:CreateTexture()
-	--artwork:SetDrawLayer("ARTWORK")
-	--artwork:SetSize(unpack(config.size))
-	--artwork:SetPoint(unpack(config.position))
-	--artwork:SetTexture(config.texture)
+	local artwork = artworkHolder:CreateTexture()
+	artwork:SetDrawLayer("ARTWORK")
+	artwork:SetSize(unpack(config.size))
+	artwork:SetPoint(unpack(config.position))
+	artwork:SetTexture(config.texture)
+	artwork:SetTexCoord(unpack(config.texcoords))
 
 	self.petartwork = artworkHolder
 
@@ -506,6 +512,7 @@ Widget.UpdateArtwork = function(self, event, ...)
 		self:LoadPetBarArtwork()
 	end
 
+
 	-- figure out which backdrop texture to show
 	local Main = Module:GetWidget("Controller: Main"):GetFrame()
 	local Pet = Module:GetWidget("Bar: Pet"):GetFrame()
@@ -516,6 +523,12 @@ Widget.UpdateArtwork = function(self, event, ...)
 	local barID = ((barState == "possess") or (barState == "vehicle")) and "vehicle" or numBars
 	local petID = hasPet and "pet" or ""
 	local xpID = hasXP and "xp" or ""
+
+	if Engine:IsBuild("MoP") and (HasVehicleActionBar() or HasOverrideActionBar() or HasTempShapeshiftActionBar()) then 
+		barState = "vehicle"
+		xpID = ""
+		petID = ""
+	end 
 
 	-- Avoid pointless updates
 	if (PLAYER_HAS_XP == hasXP) 

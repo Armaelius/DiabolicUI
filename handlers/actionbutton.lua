@@ -340,7 +340,7 @@ Button.Update = function(self)
 		elseif (self.type_by_state == "pet") then
 			ActionButtons[self] = nil
 			NonActionButtons[self] = nil
-		
+
 			local name, subtext, _, isToken, _, autoCastAllowed, autoCastEnabled = GetPetActionInfo(self.id)
 		
 			-- needed for tooltip functionality
@@ -1545,6 +1545,8 @@ Handler.OnEvent = function(self, event, ...)
 	
 	-- Various pet bar related updates
 	elseif (event == "PET_BAR_UPDATE") 
+	or (event == "SPELLS_CHANGED")
+	or (event == "PET_BAR_UPDATE_COOLDOWN")
 	or (event == "UNIT_PET" and arg1 == "player") 
 	or ((event == "UNIT_FLAGS" or event == "UNIT_AURA") and arg1 == "pet")
 	or (event == "PLAYER_FARSIGHT_FOCUS_CHANGED") then
@@ -1663,6 +1665,10 @@ Handler.LoadEvents = function(self)
 	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", "OnEvent")
 	self:RegisterEvent("UPDATE_SUMMONPETS_ACTION", "OnEvent")
 	self:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR", "OnEvent")
+
+
+	self:RegisterEvent("SPELLS_CHANGED", "OnEvent")
+	self:RegisterEvent("PET_BAR_UPDATE_COOLDOWN", "OnEvent")
 
 	--hooksecurefunc("TakeTaxiNode", function() 
 	--	for button in next, ActionButtons do

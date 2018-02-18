@@ -276,6 +276,14 @@ Engine:NewStaticConfig("ActionBars", {
 	},
 	visuals = {
 		artwork = {
+			pet = {
+				disableAutomation = true, 
+				size = { 512, 86 },
+				position = { "TOP", 0, 46 },
+				texcoords = { 0/512, 512/512, 0/128, 85/128 },
+				texture = path .. [[textures\DiabolicUI_PetBar_512x128_ArtWork.tga]]
+			},
+
 			backdrop = {
 				callback = "texture",
 				layer = "BACKGROUND",
@@ -336,9 +344,8 @@ Engine:NewStaticConfig("ActionBars", {
 					["3xp"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset },
 					["3xppet"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_TRIPLE*3 + padding*2 + bar_inset + xpoffset_before + xpsize + xpoffset_after - skulloffset + petskulloffset },
 					["vehicle"] = { "BOTTOM", 0, bar_inset + BUTTON_SIZE_VEHICLE + bar_inset - skulloffset }
-				},
+				}
 			}
-
 		},
 		buttons = {
 			-- three main bars, or any side-, pet- or stance bar

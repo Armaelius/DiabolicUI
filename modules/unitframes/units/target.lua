@@ -140,11 +140,11 @@ local PostUpdateArtwork = function(self)
 	local classification = UnitClassification(unit)
 
 	local isElite = (classification == "elite") or (classification == "rare") or (classification == "rareelite")
-	local isboss = isElite or (classification == "worldboss") or (level and level < 1)
+	local isboss = (classification == "worldboss") or (level and level < 1)
 	
 	local ishighlight = self:IsMouseOver()
 	
-	if (isboss == self.isboss) and (haspower == self.haspower) and (ishighlight == self.ishighlight) then
+	if (isboss == self.isboss) and (isElite == self.iselite) and (haspower == self.haspower) and (ishighlight == self.ishighlight) then
 		return -- avoid unneeded graphic updates
 	else
 		if (not haspower) and (self.haspower == true) then
@@ -152,15 +152,16 @@ local PostUpdateArtwork = function(self)
 			-- it being visible after the border has been hidden.
 			self.Power:Clear() 
 		end
-	
+
+		self.iselite = isElite
 		self.isboss = isboss
 		self.haspower = haspower
 		self.ishighlight = ishighlight
 
 		local cache = self.layers
-		local border_name = "Border" .. (isboss and "Boss" or "Normal") .. (haspower and "Power" or "") .. (ishighlight and "Highlight" or "")
+		local border_name = "Border" .. (isElite and "Elite" or isboss and "Boss" or "Normal") .. (haspower and "Power" or "") .. (ishighlight and "Highlight" or "")
 		local backdrop_name = "Backdrop" .. (haspower and "Power" or "")
-		local threat_name = "Threat" .. (isboss and "Boss" or "Normal") .. (haspower and "Power" or "")
+		local threat_name = "Threat" .. ((isElite or isboss) and "Boss" or "Normal") .. (haspower and "Power" or "")
 		
 		-- display the correct border texture
 		cache.border[border_name]:Show()
@@ -559,6 +560,26 @@ local Style = function(self, unit)
 	borderBossPowerHighlight:SetPoint(unpack(config.textures.position))
 	borderBossPowerHighlight:SetTexture(config.textures.layers.border.boss_double.highlight)
 
+	local borderElite = border:CreateTexture(nil, "BORDER")
+	borderElite:SetSize(unpack(config.textures.size))
+	borderElite:SetPoint(unpack(config.textures.position))
+	borderElite:SetTexture(config.textures.layers.border.elite_single.normal)
+
+	local borderEliteHighlight = border:CreateTexture(nil, "BORDER")
+	borderEliteHighlight:SetSize(unpack(config.textures.size))
+	borderEliteHighlight:SetPoint(unpack(config.textures.position))
+	borderEliteHighlight:SetTexture(config.textures.layers.border.elite_single.highlight)
+
+	local borderElitePower = border:CreateTexture(nil, "BORDER")
+	borderElitePower:SetSize(unpack(config.textures.size))
+	borderElitePower:SetPoint(unpack(config.textures.position))
+	borderElitePower:SetTexture(config.textures.layers.border.elite_double.normal)
+
+	local borderElitePowerHighlight = border:CreateTexture(nil, "BORDER")
+	borderElitePowerHighlight:SetSize(unpack(config.textures.size))
+	borderElitePowerHighlight:SetPoint(unpack(config.textures.position))
+	borderElitePowerHighlight:SetTexture(config.textures.layers.border.elite_double.highlight)
+
 
 	-- Health
 	-------------------------------------------------------------------
@@ -720,7 +741,11 @@ local Style = function(self, unit)
 			BorderBoss = borderBoss,
 			BorderBossHighlight = borderBossHighlight,
 			BorderBossPower = borderBossPower,
-			BorderBossPowerHighlight = borderBossPowerHighlight
+			BorderBossPowerHighlight = borderBossPowerHighlight,
+			BorderElite = borderElite,
+			BorderEliteHighlight = borderEliteHighlight,
+			BorderElitePower = borderElitePower,
+			BorderElitePowerHighlight = borderElitePowerHighlight
 		}, 
 		threat = {
 			ThreatNormal = threatNormal,

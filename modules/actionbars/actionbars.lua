@@ -68,8 +68,12 @@ end
 -- @return xp, artifact, honor -- where 'xp' relates to any bar at all
 Module.IsXPVisible = ENGINE_LEGION and function(self)
 
-	if UnitHasVehicleUI("player") or UnitHasVehiclePlayerFrameUI("player") then
-		return false -- hide all bars in vehicles
+	if UnitHasVehicleUI("player") 
+	or UnitHasVehiclePlayerFrameUI("player") 
+	or HasVehicleActionBar() 
+	or HasOverrideActionBar() 
+	or HasTempShapeshiftActionBar() then
+		return false 
 	else
 		local playerLevel = UnitLevel("player")
 		local expacMax = MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT or #MAX_PLAYER_LEVEL_TABLE]
@@ -84,7 +88,7 @@ Module.IsXPVisible = ENGINE_LEGION and function(self)
 			if HasArtifactEquipped() then 
 				local itemID, altItemID, name, icon, totalXP, usedPoints, quality, _, _, _, _, _, artifactTier = C_ArtifactUI.GetEquippedArtifactInfo()
 				local unusedPoints, value, max = GetEquippedArtifactXP(usedPoints, totalXP, artifactTier)
-				local artifactMaxed = ENGINE_LEGION_730 and C_ArtifactUI.IsEquippedArtifactMaxed() or (usedPoints >= 54)
+				local artifactMaxed = (ENGINE_LEGION_730 and C_ArtifactUI.IsEquippedArtifactMaxed()) or ((not ENGINE_LEGION_730) and (usedPoints >= 54))
 				local showHonorBar = hasHonorBar or (artifactMaxed and hasPrestige)
 
 				return (not artifactMaxed) or showHonorBar, not artifactMaxed, showHonorBar

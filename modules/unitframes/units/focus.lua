@@ -78,11 +78,10 @@ local Style = function(self, unit)
 	local config = Module:GetDB("UnitFrames").visuals.units.focus
 	local db = Module:GetConfig("UnitFrames") 
 
-	
 	self:Size(unpack(config.size))
 	self:Place(unpack(config.position))
 
-
+	
 	-- Artwork
 	-------------------------------------------------------------------
 
@@ -246,39 +245,7 @@ UnitFrameWidget.OnEnable = function(self)
 	local db = Module:GetConfig("UnitFrames") 
 
 	self.UnitFrame = UnitFrame:New("focus", Engine:GetFrame(), Style) 
-	
-	-- make a secure repositioning system
-	local driver = {}
-	local onattribute = ""
 
-	for i,v in ipairs(config.offsets) do
-		table_insert(driver, v[1]..i)
-		local x, y = v[2], v[3]
-		onattribute = onattribute .. ([[
-			if value == "%d" then 
-				self:SetWidth(%s); 
-				self:SetHeight(%s); 
-			end 
-		]]):format(i, x == 0 and "0.0001" or tostring(x), y == 0 and "0.0001" or tostring(y))
-	end
-
-	if (onattribute ~= "") then
-		self.Mover = Engine:CreateFrame("Frame", nil, "UICenter", "SecureHandlerAttributeTemplate")
-		self.Mover:SetSize(.0001, .0001)
-		self.UnitFrame.Place(self.Mover, unpack(config.position))
-		self.Mover:SetAttribute("_onattributechanged", ([[
-			value = tostring(value);
-			if name == "state-pos" then 
-				%s 
-			end 
-		]]):format(onattribute))
-		RegisterStateDriver(self.Mover, "pos", table_concat(driver, "; "))
-		
-		-- We're making the assumption that the base position is in the topleft corner here,
-		-- so it's important that the configuration file follows up on this.
-		self.UnitFrame:ClearAllPoints()
-		self.UnitFrame:SetPoint("TOPLEFT", self.Mover, "BOTTOMRIGHT", 0, 0)
-	end
 end
 
 UnitFrameWidget.GetFrame = function(self)

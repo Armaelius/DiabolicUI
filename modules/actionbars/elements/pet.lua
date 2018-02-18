@@ -12,9 +12,9 @@ local InCombatLockdown = _G.InCombatLockdown
 local RegisterStateDriver = _G.RegisterStateDriver
 
 -- Client version constants
+local ENGINE_LEGION = Engine:IsBuild("Legion")
 local ENGINE_MOP = Engine:IsBuild("MoP")
 
-local BLANK_TEXTURE = [[Interface\ChatFrame\ChatFrameBackground]]
 local NUM_BUTTONS = NUM_PET_ACTION_SLOTS or 10
 
 BarWidget.OnEnable = function(self)
@@ -24,6 +24,7 @@ BarWidget.OnEnable = function(self)
 
 	local Artwork = Module:GetWidget("Artwork")
 	local Bar = Module:GetHandler("ActionBar"):New("pet", Module:GetWidget("Controller: Pet"):GetFrame(), Artwork:GetBarTemplate())
+	Bar:Hide()
 	Bar:SetFrameStrata("MEDIUM")
 	Bar:SetFrameLevel(5)
 	Bar:SetSize(unpack(bar_config.bar_size))
@@ -83,13 +84,6 @@ BarWidget.OnEnable = function(self)
 		end
 	]])
 
-	-- Register a proxy visibility driver
-	--local visibility_driver = ENGINE_MOP and "[overridebar][possessbar][shapeshift]hide;[vehicleui]hide;[pet]show;hide" or "[bonusbar:5]hide;[vehicleui]hide;[pet]show;hide"
-	local visibility_driver = ENGINE_MOP and "[overridebar][possessbar][shapeshift]hide;[target=vehicle,exists,canexitvehicle][vehicleui]hide;[pet]show;hide" or "[bonusbar:5]hide;[vehicleui][target=vehicle,exists]hide;[pet]show;hide"
-
-	RegisterStateDriver(Bar, "vis", visibility_driver)
-
-
 	Bar:SetScript("OnShow", function(self) BarWidget:SendMessage("ENGINE_ACTIONBAR_PET_CHANGED", true) end)
 	Bar:SetScript("OnHide", function(self) BarWidget:SendMessage("ENGINE_ACTIONBAR_PET_CHANGED", false) end)
 
@@ -100,6 +94,8 @@ BarWidget.OnEnable = function(self)
 	self:RegisterEvent("PLAYER_ENTERED_VEHICLE", "OnEvent")
 	self:RegisterEvent("PLAYER_EXITING_VEHICLE", "OnEvent")
 	self:RegisterEvent("PLAYER_EXITED_VEHICLE", "OnEvent")
+
+	self:UpdateVisibility()
 
 end
 
@@ -114,6 +110,37 @@ BarWidget.OnEvent = function(self, event, ...)
 		return self.Bar:SetAlpha(1)
 	end
 end
+
+BarWidget.UpdateVisibility = function(self, event, ...)
+	if InCombatLockdown() then
+		return self:RegisterEvent("PLAYER_REGEN_ENABLED", "UpdateVisibility")
+	end
+	if (event == "PLAYER_REGEN_ENABLED") then
+		self:UnregisterEvent("PLAYER_REGEN_ENABLED", "UpdateVisibility")
+	end
+	if (event == "PLAYER_LEVEL_UP") then
+		local level = ...
+		if (level < 10) then 
+			return 
+		end 
+		self:UnregisterEvent("PLAYER_LEVEL_UP", "UpdateVisibility")
+	end
+	if (UnitLevel("player") >= 10) then 
+		-- Register a proxy visibility driver
+		--local visibility_driver = ENGINE_MOP and "[overridebar][possessbar][shapeshift]hide;[vehicleui]hide;[pet]show;hide" or "[bonusbar:5]hide;[vehicleui]hide;[pet]show;hide"
+		
+		local visibility_driver = ENGINE_MOP and "[petbattle] hide;[pet,novehicleui,nooverridebar,nopossessbar] show;hide"
+		or "[bonusbar:5]hide;[vehicleui][target=vehicle,exists]hide;[pet]show;hide"
+
+		UnregisterStateDriver(self.Bar, "vis")
+		RegisterStateDriver(self.Bar, "vis", visibility_driver)
+	else
+		UnregisterStateDriver(self.Bar, "vis")
+		RegisterStateDriver(self.Bar, "vis", "hide")
+
+		self:RegisterEvent("PLAYER_LEVEL_UP", "UpdateVisibility")
+	end 
+end 
 
 BarWidget.UpdatePosition = function(self, event, ...)
 	if InCombatLockdown() then

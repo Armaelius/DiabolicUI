@@ -430,11 +430,15 @@ Handler.New = function(self, unit, parent, styleFunc, nonSecure, ...)
 		VehicleUpdater:SetAttribute("unit", unit)
 		VehicleUpdater.UpdateUnit = function(self, unit) object.unit = unit end
 
-		-- Something not working as intended here
-		-- 
-		-- Legion 7.1.5: 
-		-- When leaving vehicles, health and power and other elements 
-		-- are stuck at 0, not updating. This only affects unitframes. 
+	
+		--VehicleUpdater:SetAttribute("_onstate-vis", [[
+		--	if newstate == "hide" then
+		--		self:Hide();
+		--	elseif newstate == "show" then
+		--		self:Show();
+		--	end
+		--]])
+
 
 		if (unit == "player") then
 			VehicleUpdater:SetAttribute("_onstate-vehicleupdate", [[
@@ -470,9 +474,10 @@ Handler.New = function(self, unit, parent, styleFunc, nonSecure, ...)
 			-- Pet frames are used as player frames when we have a vehicleui
 			RegisterStateDriver(object, "visibility", "[@pet,exists][vehicleui]show;hide")
 		end
-
+	
 		-- Register our vehicleswitcher
-		RegisterStateDriver(VehicleUpdater, "vehicleupdate", (ENGINE_MOP and "[overridebar][possessbar][shapeshift]" or "[bonusbar:5]") .. "[vehicleui] invehicle; notinvehicle")
+		--RegisterStateDriver(VehicleUpdater, "vehicleupdate", (ENGINE_MOP and "[overridebar][possessbar][shapeshift]" or "[bonusbar:5]") .. "[vehicleui] invehicle; notinvehicle")
+		RegisterStateDriver(VehicleUpdater, "vehicleupdate", (ENGINE_MOP and "[possessbar][shapeshift]" or "[bonusbar:5]") .. "[vehicleui] invehicle; notinvehicle")
 	else
 		-- Other units only need their own existence checks. 
 		RegisterStateDriver(object, "visibility", string_format("[@%s,exists]show;hide", object.unit))

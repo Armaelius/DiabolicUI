@@ -55,6 +55,7 @@ local GetTotalPurchasedRanks = C_ArtifactUI and C_ArtifactUI.GetTotalPurchasedRa
 
 -- Client version constants
 local ENGINE_LEGION = Engine:IsBuild("Legion")
+local ENGINE_MOP = Engine:IsBuild("MoP")
 local ENGINE_CATA = Engine:IsBuild("Cata")
 
 -- Track XP/Rep/Artifact bar visibility
@@ -661,6 +662,11 @@ BarWidget.OnEnable = function(self)
 	self:RegisterEvent("UNIT_EXITING_VEHICLE", "Update")
 	self:RegisterEvent("UNIT_EXITED_VEHICLE", "Update")
 	self:RegisterEvent("UNIT_INVENTORY_CHANGED", "Update")
+
+	if ENGINE_MOP then 
+		self:RegisterEvent("UPDATE_EXTRA_ACTIONBAR", "Update")
+		self:RegisterEvent("UPDATE_OVERRIDE_ACTIONBAR", "Update")
+	end
 
 	if ENGINE_LEGION then
 		self:RegisterEvent("ARTIFACT_XP_UPDATE", "Update")

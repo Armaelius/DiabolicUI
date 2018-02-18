@@ -702,7 +702,7 @@ Module.OnInit = function(self)
 	mapOverlay:SetPoint("CENTER", map, "CENTER", 0, 0)
 	mapOverlay:SetSize(map:GetWidth(), map:GetHeight())
 	mapOverlay:SetTexture(config.map.mask)
-	mapOverlay:SetVertexColor(0, 0, 0, .25)
+	mapOverlay:SetVertexColor(0, 0, 0, .15)
 
 	local mapBorder = border:CreateTexture()
 	mapBorder:SetDrawLayer("BACKGROUND")

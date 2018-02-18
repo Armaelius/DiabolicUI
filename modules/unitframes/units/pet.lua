@@ -21,219 +21,131 @@ local UnitIsTapDenied = _G.UnitIsTapDenied
 local UnitPlayerControlled = _G.UnitPlayerControlled
 local UnitReaction = _G.UnitReaction
 
-local postUpdateHealth = function(health, unit, curHealth, maxHealth, isUnavailable)
-
-	local r, g, b
-	if (not isUnavailable) then
-		if UnitIsPlayer(unit) then
-			local _, class = UnitClass(unit)
-			r, g, b = unpack(class and C.Class[class] or C.Class.UNKNOWN)
-		elseif UnitPlayerControlled(unit) then
-			if UnitIsFriend("player", unit) then
-				r, g, b = unpack(C.Reaction[5])
-			elseif UnitIsEnemy(unit, "player") then
-				r, g, b = unpack(C.Reaction[1])
-			else
-				r, g, b = unpack(C.Reaction[4])
+local _, playerClass = UnitClass("player")
+local postUpdateHealth = function(health, unit)
+	if (health.useClassColor and UnitIsPlayer(unit)) then
+		local _, class = UnitClass(unit)
+		if (class and C.Orb[class]) then
+			for i,v in pairs(C.Orb[class]) do
+				health:SetStatusBarColor(v[1] * .75, v[2] * .75, v[3] * .75, v[4], v[5])
 			end
-		elseif (not UnitIsFriend("player", unit)) and UnitIsTapDenied(unit) then
-			r, g, b = unpack(C.Status.Tapped)
-		elseif UnitReaction(unit, "player") then
-			r, g, b = unpack(C.Reaction[UnitReaction(unit, "player")])
 		else
-			r, g, b = unpack(C.Orb.HEALTH[1])
+			r, g, b = unpack(C.Class[class] or C.Class.UNKNOWN)
+			health:SetStatusBarColor(r, g, b, "ALL")
 		end
-	elseif (isUnavailable == "dead") or (isUnavailable == "ghost") then
-		r, g, b = unpack(C.Status.Dead)
-	elseif (isUnavailable == "offline") then
-		r, g, b = unpack(C.Status.Disconnected)
-	end
-
-	if r then
-		if not((r == health.r) and (g == health.g) and (b == health.b)) then
-			health:SetStatusBarColor(r, g, b)
-			health.r, health.g, health.b = r, g, b
+	elseif (health.useClassColorPet and UnitIsUnit("pet", unit)) then 
+		if (C.Orb[playerClass]) then
+			for i,v in pairs(C.Orb[playerClass]) do
+				health:SetStatusBarColor(v[1] * .5, v[2] * .5, v[3] * .5, v[4], v[5])
+			end
+		else
+			r, g, b = unpack(C.Class[playerClass] or C.Class.UNKNOWN)
+			health:SetStatusBarColor(r, g, b, "ALL")
 		end
-	end
-
+	else 
+		for i,v in pairs(C.Orb.HEALTH) do
+			health:SetStatusBarColor(v[1], v[2], v[3], v[4], v[5])
+		end
+	end 
 end
 
-local UpdateLayers = function(self)
-	if self:IsMouseOver() then
-		self.BorderNormalHighlight:Show()
-		self.PortraitBorderNormalHighlight:Show()
-		self.BorderNormal:Hide()
-		self.PortraitBorderNormal:Hide()
-	else
-		self.BorderNormal:Show()
-		self.PortraitBorderNormal:Show()
-		self.BorderNormalHighlight:Hide()
-		self.PortraitBorderNormalHighlight:Hide()
-	end
-end
+
+--local UpdateLayers = function(self)
+--	if self:IsMouseOver() then
+--		self.BorderNormalHighlight:Show()
+--		self.BorderNormal:Hide()
+--	else
+--		self.BorderNormal:Show()
+--		self.BorderNormalHighlight:Hide()
+--	end
+--end
 
 local Style = function(self, unit)
 	local config = Module:GetDB("UnitFrames").visuals.units.pet
 	local db = Module:GetConfig("UnitFrames") 
 
-	
+	local configHealth = config.health
+	local configHealthSpark = config.health.spark
+	local configHealthLayers = config.health.layers
+
 	self:Size(unpack(config.size))
 	self:Place(unpack(config.position))
 
 
-	-- Artwork
-	-------------------------------------------------------------------
-
-	local Shade = self:CreateTexture(nil, "BACKGROUND")
-	Shade:SetSize(unpack(config.shade.size))
-	Shade:SetPoint(unpack(config.shade.position))
-	Shade:SetTexture(config.shade.texture)
-	Shade:SetVertexColor(config.shade.color)
-
-	local Backdrop = self:CreateTexture(nil, "BORDER")
-	Backdrop:SetSize(unpack(config.backdrop.texture_size))
-	Backdrop:SetPoint(unpack(config.backdrop.texture_position))
-	Backdrop:SetTexture(config.backdrop.texture)
-
-	-- border overlay frame
-	local Border = CreateFrame("Frame", nil, self)
-	Border:SetFrameLevel(self:GetFrameLevel() + 3)
-	Border:SetAllPoints()
-	
-	local BorderNormal = Border:CreateTexture(nil, "BORDER")
-	BorderNormal:SetSize(unpack(config.border.texture_size))
-	BorderNormal:SetPoint(unpack(config.border.texture_position))
-	BorderNormal:SetTexture(config.border.textures.normal)
-	
-	local BorderNormalHighlight = Border:CreateTexture(nil, "BORDER")
-	BorderNormalHighlight:SetSize(unpack(config.border.texture_size))
-	BorderNormalHighlight:SetPoint(unpack(config.border.texture_position))
-	BorderNormalHighlight:SetTexture(config.border.textures.highlight)
-	BorderNormalHighlight:Hide()
-
-
 	-- Health
 	-------------------------------------------------------------------
-	local Health = StatusBar:New(self)
-	Health:SetSize(unpack(config.health.size))
-	Health:SetPoint(unpack(config.health.position))
-	Health:SetStatusBarTexture(config.health.texture)
+	local Health = self:CreateOrb()
+	Health:SetSize(unpack(configHealth.size))
+	Health:SetPoint(unpack(configHealth.position))
+	Health:SetStatusBarTexture(configHealthLayers.gradient.texture, "bar")
+	Health:SetStatusBarTexture(configHealthLayers.moon.texture, "moon")
+	Health:SetStatusBarTexture(configHealthLayers.smoke.texture, "smoke")
+	Health:SetStatusBarTexture(configHealthLayers.shade.texture, "shade")
+	Health:SetSparkTexture(configHealthSpark.texture)
+	Health:SetSparkSize(unpack(configHealthSpark.size))
+	Health:SetSparkOverflow(configHealthSpark.overflow)
+	Health:SetSparkFlashSize(unpack(configHealthSpark.flash_size))
+	Health:SetSparkFlashTexture(configHealthSpark.flash_texture)
+
+	Health.useClassColor = true 
+	Health.useClassColorPet = true 
 	Health.frequent = 1/120
+
 	Health.PostUpdate = postUpdateHealth
 
-	
-	-- Power
+
+	-- Artwork
 	-------------------------------------------------------------------
-	local Power = StatusBar:New(self)
-	Power:SetSize(unpack(config.power.size))
-	Power:SetPoint(unpack(config.power.position))
-	Power:SetStatusBarTexture(config.power.texture)
-	Power.frequent = 1/120
-	
+	local Shade = Health:CreateTexture()
+	Shade:SetDrawLayer("BACKGROUND")
+	Shade:SetSize(unpack(configHealth.shade.size))
+	Shade:SetPoint(unpack(configHealth.shade.position))
+	Shade:SetTexture(configHealth.shade.texture)
+	Shade:SetVertexColor(unpack(configHealth.shade.color))
 
-	-- CastBar
-	-------------------------------------------------------------------
-	local CastBar = StatusBar:New(Health)
-	CastBar:Hide()
-	CastBar:SetAllPoints()
-	CastBar:SetStatusBarTexture(1, 1, 1, .15)
-	CastBar:SetSize(Health:GetSize())
-	--CastBar:SetSparkTexture(config.castbar.spark.texture)
-	--CastBar:SetSparkSize(unpack(config.castbar.spark.size))
-	--CastBar:SetSparkFlash(unpack(config.castbar.spark.flash))
-	CastBar:DisableSmoothing(true)
+	local Overlay = self:CreateFrame("Frame")
+	Overlay:SetAllPoints()
+	Overlay:SetFrameLevel(self:GetFrameLevel() + 5)
+
+	local OverlayTexture = Overlay:CreateTexture()
+	OverlayTexture:SetDrawLayer("OVERLAY")
+	OverlayTexture:SetSize(unpack(configHealth.overlay.size))
+	OverlayTexture:SetPoint(unpack(configHealth.overlay.position))
+	OverlayTexture:SetTexture(configHealth.overlay.texture)
+	OverlayTexture:SetVertexColor(unpack(configHealth.overlay.color))
 
 
-	-- Portrait
-	-------------------------------------------------------------------
-	local PortraitHolder = CreateFrame("Frame", nil, self)
-	PortraitHolder:SetSize(unpack(config.portrait.size))
-	PortraitHolder:SetPoint(unpack(config.portrait.position))
-	
-	local PortraitBackdrop = PortraitHolder:CreateTexture(nil, "BACKGROUND")
-	PortraitBackdrop:SetSize(unpack(config.portrait.texture_size))
-	PortraitBackdrop:SetPoint(unpack(config.portrait.texture_position))
-	PortraitBackdrop:SetTexture(config.portrait.textures.backdrop)
-	
-	local Portrait = CreateFrame("PlayerModel", nil, PortraitHolder)
-	Portrait:SetFrameLevel(self:GetFrameLevel() + 1)
-	Portrait:SetAllPoints()
-	
-	local PortraitBorder = CreateFrame("Frame", ni, PortraitHolder)
-	PortraitBorder:SetFrameLevel(self:GetFrameLevel() + 2)
-	PortraitBorder:SetAllPoints()
-
-	local PortraitBorderNormal = PortraitBorder:CreateTexture(nil, "ARTWORK")
-	PortraitBorderNormal:SetSize(unpack(config.portrait.texture_size))
-	PortraitBorderNormal:SetPoint(unpack(config.portrait.texture_position))
-	PortraitBorderNormal:SetTexture(config.portrait.textures.border)
-
-	local PortraitBorderNormalHighlight = PortraitBorder:CreateTexture(nil, "ARTWORK")
-	PortraitBorderNormalHighlight:SetSize(unpack(config.portrait.texture_size))
-	PortraitBorderNormalHighlight:SetPoint(unpack(config.portrait.texture_position))
-	PortraitBorderNormalHighlight:SetTexture(config.portrait.textures.highlight)
-	PortraitBorderNormalHighlight:Hide()
-
-	
 	-- Threat
 	-------------------------------------------------------------------
-	local Threat = {}
+	--local Threat = {}
 	
+	--[[
 	Threat.Border = self:CreateTexture(nil, "BACKGROUND")
 	Threat.Border:Hide()
 	Threat.Border:SetSize(unpack(config.border.texture_size))
 	Threat.Border:SetPoint(unpack(config.border.texture_position))
 	Threat.Border:SetTexture(config.border.textures.threat)
 
-	Threat.Portrait = Portrait:CreateTexture(nil, "BACKGROUND")
-	Threat.Portrait:Hide()
-	Threat.Portrait:SetSize(unpack(config.portrait.texture_size))
-	Threat.Portrait:SetPoint(unpack(config.portrait.texture_position))
-	Threat.Portrait:SetTexture(config.portrait.textures.threat)
-	
 	Threat.Hide = function(self)
 		self.Border:Hide()
-		self.Portrait:Hide()
 	end
 
 	Threat.Show = function(self)
 		self.Border:Show()
-		self.Portrait:Show()
 	end
 	
 	Threat.SetVertexColor = function(self, ...)
 		self.Border:SetVertexColor(...)
-		self.Portrait:SetVertexColor(...)
-	end
+	end]]
 
-
-	-- Texts
-	-------------------------------------------------------------------
-	local Name = Border:CreateFontString(nil, "OVERLAY")
-	Name:SetFontObject(config.name.font_object)
-	Name:SetPoint(unpack(config.name.position))
-	Name:SetSize(unpack(config.name.size))
-	Name:SetJustifyV("BOTTOM")
-	Name:SetJustifyH("CENTER")
-	Name:SetIndentedWordWrap(false)
-	Name:SetWordWrap(true)
-	Name:SetNonSpaceWrap(false)
-
-
-	self.CastBar = CastBar
 	self.Health = Health
-	self.Name = Name
-	self.Portrait = Portrait
-	self.Power = Power
-	self.Threat = Threat
+	--self.Threat = Threat
 
-	self.BorderNormal = BorderNormal
-	self.BorderNormalHighlight = BorderNormalHighlight
-	self.PortraitBorderNormal = PortraitBorderNormal
-	self.PortraitBorderNormalHighlight = PortraitBorderNormalHighlight
+	--self.BorderNormal = BorderNormal
+	--self.BorderNormalHighlight = BorderNormalHighlight
 
-	self:HookScript("OnEnter", UpdateLayers)
-	self:HookScript("OnLeave", UpdateLayers)
+	--self:HookScript("OnEnter", UpdateLayers)
+	--self:HookScript("OnLeave", UpdateLayers)
 	
 	--self:SetAttribute("toggleForVehicle", true)
 
@@ -244,39 +156,8 @@ UnitFrameWidget.OnEnable = function(self)
 	local db = self:GetConfig("UnitFrames") 
 
 	self.UnitFrame = UnitFrame:New("pet", Engine:GetFrame(), Style) 
-	
-	-- make a secure repositioning system
-	local driver = {}
-	local onattribute = ""
-
-	for i,v in ipairs(config.offsets) do
-		tinsert(driver, v[1]..i)
-		local x, y = v[2], v[3]
-		onattribute = onattribute .. ([[
-			if value == "%d" then 
-				self:SetWidth(%s); 
-				self:SetHeight(%s); 
-			end 
-		]]):format(i, x == 0 and "0.0001" or tostring(x), y == 0 and "0.0001" or tostring(y))
-	end
-
-	if onattribute ~= "" then
-		self.Mover = CreateFrame("Frame", nil, Engine:GetFrame(), "SecureHandlerAttributeTemplate")
-		self.Mover:SetSize(.0001, .0001)
-		self.UnitFrame.Place(self.Mover, unpack(config.position))
-		self.Mover:SetAttribute("_onattributechanged", ([[
-			value = tostring(value);
-			if name == "state-pos" then 
-				%s 
-			end 
-		]]):format(onattribute))
-		RegisterStateDriver(self.Mover, "pos", tconcat(driver, "; "))
-		
-		-- We're making the assumption that the base position is in the topleft corner here,
-		-- so it's important that the configuration file follows up on this.
-		self.UnitFrame:ClearAllPoints()
-		self.UnitFrame:SetPoint("TOPLEFT", self.Mover, "BOTTOMRIGHT", 0, 0)
-	end
+	self.UnitFrame:SetFrameStrata("MEDIUM") -- get it above player orbs
+	self.UnitFrame:SetFrameLevel(25) -- get it above player orbs
 
 	-- Disable Blizzard's castbars for pet 
 	self:GetHandler("BlizzardUI"):GetElement("CastBars"):Remove("pet")

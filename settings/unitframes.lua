@@ -413,13 +413,13 @@ Engine:NewStaticConfig("UnitFrames", {
 								threat = path .. [[textures\DiabolicUI_Target_305x15_Glow2Bars.tga]]
 							},
 							elite_single = {
-								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss.tga]],
-								highlight = path .. [[textures\DiabolicUI_Target_305x15_BorderBossHighlight.tga]],
+								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderElite.tga]],
+								highlight = path .. [[textures\DiabolicUI_Target_305x15_BorderEliteHighlight.tga]],
 								threat = path .. [[textures\DiabolicUI_Target_305x15_GlowBoss.tga]]
 							},
 							elite_double = {
-								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss2Bars.tga]],
-								highlight = path .. [[textures\DiabolicUI_Target_305x15_BorderBoss2BarsHighlight.tga]],
+								normal = path .. [[textures\DiabolicUI_Target_305x15_BorderElite2Bars.tga]],
+								highlight = path .. [[textures\DiabolicUI_Target_305x15_BorderElite2BarsHighlight.tga]],
 								threat = path .. [[textures\DiabolicUI_Target_305x15_GlowBoss2Bars.tga]]
 							},
 							boss_single = {
@@ -526,14 +526,6 @@ Engine:NewStaticConfig("UnitFrames", {
 			focus = {
 				size = { 90, 17 + 8 + 70 },
 				position = { "TOPLEFT", "UICenter", "TOPLEFT", 60, -50 },
-				offsets = {
-					{ "[nopet]", 0, 0 }, 
-					{ "[pet]", 90 + 60, 0 }
-					--{ "[nopet,@raid5,exists][nopet,@party1,noexists]", 0, 0 },
-					--{ "[pet,@raid5,exists][pet,@party1,noexists]", 90 + 60, 0 },
-					--{ "[nopet,group:raid,@raid5,noexists][nopet,group:party,@party1,exists]", 0, 17 + 8 + 70 + 60 },
-					--{ "[pet,group:raid,@raid5,noexists][pet,group:party,@party1,exists]", 90 + 60, 17 + 8 + 70 + 60 }
-				},
 				shade = {
 					size = { 196, 64 },
 					position = { "BOTTOM", 0, -20 },
@@ -583,61 +575,56 @@ Engine:NewStaticConfig("UnitFrames", {
 				}
 			},
 			pet = {
-				size = { 90, 17 + 8 + 70 },
-				position = { "TOPLEFT", "UICenter", "TOPLEFT", 60, -50 },
-				offsets = {
-					--{ "[@raid5,exists][@party1,noexists]", 0, 0 },
-					--{ "[group:raid,@raid5,noexists][group:party,@party1,exists]", 0, 17 + 8 + 70 + 60 }
-				},
-				shade = {
-					size = { 196, 64 },
-					position = { "BOTTOM", 0, -20 },
-					color = { 0, 0, 0, .5 },
-					texture = path .. [[textures\DiabolicUI_Tooltip_Header_TitleBackground.tga]]
-				},
-				backdrop = {
-					texture_size = { 256, 64 },
-					texture_position = { "TOPLEFT", -83, 24 -(70 + 8)},
-					texture = path .. [[textures\DiabolicUI_Target_80x15_Backdrop.tga]]
-				},
-				border = {
-					texture_size = { 256, 64 },
-					texture_position = { "TOPLEFT", -83, 24 -(70 + 8)},
-					textures = {
-						normal = path .. [[textures\DiabolicUI_Target_80x15_Border.tga]],
-						highlight = path .. [[textures\DiabolicUI_Target_80x15_Highlight.tga]],
-						threat = path .. [[textures\DiabolicUI_Target_80x15_Glow.tga]]
-					}
-				},
+				size = { 85 *1.15, 85 *1.15 },
+				position = { "BOTTOMLEFT", "Main", "BOTTOMLEFT", orbOffsetX -140 + (140 - 160)/2 -8  -56, orbOffsetY -(140 - 160)/2 -6 +72 },
 				health = {
-					size = { 82, 9 },
-					position = { "BOTTOM", 0, 7 },
-					texture = path .. [[statusbars\DiabolicUI_StatusBar_512x64_Dark_Warcraft.tga]]
-				},
-				power = { 
-					size = { 82, 3 },
-					position = { "BOTTOM", 0, 3 },
-					texture = path .. [[statusbars\DiabolicUI_StatusBar_512x64_Dark_Warcraft.tga]]
-				},
-				portrait = {
-					size = { 70, 70 },
-					position = { "TOP", 0, 0 },
-					texture_size = { 128, 128 }, 
-					texture_position = { "CENTER", 0, 0 },
-					textures = {
-						backdrop = path .. [[textures\DiabolicUI_Target_80x80_PortraitBackdrop.tga]],
-						border = path .. [[textures\DiabolicUI_Target_80x80_PortraitBorder.tga]],
-						highlight = path .. [[textures\DiabolicUI_Target_80x80_PortraitBorderHighlight.tga]],
-						threat = path .. [[textures\DiabolicUI_Target_80x80_PortraitGlow.tga]]
+					size = { 75 *1.15, 75 *1.15 },
+					position = { "CENTER" },
+					color = { 175/255, 17/255, 28/255 }, -- blood
+					--color = { 138/255, 7/255, 7/255 }, -- blood
+					spark = {
+						size = { 64, 64 },
+						overflow = 8,
+						texture = path .. [[statusbars\DiabolicUI_StatusBar_128x128_SparkVertical_Warcraft.tga]],
+						flash = { 2.75, 1.25, .45, .95 },
+						flash_size = { 64, 16 },
+						flash_texture = path .. [[textures\DiabolicUI_Tooltip_Header_TitleBackground.tga]]
+					},
+					shade = {
+						size = { 128 *1.15, 128 *1.15 },
+						position = { "CENTER", 0, 0 },
+						texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Backdrop.tga]],
+						color = { 0, 0, 0, 1 }
+					},
+					overlay = {
+						size = { 128 *1.15, 128 *1.15 },
+						position = { "CENTER", 0, 0 },
+						texture = path .. [[textures\DiabolicUI_PlayerGlobes_150x150_Border.tga]],
+						color = { 1, 1, 1, 1 }
+					},					
+					layers = {
+						gradient = {
+							alpha = .85,
+							texture = path .. [[textures\DiabolicUI_HealthGlobe512x512_Gradient.tga]]
+						},
+						moon = {
+							alpha = .5,
+							texture = path .. [[textures\DiabolicUI_HealthGlobe512x512_Moon.tga]]
+						},
+						smoke = {
+							alpha = .5,
+							texture = path .. [[textures\DiabolicUI_HealthGlobe512x512_Smoke.tga]]
+						},
+						shade = {
+							alpha = .9,
+							texture = path .. [[textures\DiabolicUI_HealthGlobe512x512_Shade.tga]]
+						}
 					}
-				},
-				name = {
-					font_object = DiabolicFont_HeaderRegular14,
-					position = { "TOP", 0, 42 },
-					size = { 90 + 50, 30 }
 				}
 			},
 			party = {
+				size = { 1, 1 },
+				position = { "TOPLEFT", "UICenter", "TOPLEFT", 60, -50 }
 			},
 			raid = {
 			}

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.107] 2017-02-18
+### Added
+- There is now a checkbutton enabled by default located on the (Legion) WorldMap, which when enabled will reveal hidden parts of the map.
+- There are now wowhead links added to the (Legion) quest log, the achievement frame and adventure guide.
+
+### Changed
+- Elites and Rares now have a silver border on the target frame, while bosses have a gold border. Both have a skull with red eyes as before. 
+- The pet unitframe has changed to a single orb, and has been moved from its previous position in the top left corner of the screen to a new home on the top left side of the player's own health orb now. 
+- The pet actionbar is now invisible until you reach level 10 and can actually use it. 
+- The pet actionbar got some minor styling slapped on it. Not perfect, but was a bit too dull before.
+- The WorldMap and Minimaps are now both slightly brighter than before. 
+
+### Fixed
+- The artifact bar should appear for people with unmaxed artifacts again.
+- Your health and power should now remain visible while an override bar is visible. 
+- Your XP/Artifact/Honor bar should now disappear as intended while an override bar is visible.
+- The actionbar backdrop and other actionbar artwork now properly updates while the override bar is visible. 
+- Hovering over world buttons at the top level part of the WorldMap should no longer look bad. 
+
 ## [1.3.106] 2017-02-14
 ### Added
 - The Minimap clock can now be right-clicked to toggle 12/24 hour time mode, and middle-clicked to toggle between your local time and game time.

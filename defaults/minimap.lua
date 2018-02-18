@@ -5,3 +5,7 @@ Engine:NewConfig("Minimap", {
 	use24hrClock = true,
 	useSmallerMap = false
 })
+
+Engine:NewConfig("WorldMap", {
+	revealHidden = true
+})
