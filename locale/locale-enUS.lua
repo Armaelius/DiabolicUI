@@ -218,8 +218,8 @@ L["Reveal"] = true
 L["Reveal Hidden Areas"] = true
 L["Hide Undiscovered Areas"] = true
 L["Disable to hide areas|nyou have not yet discovered."] = true
-L["Enable to show hidden area|nyou have not yet discovered."] = true
-L["Press CTRL/C to copy."] = true
+L["Enable to show hidden areas|nyou have not yet discovered."] = true
+L["Press <CTRL+C> to copy."] = true
 
 -- abbreviations
 ---------------------------------------------------------------------

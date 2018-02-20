@@ -34,7 +34,7 @@ local subDomain = (setmetatable({
     esES = "es", esMX = "es",
     ptBR = "pt", ptPT = "pt", itIT = "it",
     koKR = "ko", zhTW = "cn", zhCN = "cn"
-}, { __index = function(t,v) return "www" end }))[GetLocale()]
+}, { __index = function() return "www" end }))[GetLocale()]
 
 local wowheadLoc = subDomain..".wowhead.com"
 
@@ -210,12 +210,15 @@ Module.SetUpAchievementLinks = function(self)
 			-- Get achievement title for tooltip
 			local achievementLink = GetAchievementLink(self.id)
 			if achievementLink then
-				aEB.tiptext = string_match(achievementLink, "%[(.-)%]") .. "|n" .. L["Press CTRL/C to copy."]
+				aEB.tiptext = string_match(achievementLink, "%[(.-)%]")
 			end
 			-- Show the editbox
 			aEB:Show()
 		end
 	end)
+
+	local r,g,b = unpack(C.General.Title)
+	local r2,g2,b2 = unpack(C.General.OffGreen)
 
 	-- Create tooltip
 	aEB:HookScript("OnEnter", function()
@@ -225,7 +228,8 @@ Module.SetUpAchievementLinks = function(self)
 			return 
 		end 
 		GameTooltip:SetOwner(aEB, "ANCHOR_TOP", 0, 10)
-		GameTooltip:SetText(aEB.tiptext, nil, nil, nil, nil, true)
+		GameTooltip:AddLine(aEB.tiptext, r,g,b)
+		GameTooltip:AddLine(L["Press <CTRL+C> to copy."], r2,g2,b2)
 		GameTooltip:Show()
 	end)
 
@@ -290,12 +294,15 @@ Module.SetUpEJLinks = function(self)
 			eEB:SetWidth(eEB.z:GetStringWidth() + 90)
 			-- Get achievement title for tooltip
 			if link then
-				eEB.tiptext = string_match(link, "%[(.-)%]") .. "|n" .. L["Press CTRL/C to copy."]
+				eEB.tiptext = string_match(link, "%[(.-)%]") 
 			end
 			-- Show the editbox
 			eEB:Show()
 		end
 	end)
+
+	local r,g,b = unpack(C.General.Title)
+	local r2,g2,b2 = unpack(C.General.OffGreen)
 
 	-- Create tooltip
 	eEB:HookScript("OnEnter", function()
@@ -305,7 +312,8 @@ Module.SetUpEJLinks = function(self)
 			return 
 		end 
 		GameTooltip:SetOwner(eEB, "ANCHOR_BOTTOM", 0, -10)
-		GameTooltip:SetText(eEB.tiptext, nil, nil, nil, nil, true)
+		GameTooltip:AddLine(eEB.tiptext, r,g,b)
+		GameTooltip:AddLine(L["Press <CTRL+C> to copy."], r2,g2,b2)
 		GameTooltip:Show()
 	end)
 
@@ -376,7 +384,8 @@ Module.SetUpQuestLinks = function(self)
 			-- Get quest title for tooltip
 			local questLink = GetQuestLink(questID) or nil
 			if questLink then
-				mEB.tiptext = string_match(questLink, "%[(.-)%]") .. "|n" .. L["Press CTRL/C to copy."]
+				local title = QuestInfoTitleHeader:GetText() or string_match(questLink, "%[(.-)%]")
+				mEB.tiptext = title 
 			else
 				mEB.tiptext = ""
 				if mEB:IsMouseOver() and WorldMapTooltip:IsShown() then WorldMapTooltip:Hide() end
@@ -393,12 +402,16 @@ Module.SetUpQuestLinks = function(self)
 	hooksecurefunc("QuestMapFrame_ShowQuestDetails", SetQuestInBox)
 	hooksecurefunc("QuestMapFrame_CloseQuestDetails", SetQuestInBox)
 
+	local r,g,b = unpack(C.General.Title)
+	local r2,g2,b2 = unpack(C.General.OffGreen)
+
 	-- Create tooltip
 	mEB:HookScript("OnEnter", function()
 		mEB:HighlightText()
 		mEB:SetFocus()
 		WorldMapTooltip:SetOwner(mEB, "ANCHOR_BOTTOM", 0, -10)
-		WorldMapTooltip:SetText(mEB.tiptext, nil, nil, nil, nil, true)
+		WorldMapTooltip:AddLine(mEB.tiptext, r,g,b)
+		WorldMapTooltip:AddLine(L["Press <CTRL+C> to copy."], r2,g2,b2)
 		WorldMapTooltip:Show()
 	end)
 
@@ -422,9 +435,12 @@ Module.SetUpFogOfWar = function(self)
 	local MapTex = {}
 
 	-- Create checkbox
-	local frame = CreateFrame("CheckButton", nil, WorldMapTitleButton, "OptionsCheckButtonTemplate")
-	frame:SetSize(23, 23)
-	frame:SetPoint("RIGHT", WorldMapTitleButton, "RIGHT", -10, -1)
+	--local frame = CreateFrame("CheckButton", nil, WorldMapTitleButton, "OptionsCheckButtonTemplate")
+	--frame:SetSize(23, 23)
+	--frame:SetPoint("RIGHT", WorldMapTitleButton, "RIGHT", -10, -1)
+	local frame = CreateFrame("CheckButton", nil, WorldMapFrame.BorderFrame, "OptionsCheckButtonTemplate")
+	frame:SetPoint("TOPRIGHT", -50, 0)
+    frame:SetSize(23, 23)
 
 	frame.f = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	frame.f:SetPoint("RIGHT", frame, "LEFT", -4, 0)
@@ -445,7 +461,7 @@ Module.SetUpFogOfWar = function(self)
 			GameTooltip:AddLine(L["Disable to hide areas|nyou have not yet discovered."], r, g, b)
 		else 
 			GameTooltip:AddLine(L["Reveal Hidden Areas"], r2, g2, b2)
-			GameTooltip:AddLine(L["Enable to show hidden area|nyou have not yet discovered."], r, g, b)
+			GameTooltip:AddLine(L["Enable to show hidden areas|nyou have not yet discovered."], r, g, b)
 		end 
 		
 		GameTooltip:Show()

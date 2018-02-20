@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.3.107] 2017-02-18
+## [1.3.108] 2018-02-20
+### Changed
+- Debuffs visible on enemy nameplates will no longer be hidden from the target unitframe. 
+- Improved the tooltip shown when hovering over the checkbutton to reveal hidden ares of the world map slightly in terms of colors and layout. 
+
+### Fixed
+- Fixed a typo in the tooltip shown when hovering over the checkbutton to reveal hidden areas of the world map.
+- Fixed a display bug in the aforementioned tooltip on the Felsong realm that would only display the level requirement instead of the quest title. 
+- Fixed wrong year in every patch note prior to this one this year. Guess I was living in the past.
+
+## [1.3.107] 2018-02-18
 ### Added
 - There is now a checkbutton enabled by default located on the (Legion) WorldMap, which when enabled will reveal hidden parts of the map.
 - There are now wowhead links added to the (Legion) quest log, the achievement frame and adventure guide.
@@ -23,7 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The actionbar backdrop and other actionbar artwork now properly updates while the override bar is visible. 
 - Hovering over world buttons at the top level part of the WorldMap should no longer look bad. 
 
-## [1.3.106] 2017-02-14
+## [1.3.106] 2018-02-14
 ### Added
 - The Minimap clock can now be right-clicked to toggle 12/24 hour time mode, and middle-clicked to toggle between your local time and game time.
 
@@ -31,11 +41,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Changed how the UI checks for whether or not an addon is enabled and will be loaded. Previously it just checked for the enabled checkmark in the addon listing, which would cause crazy issues like the DiabolicUI nameplates not being loaded if you had Goldpaw's NamePlates enabled in your addon listing but the Goldpaw's UI Core disabled. The new behavior makes sure the addon in question will actually be loaded, meaning its dependencies must also be enabled. 
 - The bottom left corner social button's tooltip now exclude yourself from the count of online guild members, the same way the button's own count does. Because you're well aware you're online, it's who else is there with you that matters. 
 
-## [1.3.105] 2017-02-13
+## [1.3.105] 2018-02-13
 ### Fixed
 - Changed how the actionbars decided whether or not the Artifact or Honor bar should be shown. Artifacts that aren't maxed should be shown as intended when equipped now. 
 
-## [1.3.104] 2017-02-12
+## [1.3.104] 2018-02-12
 ### Added
 - Added professions tabs at the side of the tradeskill frame, to quickly switch from one profession to another.
 - Added a "Click to Complete" functionality for auto completable quests in the tracker. Work in progress, missing some opacity updates. 
@@ -52,7 +62,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - You shouldn't be told you're not in a Guild every 5th second on WotLK realms anymore. 
 
-## [1.3.103] 2017-02-09
+## [1.3.103] 2018-02-09
 ### Added
 - Added styling for the trade skill interface and the merchant frame.
 
@@ -62,11 +72,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed the item level displayed on heirlooms in the character frame when you're above their maximum level.
 
-## [1.3.102] 2017-02-08
+## [1.3.102] 2018-02-08
 ### Removed
 - Removed all AlertFrame filtering for now. Appears what I experienced as spammy and wanted to filter out is a Felsong-only bug, and thus shouldn't even be monitored on retail clients or through this UI in general. Moved that functionality to my Felsong_Companion addon instead. 
 
-## [1.3.101] 2017-02-07
+## [1.3.101] 2018-02-07
 ### Added 
 - Started styling the trade skill frame the way some other Blizzard frames have been styled. Unfinished, just the basic backdrop coloring done so far.
 
@@ -75,28 +85,28 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Loot toasts should once again be visible. Only Ancient Mana in quantities of less than 10 gets its toast removed now.
 - Added a few more tracker updates to rememedy item/kill counts sometimes not being updated, as well as quest item buttons getting stuck at the wrong ID thus preventing them from functioning properly.
 
-## [1.3.100] 2017-02-06
+## [1.3.100] 2018-02-06
 ### Added
 - Added a button in the Blizzard TradeSkillUI for Enchanters to directly enchant vellums in their bags.
 
 ### Fixed
 - Fixed a bug in the Minimap's new mail notification when hovered over.
 
-## [1.3.99] 2017-02-06
+## [1.3.99] 2018-02-06
 ### Added
 - Added text based new mail notification to the minimap.
 
-## [1.3.98] 2017-02-05
+## [1.3.98] 2018-02-05
 ### Changed
 - Changed how the quest tracker handles quest texts to better reformat line breaks.
 
-## [1.3.97] 2017-02-04
+## [1.3.97] 2018-02-04
 ### Changed
 - Rewrote a lot of the tracker's update cycle to avoid flickering, disappearances and so on.
 - Rewrote most of the tracker's internal anchoring, to avoid the weird indendted "tree" view that some users were experiencing. 
 - Added in an extra set of updates for the tracker's quest item buttons, to avoid them getting the wrong ID and becoming unusable after a while. More might be needed, I will monitor the situation closely on my alts!
 
-## [1.3.96] 2017-02-02
+## [1.3.96] 2018-02-02
 ### Changed
 - Added new colors for NPCs you have a Honored or higher standing with. From Honored to Exalted the colors move slightly towards cyan.
 - Added the same new colors for Friendship standings from Friend to Best Friend as was used for Honored to Exalted reputation standings.
@@ -106,33 +116,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed 
 - Fixed a bug that would occur when scanning the item levels of crucible upgraded Artifact relics from the character window.
 
-## [1.3.95] 2017-02-01
+## [1.3.95] 2018-02-01
 ### Fixed
 - Added a lot of items to the Minimap's icon whitelist, to allow elements from Gatherer and HandyNotes, Zygor Guides and several others to be shown.
 
-## [1.3.94] 2017-01-31
+## [1.3.94] 2018-01-31
 ### Added
 - Added new Order Hall follower tooltips to the list of styled tooltips. 
 
 ### Fixed
 - Fixed an issue in Legion clients where the quest tracker's sorting function sometimes would cause an error while trying to figure out the closest one quest.
 
-## [1.3.93] 2017-01-30
+## [1.3.93] 2018-01-30
 ### Added
 - Added secondary profession quests to the priority list visible in all zones in the quest tracker.
 
 ### Fixed
 - Changed how the override action bar (vehicles) is hidden to avoid the old bar (though transparent) covering it and causing wrong clicks and tooltips.
 
-## [1.3.92] 2017-01-28
+## [1.3.92] 2018-01-28
 ### Fixed
 - Added regular Guild Roster updates to keep the online guild member count on the bottom left corner social button properly updated. 
 
-## [1.3.91] 2017-01-27
+## [1.3.91] 2018-01-27
 ### Fixed
 - Fixed an annoying nil bug in the new Battleground Score module that would fire whenever a timer was visible. Oops!
 
-## [1.3.90] 2017-01-27
+## [1.3.90] 2018-01-27
 ### Added
 - Battleground scores, dungeon waves and similar has been added! Visible at the top of the screen, hidden when a target is selected to keep the UI clean. Not movable. Not optional. 
 
@@ -143,29 +153,29 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Empty actionbuttons in Cata and WotLK clients will no longer have their checked, empty and highlight textures visible all at once until hovered over.
 - Trying to work around a Blizzard XP bar text issue causing a nil bug for Starter Edition characters at level 20 when the UI is reloaded.
 
-## [1.3.89] 2017-01-25
+## [1.3.89] 2018-01-25
 ### Fixed
 - Fixed a tooltip-related actionbar bug in clients prior to Legion.
 
-## [1.3.88] 2017-01-25
+## [1.3.88] 2018-01-25
 ### Changed
 - Improved the money display in the bottom left corner slightly. 
 
 ### Fixed
 - The UI should once again work for WotLK and Cata, as incompabilities in the tracker and social button modules have been sorted out.
 
-## [1.3.87] 2017-01-21
+## [1.3.87] 2018-01-21
 ### Added
 - Added Mac'Aree, Antoran Wastes, Krokuun and Argus as Legion zones to the tracker. World Quests should be visible while in Argus now. 
 
 ### Changed
 - Trying some experimental changes to show Highmountain World Quests while inside Thunder Totem. 
 
-## [1.3.86] 2017-01-21
+## [1.3.86] 2018-01-21
 ### Changed
 - Changed how the social button in the bottom left corner displays online Guild Members. It should be updated on first login now. 
 
-## [1.3.85] 2017-01-20
+## [1.3.85] 2018-01-20
 ### Added
 - The Friends & Guild menubutton in the bottom left corner of the screen will now show online guild members and friends in the tooltip, as well as showing a count for total number of online friends and guild members (yourself excluded) on the button itself.
 - Added your current money in gold/silver/copper beneath the chat/social menu buttons in the bottom left corner of the screen.
@@ -173,7 +183,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - The chat bubble module will now hide its bubbles if the bubble message is nil or empty. This is to allow other addons and modules to filter or hide the DiabolicUI bubbles by modifying the text in the original blizzard bubble. 
 
-## [1.3.84] 2017-01-20
+## [1.3.84] 2018-01-20
 ### Added
 - The stance bar toggle button should now cancel any non-normal stance or form when right-clicked, while keeping it's normal toggle behavior when left-clicked as before. The tooltip updates dynamically to reflect whether or not there are any active forms or stances to cancel.
 - Added a twitter link to the GitHub README file.
@@ -181,32 +191,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - Removed the fix for the "Not enough players" spam on the Felsong realm, as this has been moved to a separate addon specifically targeting Felsong bugs and annoyances. Get it at https://github.com/cogwerkz/Felsong_Companion
 
-## [1.3.83] 2017-01-19
+## [1.3.83] 2018-01-19
 ### Added
 - The WorldMap's map textures are now slightly toned down and colorized to allow the overlay objective icons to stand more out. 
 - The QueueStatusButton's tooltip in Legion should now be styled similarly to the rest of the UI.
 
-## [1.3.82] 2017-01-18
+## [1.3.82] 2018-01-18
 ### Changed
 - The DiabolicUI nameplates now also disable themselves if the addon TidyPlates_ThreatPlates is loaded.
 
-## [1.3.81] 2017-01-17
+## [1.3.81] 2018-01-17
 ### Changed
 - Changed the quest sorting in the custom tracker. Primary Profession Quests in the current map zone will now appear at the top of the list, followed by any normal quests in the current map zone, followed by any World Quests in the current map zone, and finally Emissary and Elite World Quests in the current map zone. The philosophy behind this is that quests you have specifically picked up should have a higher visual priority than repeatable World Quests. Super tracking is not yet affected by this new filtering, but it will be updated in the near future.
 
-## [1.3.80] 2017-01-17
+## [1.3.80] 2018-01-17
 ### Fixed
 - Added updated Legion 7.3.5 Minimap Blip Textures. All the icons inside the Minimap like quest givers, vendors, mailbox and so on should work again now. 
 
-## [1.3.79] 2017-01-15
+## [1.3.79] 2018-01-15
 ### Changed
 - More fixes to the GameTooltip to work around Blizzard's faulty Legion 7.3 nameplate protected tooltip bug.
 
-## [1.3.78] 2017-01-10
+## [1.3.78] 2018-01-10
 ### Changed
 - No attempts should be made to show, hide or move the GameTooltip if it's become protected by Blizzard's faulty Legion 7.3 nameplates anymore.
 
-## [1.3.77] 2017-01-07
+## [1.3.77] 2018-01-07
 ### Added
 - Added /rl /reload and /reloadui as ReloadUI() chat commands to all client versions.
 

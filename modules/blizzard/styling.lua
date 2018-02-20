@@ -239,14 +239,11 @@ local elements = {
 
 	["FloatingBattlePetTooltip"] = true
 
-	-- These can't be styled, as they are :IsForbidden()
-	--["SecureTransferDialog"] = true,
-	--["SecureTransferDialogButton1"] = true,
-	--["SecureTransferDialogButton2"] = true
 }
 
 -- Elements we won't skin
 local whiteList = {
+
 	["GroupFinderFrameGroupButton1Icon"] = true, 
 	["GroupFinderFrameGroupButton2Icon"] = true, 
 	["GroupFinderFrameGroupButton3Icon"] = true, 
@@ -284,6 +281,7 @@ local whiteList = {
 
 -- Elements we'll hide
 local blackList = {
+
 	["LFDQueueFrameFindGroupButton_LeftSeparator"] = true,
 	["LFDQueueFrameFindGroupButton_RightSeparator"] = true,
 	["LFGListFrame.CategorySelection.FindGroupButton.LeftSeparator"] = true,
@@ -462,6 +460,7 @@ end
 
 Module.OnEvent = function(self, event, ...)
 	local addonName = ...
+
 	for frameName, addon in pairs(elements) do
 		if (addonName == addon) then
 			local object = self:GetObject(frameName)
@@ -496,7 +495,7 @@ Module.OnEvent = function(self, event, ...)
 	end
 end
 
-Module.OnInit = function(self)
+Module.OnEnable = function(self)
 	local UIHider -- define this, but don't create it until we need it
 	local unstyledAddonFrames = 0 -- Count how many addon elements we were unable to style
 	local unhiddenAddonFrames = 0 -- Count how many elements we were unable to hide
@@ -507,8 +506,8 @@ Module.OnInit = function(self)
 			self:StyleObject(object)
 			elements[frameName] = nil
 		else
-			if (addonName == true) then -- is the element from normal frameXML or an addon?
-				blackList[frameName] = nil -- remove the entry since it's probably a frameXML reference from another expansion
+			if (addonName == true) then -- is the element from normal frameXML (true) or an addon (string)?
+				elements[frameName] = nil -- remove the entry since it's probably a frameXML reference from another expansion
 			else
 				unstyledAddonFrames = unstyledAddonFrames + 1
 			end
@@ -525,7 +524,7 @@ Module.OnInit = function(self)
 			object:SetParent(UIHider)
 			blackList[frameName] = nil
 		else
-			if (addonName == true) then -- is the element from normal frameXML or an addon?
+			if (addonName == true) then -- is the element from normal frameXML (true) or an addon (string)?
 				blackList[frameName] = nil -- remove the entry since it's probably a frameXML reference from another expansion
 			else
 				unhiddenAddonFrames = unhiddenAddonFrames + 1

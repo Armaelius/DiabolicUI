@@ -333,8 +333,8 @@ local debuffFilter = function(self, name, rank, icon, count, debuffType, duratio
 
 	-- Hide Loss of Control CC from the target when enemy plates are visible
 	--elseif ENEMY_PLATES and isLoC then
-	elseif ENEMY_PLATES and unitIsHostilePlayer and isShortDuration then 
-		return false
+	--elseif ENEMY_PLATES and unitIsHostilePlayer and isShortDuration then 
+	--	return false
 
 	-- Show debuffs cast by the player, unless it's currently visible on a nameplate
 	elseif isCastByPlayer then
@@ -342,9 +342,9 @@ local debuffFilter = function(self, name, rank, icon, count, debuffType, duratio
 		-- Enemy plates are visible (implies Legion)and the target is hostile.
 		-- Filter out debuffs shown on the nameplates. This must match the nameplate filter.
 		--if ENEMY_PLATES and (unitIsHostilePlayer or unitIsHostileNPC) and isShortDuration then 
-		if ENEMY_PLATES and unitIsHostilePlayer and isShortDuration then 
-			return false
-		end
+		--if ENEMY_PLATES and unitIsHostilePlayer and isShortDuration then 
+		--	return false
+		--end
 		return true
 
 	elseif (not unitCaster) and (not IsInInstance()) then

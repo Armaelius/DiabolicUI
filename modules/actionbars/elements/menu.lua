@@ -293,6 +293,18 @@ MenuWidget.HookBagnon = function(self, menuButton, menuWindow)
 	end)
 end
 
+MenuWidget.HookLiteBag = function(self, menuButton, menuWindow)
+	local inventory = _G.LiteBagInventory
+	inventory:HookScript("OnShow", function(self) 
+		menuButton:SetButtonState("PUSHED", 1)
+	end)
+	inventory:HookScript("OnHide", function(self) 
+		if (not menuWindow:IsShown()) then
+			menuButton:SetButtonState("NORMAL")
+		end
+	end)
+end
+
 MenuWidget.OnEnable = function(self)
 	local config = Module.config
 	local db = Module.db
@@ -888,6 +900,22 @@ MenuWidget.OnEnable = function(self)
 					return
 				end
 				self:HookBagnon(BagBarMenuButton, BagBarMenuWindow)
+				self:UnregisterEvent("ADDON_LOADED", proxy)
+			end
+			self:RegisterEvent("ADDON_LOADED", proxy)
+		end
+	end
+
+	if Engine:IsAddOnEnabled("LiteBag") then
+		if IsAddOnLoaded("LiteBag") then
+			self:HookLiteBag(BagBarMenuButton, BagBarMenuWindow)
+		else
+			local proxy 
+			proxy = function(_, event, addon) 
+				if (addon ~= "LiteBag") then
+					return
+				end
+				self:HookLiteBag(BagBarMenuButton, BagBarMenuWindow)
 				self:UnregisterEvent("ADDON_LOADED", proxy)
 			end
 			self:RegisterEvent("ADDON_LOADED", proxy)
