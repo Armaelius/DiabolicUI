@@ -1084,7 +1084,7 @@ NamePlate_Legion.UpdateThreat = function(self)
 	if not UnitExists(unit) then
 		return
 	end
-	local threat = UnitThreatSituation("player", unit)
+	local threat = UnitIsEnemy(unit, "player") and UnitThreatSituation(unit, "player") -- UnitThreatSituation("player", unit)
 	if (threat and (threat > 0)) then
 		local r, g, b = unpack(C.Threat[threat])
 		self.Health.Glow:SetVertexColor(r, g, b, 1)

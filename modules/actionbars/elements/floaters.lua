@@ -235,7 +235,7 @@ BarWidget.SpawnVehicleExitButton = function(self)
 	end
 
 	VehicleExitButton:SetAttribute("type", "macro")
-	VehicleExitButton:SetAttribute("macrotext", ENGINE_MOP and "/leavevehicle [target=vehicle,exists,canexitvehicle]" or "leavevehicle [target=vehicle,exists]")
+	VehicleExitButton:SetAttribute("macrotext", ENGINE_MOP and "/leavevehicle [target=vehicle,exists,canexitvehicle]" or "/leavevehicle [target=vehicle,exists]")
 	
 	RegisterStateDriver(VehicleExitButton, "visibility", ENGINE_MOP and "[target=vehicle,exists,canexitvehicle] show; hide" or "[target=vehicle,exists] show; hide")
 

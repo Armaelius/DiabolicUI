@@ -71,6 +71,10 @@ L["Bad argument #%d to '%s'. No object named '%s' exists."] = true
 -- button tooltips
 L["Main Menu"] = true
 L["<Left-click> to toggle menu."] = true
+L["Blizzard Micro Menu"] = true
+L["Here you'll find all the common interface panels|nlike the spellbook, talents, achievements etc."] = true
+L["Diabolic Options"] = true
+
 L["Action Bars"] = true
 L["<Left-click> to toggle action bar menu."] = true
 L["Bags"] = true

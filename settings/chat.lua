@@ -122,7 +122,9 @@ Engine:NewStaticConfig("ChatWindows", {
 })
 
 -- chat filters and emoticons
-Engine:NewStaticConfig("ChatFilters", {})
+Engine:NewStaticConfig("ChatFilters", {
+	useCustomClassColors = true
+})
 
 -- chat bubbles
 Engine:NewStaticConfig("ChatBubbles", {})

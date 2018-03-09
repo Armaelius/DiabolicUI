@@ -404,6 +404,25 @@ Handler.New = function(self, unit, parent, styleFunc, nonSecure, ...)
 	-- so we need to manually force their updates, 
 	-- or stuff like their names will very often be wrong.
 	if (unit:match("%w+target")) or (unit:match("(boss)%d?$") == "boss") then
+	end
+
+	object:SetScript("OnEvent", UnitFrame.OnEvent)
+	object:SetScript("OnAttributeChanged", UnitFrame.OnAttributeChanged)
+	object:HookScript("OnShow", UnitFrame.UpdateAllElements) 
+
+
+	if (unit == "target") then
+		object:RegisterEvent("PLAYER_TARGET_CHANGED", UnitFrame.UpdateAllElements)
+	elseif (unit == "mouseover") then
+		object:RegisterEvent("UPDATE_MOUSEOVER_UNIT", UnitFrame.UpdateAllElements)
+	elseif (unit == "focus") then
+		object:RegisterEvent("PLAYER_FOCUS_CHANGED", UnitFrame.UpdateAllElements)
+	elseif (unit:match("boss%d?$")) then
+		object:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT", object.UpdateAllElements, true)
+		object:RegisterEvent("UNIT_TARGETABLE_CHANGED", UnitFrame.UpdateAllElements)
+	elseif (unit:match("arena%d?$")) then
+		object:RegisterEvent("ARENA_OPPONENT_UPDATE", UnitFrame.UpdateAllElements)
+	elseif (unit:match("%w+target")) then
 		local timer = 0
 		local OnUpdate = function(self, elapsed)
 			if not self.unit then
@@ -417,10 +436,6 @@ Handler.New = function(self, unit, parent, styleFunc, nonSecure, ...)
 		end
 		object:SetScript("OnUpdate", OnUpdate)
 	end
-
-	object:SetScript("OnEvent", UnitFrame.OnEvent)
-	object:SetScript("OnAttributeChanged", UnitFrame.OnAttributeChanged)
-	object:HookScript("OnShow", object.UpdateAllElements) 
 
 	-- When we have a vehicleUI, we switch the player frame to vehicle, and pet frame to player. 
 	if (unit == "player") or (unit == "playerpet") or (unit == "pet") then

@@ -193,6 +193,13 @@ FlyoutBar.AttachToButton = function(self, button)
 				window:Show();
 				window:RegisterAutoHide(.5);
 				window:AddToAutoHide(self);
+				local autohideCounter = 1
+				local autohideFrame = window:GetFrameRef("autohide"..autohideCounter);
+				while autohideFrame do 
+					window:AddToAutoHide(autohideFrame);
+					autohideCounter = autohideCounter + 1;
+					autohideFrame = window:GetFrameRef("autohide"..autohideCounter);
+				end 
 			end
 			local leftclick = self:GetAttribute("leftclick");
 			if leftclick then
@@ -208,7 +215,15 @@ FlyoutBar.AttachToButton = function(self, button)
 	]])
 end
 
-
+FlyoutBar.AddToAutoHide = function(self, frame)
+	if not self.autohiders then 
+		self.autohiders = {}
+	end 
+	local autohideParent = CreateFrame("Frame", nil, self, "SecureHandlerStateTemplate")
+	autohideParent:SetAllPoints(frame)
+	tinsert(self.autohiders, autohideParent)
+	self:SetFrameRef("autohide"..#self.autohiders,autohideParent)
+end
 
 FlyoutBarWidget.New = function(self, parent)
 	local bar = setmetatable(CreateFrame("Frame", nil, parent, "SecureHandlerStateTemplate"), FlyoutBar_MT)

@@ -56,9 +56,12 @@ local C = {
 		OffWhite 		= prepare( 201/255, 201/255, 201/255 ),
 
 		-- XP Bar coloring
-		XP 				= prepare( 251/255, 120/255,  29/255 ), 
+		XP 				= prepare( 251/255, 120/255,  29/255 ), -- also used for buffs... gotta fix that
 		XPRested 		= prepare( 251/255, 120/255,  29/255 ), 
 		XPRestedBonus 	= prepare(  84/255,  40/255,   9/255 ),
+		XPBright 		= prepare( 255/255, 214/255, 137/255 ), 
+		XPRestedBright 	= prepare( 255/255, 214/255, 137/255 ), 
+		XPBonusBright 	= prepare(  85/255,  71/255,  46/255 ),
 		XPComplimentary = prepare(  33/255,  82/255, 166/255 ),
 		Honor 			= prepare( 230/255, 204/255, 128/255 ),
 
@@ -86,8 +89,9 @@ local C = {
 		HUNTER 			= prepare( 191/255, 232/255, 115/255 ), -- slightly more green and yellow, to stand more out from friendly players/npcs
 		MAGE 			= prepare( 105/255, 204/255, 240/255 ),
 		MONK 			= prepare(   0/255, 255/255, 150/255 ),
-		PALADIN 		= prepare( 245/255, 140/255, 186/255 ),
-		PRIEST 			= prepare( 220/255, 235/255, 250/255 ), -- tilted slightly towards blue, and somewhat toned down
+		PALADIN 		= prepare( 255/255, 130/255, 226/255 ), -- less pink, more purple
+		--PALADIN 		= prepare( 245/255, 140/255, 186/255 ), -- original 
+		PRIEST 			= prepare( 220/255, 235/255, 250/255 ), -- tilted slightly towards blue, and somewhat toned down. chilly.
 		ROGUE 			= prepare( 255/255, 225/255,  95/255 ), -- slightly more orange than Blizz, to avoid the green effect when shaded with black
 		SHAMAN 			= prepare(  32/255, 122/255, 222/255 ), -- brighter, to move it a bit away from the mana color
 		WARLOCK 		= prepare( 148/255, 130/255, 201/255 ),
@@ -323,10 +327,14 @@ local C = {
 			{   0/255,  25/255,  15/255,  1, "shade" }
 		},
 		PALADIN = {
-			{ 122/255,  40/255,  63/255,  1, "bar" },
-			{ 122/255,  40/255,  63/255, .9, "moon" },
-			{ 245/255, 140/255, 186/255, .5, "smoke" },
-			{  24/255,  14/255,  18/255,  1, "shade" }
+			{ 127/255,  65/255, 113/255,  1, "bar" },
+			{ 127/255,  65/255, 113/255, .9, "moon" },
+			{ 255/255, 130/255, 226/255, .5, "smoke" },
+			{  25/255,  13/255,  19/255,  1, "shade" }
+			--{ 122/255,  40/255,  63/255,  1, "bar" },
+			--{ 122/255,  40/255,  63/255, .9, "moon" },
+			--{ 245/255, 140/255, 186/255, .5, "smoke" },
+			--{  24/255,  14/255,  18/255,  1, "shade" }
 		},
 		PRIEST = {
 			{  55/255,  58/255,  62/255,  1, "bar" },

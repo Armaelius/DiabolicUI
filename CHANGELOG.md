@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.109] 2018-02-24
+### Changed
+- Added a few more IsForbidden checks to the GameTooltip in the actionbar menu module, as some had slipped through the cracks in the previous round of fixes.
+- Made the Paladin class color even more pink, but less dandy.
+
+### Fixed
+- Fixed revealed WorldMap textures for the Broken Shores zone in WoW client patch 7.1.5. We should no longer get green textures for the undiscovered areas there.
+- Units that become friendly towards the player (like Hymdall in Halls of Valor) will no longer show their previous threat on the nameplates. Friendly units aren't by definition threatening since they can't attack us, so even though the threat info still exists in the client, it makes no sense showing it to the user. 
+- Fixed capitalization issues relevant to German game clients in the quest tracker.
+- Clicking the button to exit vehicles in WotLK and Cata gaming clients should now actually make you exit the vehicle instead of just saying "leavevehicle" out into the open air. Sorry for that one, folks!
+- Fixed the issue where the middle and right mouse buttons clicks on the Minimap clock were mixed up as opposed to what the tooltip set.
+
 ## [1.3.108] 2018-02-20
 ### Changed
 - Debuffs visible on enemy nameplates will no longer be hidden from the target unitframe. 

@@ -323,39 +323,66 @@ MenuWidget.OnEnable = function(self)
 
 	-- Main Buttons
 	---------------------------------------------
+	local MasterMenuButton = MenuButton:New(Menu)
+	MasterMenuButton:SetPoint("BOTTOMRIGHT")
+	MasterMenuButton:SetSize(unpack(micro_menu_config.button.size))
+	self:Skin(MasterMenuButton, micro_menu_config, "cogs")
+
+	local BagBarMenuButton = MenuButton:New(Menu)
+	BagBarMenuButton:SetPoint("BOTTOMRIGHT", MasterMenuButton, "BOTTOMLEFT", -main_menu_config.padding, 0 )
+	BagBarMenuButton:SetSize(unpack(bagbar_menu_config.button.size))
+	self:Skin(BagBarMenuButton, micro_menu_config, "bag")
+
 	local MicroMenuButton = MenuButton:New(Menu)
-	MicroMenuButton:SetPoint("BOTTOMRIGHT")
 	MicroMenuButton:SetSize(unpack(micro_menu_config.button.size))
 	self:Skin(MicroMenuButton, micro_menu_config, "mainmenu")
 
 	local ActionBarMenuButton = MenuButton:New(Menu)
-	ActionBarMenuButton:SetPoint("BOTTOMRIGHT", MicroMenuButton, "BOTTOMLEFT", -main_menu_config.padding, 0 )
 	ActionBarMenuButton:SetSize(unpack(actionbar_menu_config.button.size))
 	self:Skin(ActionBarMenuButton, micro_menu_config, "bars")
 
-	local BagBarMenuButton = MenuButton:New(Menu)
-	BagBarMenuButton:SetPoint("BOTTOMRIGHT", ActionBarMenuButton, "BOTTOMLEFT", -main_menu_config.padding, 0 )
-	BagBarMenuButton:SetSize(unpack(bagbar_menu_config.button.size))
-	self:Skin(BagBarMenuButton, micro_menu_config, "bag")
 
+	-- Menu Window #0: MasterMenu
+	---------------------------------------------
+	local MasterMenuWindow = FlyoutBar:New(MasterMenuButton)
+	MasterMenuWindow:AttachToButton(MasterMenuButton)
+	MasterMenuWindow:SetPoint(unpack(micro_menu_config.position))
+	MasterMenuWindow:SetBackdrop(micro_menu_config.backdrop)
+	MasterMenuWindow:SetBackdropColor(unpack(micro_menu_config.backdrop_color))
+	MasterMenuWindow:SetBackdropBorderColor(unpack(micro_menu_config.backdrop_border_color))
+	MasterMenuWindow:SetWindowInsets(unpack(micro_menu_config.insets))
+	MasterMenuWindow:SetButtonSize(unpack(micro_menu_config.button.size))
+	MasterMenuWindow:SetButtonPadding(micro_menu_config.button.padding)
+	MasterMenuWindow:SetButtonAnchor("BOTTOMRIGHT")
+	MasterMenuWindow:SetButtonGrowthX("LEFT")
+	MasterMenuWindow:SetButtonGrowthY("UP")
+	MasterMenuWindow:SetJustify("RIGHT")
+	MasterMenuWindow:SetRowSize(1)
+	MasterMenuWindow:SetRowSpacing(micro_menu_config.button.spacing)
+	MasterMenuWindow:InsertButton(MicroMenuButton)
+	MasterMenuWindow:InsertButton(ActionBarMenuButton)
+	MasterMenuWindow:Arrange()
+
+	self.MasterMenuWindow = MasterMenuWindow
 
 
 	-- Menu Window #1: MicroMenu
 	---------------------------------------------
 	local MicroMenuWindow = FlyoutBar:New(MicroMenuButton)
 	MicroMenuWindow:AttachToButton(MicroMenuButton)
-	MicroMenuWindow:SetPoint(unpack(micro_menu_config.position))
 	MicroMenuWindow:SetBackdrop(micro_menu_config.backdrop)
 	MicroMenuWindow:SetBackdropColor(unpack(micro_menu_config.backdrop_color))
 	MicroMenuWindow:SetBackdropBorderColor(unpack(micro_menu_config.backdrop_border_color))
 	MicroMenuWindow:SetWindowInsets(unpack(micro_menu_config.insets))
 	MicroMenuWindow:SetButtonSize(unpack(micro_menu_config.button.size))
-	MicroMenuWindow:SetButtonAnchor(micro_menu_config.button.anchor)
 	MicroMenuWindow:SetButtonPadding(micro_menu_config.button.padding)
-	MicroMenuWindow:SetButtonGrowthX(micro_menu_config.button.growthX)
-	MicroMenuWindow:SetButtonGrowthY(micro_menu_config.button.growthY)
 	MicroMenuWindow:SetRowSpacing(micro_menu_config.button.spacing)
-	MicroMenuWindow:SetJustify(micro_menu_config.button.justify)
+	MicroMenuWindow:SetButtonAnchor("BOTTOMRIGHT")
+	MicroMenuWindow:SetPoint("BOTTOMRIGHT", MicroMenuButton, "BOTTOMLEFT", -micro_menu_config.button.padding, 0)
+	MicroMenuWindow:SetButtonGrowthX("LEFT")
+	MicroMenuWindow:SetButtonGrowthY("UP")
+	MicroMenuWindow:SetJustify("LEFT")
+	MicroMenuWindow:SetRowSize(4)
 
 	self.MicroMenuWindow = MicroMenuWindow -- needed for some callbacks later on
 	
@@ -382,7 +409,6 @@ MenuWidget.OnEnable = function(self)
 		end
 		
 		MicroMenuWindow:InsertButton(MainMenuMicroButton)
-		MicroMenuWindow:SetRowSize(4)
 
 		button_to_icon = {
 			[CharacterMicroButton] = "character", 
@@ -411,7 +437,6 @@ MenuWidget.OnEnable = function(self)
 		MicroMenuWindow:InsertButton(EJMicroButton)
 		MicroMenuWindow:InsertButton(StoreMicroButton)
 		MicroMenuWindow:InsertButton(MainMenuMicroButton)
-		MicroMenuWindow:SetRowSize(4)
 
 		button_to_icon = {
 			[CharacterMicroButton] = "character", 
@@ -440,7 +465,6 @@ MenuWidget.OnEnable = function(self)
 		MicroMenuWindow:InsertButton(RaidMicroButton)
 		MicroMenuWindow:InsertButton(EJMicroButton)
 		MicroMenuWindow:InsertButton(MainMenuMicroButton)
-		MicroMenuWindow:SetRowSize(4)
 		
 		button_to_icon = {
 			[CharacterMicroButton] = "character", 
@@ -467,7 +491,6 @@ MenuWidget.OnEnable = function(self)
 		MicroMenuWindow:InsertButton(LFDMicroButton)
 		MicroMenuWindow:InsertButton(MainMenuMicroButton)
 		--MicroMenuWindow:InsertButton(HelpMicroButton)
-		MicroMenuWindow:SetRowSize(5)
 
 		button_to_icon = {
 			[CharacterMicroButton] = "character", 
@@ -495,17 +518,24 @@ MenuWidget.OnEnable = function(self)
 		button.OnLeave = button:GetScript("OnLeave")
 
 		button:SetScript("OnEnter", function(self) 
+			if GameTooltip:IsForbidden() then
+				return
+			end
 			self:OnEnter()
 			if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
 				GameTooltip:ClearAllPoints()
-				GameTooltip:SetPoint("BOTTOMRIGHT", MicroMenuWindow, "TOPRIGHT", 0, 10)
+				GameTooltip:SetPoint("BOTTOMRIGHT", MicroMenuWindow, "TOPRIGHT", -10, 10)
 			end
 		end)
 		
 		button:SetScript("OnLeave", function(self) 
+			if GameTooltip:IsForbidden() then
+				return
+			end
 			self:OnLeave()
 		end)
 		
+		MasterMenuWindow:AddToAutoHide(button)
 	end
 	
 	-- Remove the character button portrait
@@ -531,9 +561,12 @@ MenuWidget.OnEnable = function(self)
 	-- wild hacks to control the tooltip position
 	if MainMenuBarPerformanceBarFrame_OnEnter then
 		hooksecurefunc("MainMenuBarPerformanceBarFrame_OnEnter", function() 
+			if GameTooltip:IsForbidden() then
+				return
+			end
 			if GameTooltip:IsShown() and GameTooltip:GetOwner() == MainMenuMicroButton then
 				GameTooltip:ClearAllPoints()
-				GameTooltip:SetPoint("BOTTOMRIGHT", MicroMenuWindow, "TOPRIGHT", 0, 10)
+				GameTooltip:SetPoint("BOTTOMRIGHT", MicroMenuWindow, "TOPRIGHT", -10, 10)
 			end
 		end)
 	end
@@ -583,7 +616,7 @@ MenuWidget.OnEnable = function(self)
 	local ActionBarMenuWindow = FlyoutBar:New(ActionBarMenuButton)
 	ActionBarMenuWindow:AttachToButton(ActionBarMenuButton)
 	ActionBarMenuWindow:SetSize(unpack(actionbar_menu_config.size))
-	ActionBarMenuWindow:SetPoint(unpack(actionbar_menu_config.position))
+	ActionBarMenuWindow:SetPoint("BOTTOMRIGHT", MicroMenuWindow, "BOTTOMRIGHT", 15, -17)
 	ActionBarMenuWindow:SetBackdrop(actionbar_menu_config.backdrop)
 	ActionBarMenuWindow:SetBackdropColor(unpack(actionbar_menu_config.backdrop_color))
 	ActionBarMenuWindow:SetBackdropBorderColor(unpack(actionbar_menu_config.backdrop_border_color))
@@ -593,6 +626,8 @@ MenuWidget.OnEnable = function(self)
 	ActionBarMenuWindow:SetButtonPadding(actionbar_menu_config.button.padding)
 	ActionBarMenuWindow:SetButtonGrowthX(actionbar_menu_config.button.growthX)
 	ActionBarMenuWindow:SetButtonGrowthY(actionbar_menu_config.button.growthY)
+	
+	MasterMenuWindow:AddToAutoHide(ActionBarMenuWindow)
 
 	-- Raise your hand if you hate writing menus!!!1 >:(
 	do
@@ -769,13 +804,11 @@ MenuWidget.OnEnable = function(self)
 		if GameTooltip:IsForbidden() then
 			return
 		end
-		if MicroMenuButton:GetButtonState() == "PUSHED"
-		or ActionBarMenuButton:GetButtonState() == "PUSHED"
+		if MasterMenuButton:GetButtonState() == "PUSHED"
 		or BagBarMenuButton:GetButtonState() == "PUSHED" then
 			GameTooltip:Hide()
 			return
 		end
-	--		GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", -6, 16)
 		GameTooltip_SetDefaultAnchor(GameTooltip, self)
 		GameTooltip:AddLine(L["Bags"])
 		GameTooltip:AddLine(L["<Left-click> to toggle bags."], 0, .7, 0)
@@ -783,26 +816,64 @@ MenuWidget.OnEnable = function(self)
 		GameTooltip:Show()
 	end
 	BagBarMenuButton:SetScript("OnEnter", BagBarMenuButton.OnEnter)
-	BagBarMenuButton:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+	BagBarMenuButton:SetScript("OnLeave", function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		GameTooltip:Hide() 
+	end)
+
+	MasterMenuButton.OnEnter = function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		if MasterMenuButton:GetButtonState() == "PUSHED" 
+		or BagBarMenuButton:GetButtonState() == "PUSHED" then
+			GameTooltip:Hide()
+			return
+		end
+		GameTooltip_SetDefaultAnchor(GameTooltip, self)
+		GameTooltip:AddLine(L["Main Menu"])
+		GameTooltip:AddLine(L["<Left-click> to toggle menu."], 0, .7, 0)
+		GameTooltip:Show()
+	end
+	MasterMenuButton:SetScript("OnEnter", MasterMenuButton.OnEnter)
+	MasterMenuButton:SetScript("OnLeave", function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		GameTooltip:Hide() 
+	end)
+	MasterMenuButton.OnClick = function(self, button) 
+		if button == "LeftButton" then
+			self:OnEnter() -- update tooltips
+		end
+	end
+
 
 	ActionBarMenuButton.OnEnter = function(self) 
 		if GameTooltip:IsForbidden() then
 			return
 		end
-		if MicroMenuButton:GetButtonState() == "PUSHED"
-		or ActionBarMenuButton:GetButtonState() == "PUSHED"
-		or BagBarMenuButton:GetButtonState() == "PUSHED" then
+		if ActionBarMenuButton:GetButtonState() == "PUSHED"
+		or MicroMenuButton:GetButtonState() == "PUSHED" then
 			GameTooltip:Hide()
 			return
 		end
---		GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", -6, 16)
-		GameTooltip_SetDefaultAnchor(GameTooltip, self)
+		GameTooltip:SetOwner(MicroMenuButton, "ANCHOR_NONE")
+		GameTooltip:ClearAllPoints()
+		GameTooltip:SetPoint("BOTTOMRIGHT", MicroMenuButton, "BOTTOMLEFT", -10, 10)
 		GameTooltip:AddLine(L["Action Bars"])
 		GameTooltip:AddLine(L["<Left-click> to toggle action bar menu."], 0, .7, 0)
 		GameTooltip:Show()
 	end
 	ActionBarMenuButton:SetScript("OnEnter", ActionBarMenuButton.OnEnter)
-	ActionBarMenuButton:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+	ActionBarMenuButton:SetScript("OnLeave", function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		GameTooltip:Hide() 
+	end)
 	ActionBarMenuButton.OnClick = function(self, button) 
 		if button == "LeftButton" then
 			self:OnEnter() -- update tooltips
@@ -813,20 +884,26 @@ MenuWidget.OnEnable = function(self)
 		if GameTooltip:IsForbidden() then
 			return
 		end
-		if MicroMenuButton:GetButtonState() == "PUSHED"
-		or ActionBarMenuButton:GetButtonState() == "PUSHED"
-		or BagBarMenuButton:GetButtonState() == "PUSHED" then
-			GameTooltip:Hide()
+		if MicroMenuButton:GetButtonState() == "PUSHED" 
+		or ActionBarMenuButton:GetButtonState() == "PUSHED" then
+				GameTooltip:Hide()
 			return
 		end
---		GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT", -6, 16)
-		GameTooltip_SetDefaultAnchor(GameTooltip, self)
-		GameTooltip:AddLine(L["Main Menu"])
+		GameTooltip:SetOwner(MicroMenuButton, "ANCHOR_NONE")
+		GameTooltip:ClearAllPoints()
+		GameTooltip:SetPoint("BOTTOMRIGHT", MicroMenuButton, "BOTTOMLEFT", -10, 10)
+		GameTooltip:AddLine(L["Blizzard Micro Menu"])
+		GameTooltip:AddLine(L["Here you'll find all the common interface panels|nlike the spellbook, talents, achievements etc."], .9,.9,.9)
 		GameTooltip:AddLine(L["<Left-click> to toggle menu."], 0, .7, 0)
 		GameTooltip:Show()
 	end
 	MicroMenuButton:SetScript("OnEnter", MicroMenuButton.OnEnter)
-	MicroMenuButton:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+	MicroMenuButton:SetScript("OnLeave", function(self) 
+		if GameTooltip:IsForbidden() then
+			return
+		end
+		GameTooltip:Hide() 
+	end)
 	MicroMenuButton.OnClick = function(self, button) 
 		if button == "LeftButton" then
 			self:OnEnter() -- update tooltips
@@ -927,9 +1004,11 @@ MenuWidget.OnEnable = function(self)
 	BagBarMenuButton:SetFrameRef("window", BagBarMenuWindow)
 	BagBarMenuButton:SetFrameRef("otherwindow1", ActionBarMenuWindow)
 	BagBarMenuButton:SetFrameRef("otherwindow2", MicroMenuWindow)
+	BagBarMenuButton:SetFrameRef("otherwindow3", MasterMenuWindow)
 	BagBarMenuButton:SetAttribute("_onclick", [[
 		self:GetFrameRef("otherwindow1"):Hide();
 		self:GetFrameRef("otherwindow2"):Hide();
+		self:GetFrameRef("otherwindow3"):Hide();
 		
 		local window = self:GetFrameRef("window"); -- bag bar
 		local bags
@@ -954,9 +1033,8 @@ MenuWidget.OnEnable = function(self)
 		control:CallMethod("OnClick", button);
 	]])
 
-
-
 	 -- Close the bags when showing any of our other windows.
+	MasterMenuWindow:HookScript("OnShow", CloseAllBags)
 	MicroMenuWindow:HookScript("OnShow", CloseAllBags)
 	ActionBarMenuWindow:HookScript("OnShow", CloseAllBags)
 		
@@ -966,6 +1044,17 @@ MenuWidget.OnEnable = function(self)
 	MicroMenuButton:SetAttribute("leftclick", [[
 		self:GetFrameRef("otherwindow1"):Hide()
 		self:GetFrameRef("otherwindow2"):Hide()
+		--self:GetFrameRef("otherwindow3"):Hide()
+	]])
+
+	-- Make sure clicking one main button hides the rest and their windows.
+	MasterMenuButton:SetFrameRef("otherwindow1", BagBarMenuWindow)
+	MasterMenuButton:SetFrameRef("otherwindow2", ActionBarMenuWindow)
+	MasterMenuButton:SetFrameRef("otherwindow3", MicroMenuWindow)
+	MasterMenuButton:SetAttribute("leftclick", [[
+		self:GetFrameRef("otherwindow1"):Hide()
+		self:GetFrameRef("otherwindow2"):Hide()
+		self:GetFrameRef("otherwindow3"):Hide()
 	]])
 
 	ActionBarMenuButton:SetFrameRef("otherwindow1", MicroMenuWindow)
@@ -978,12 +1067,12 @@ MenuWidget.OnEnable = function(self)
 
 	-- Texts
 	---------------------------------------------
-	local Performance = MicroMenuButton:CreateFontString()
+	local Performance = MasterMenuButton:CreateFontString()
 	Performance:SetDrawLayer("ARTWORK")
 	Performance:SetFontObject(micro_menu_config.performance.normalFont)
 	Performance:SetPoint(unpack(micro_menu_config.performance.position))
 	
-	MicroMenuButton.Performance = Performance
+	MasterMenuButton.Performance = Performance
 	
 	local performance_string = "%d%s - %d%s"
 	local performance_hz = 1
@@ -992,7 +1081,7 @@ MenuWidget.OnEnable = function(self)
 	
 	local floor = math.floor
 	
-	MicroMenuButton:SetScript("OnUpdate", function(self, elapsed) 
+	MasterMenuButton:SetScript("OnUpdate", function(self, elapsed) 
 		self.elapsed = (self.elapsed or 0) + elapsed
 		if self.elapsed > performance_hz then
 			local _, _, chat_latency, cast_latency = GetNetStats()
@@ -1013,6 +1102,10 @@ MenuWidget.OnEnable = function(self)
 
 	MicroMenuWindow:HookScript("OnShow", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPEN, "SFX") end)
 	MicroMenuWindow:HookScript("OnHide", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_CLOSE, "SFX") end)
+
+	MasterMenuWindow:HookScript("OnShow", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_OPEN, "SFX") end)
+	MasterMenuWindow:HookScript("OnHide", function(self) PlaySoundKitID(SOUNDKIT.IG_MAINMENU_CLOSE, "SFX") end)
+	
 
 	-- We need to manually handle this, as our actionbar script 
 	-- is blocking this event for the talent button. Or?

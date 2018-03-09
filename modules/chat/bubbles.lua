@@ -27,7 +27,6 @@ local ENGINE_LEGION_725 = Engine:IsBuild("7.2.5")
 
 -- Bubble Data
 local bubbles = {} -- local bubble registry
-local fontsize = 14
 local numChildren, numBubbles = -1, 0 -- bubble counters
 
 local minsize, maxsize, fontsize = 12, 16, 12 -- bubble font size
@@ -91,7 +90,6 @@ end or function(self, bubble)
 	return texture and texture == BUBBLE_TEXTURE
 end
 
-local offsetX, offsetY = 0, -100 -- todo: move this into the theme
 Updater.OnUpdate = function(self, elapsed)
 	local children = select("#", WorldFrame:GetChildren())
 	if numChildren ~= children then

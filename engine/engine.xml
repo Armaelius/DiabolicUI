@@ -4,8 +4,5 @@
 <Script file="blizzard-taint.lua"/>
 <Script file="blizzard-fixes.lua"/>
 <Script file="engine-core.lua"/>
-<!-- 
-<Script file="engine-global-API.lua"/>
--->
 
 </Ui>

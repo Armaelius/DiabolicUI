@@ -178,6 +178,11 @@ UICenter:SetPoint("TOP", UIParent, "TOP")
 UICenter:SetPoint("BOTTOM", UIParent, "BOTTOM")
 --UICenter:SetPoint("CENTER", UIParent, "CENTER")
 
+-- Frame for all UI config dialogs
+local UIConfig = CreateFrame("Frame", nil, UICenter, "SecureHandlerAttributeTemplate")
+UIConfig:SetFrameStrata("DIALOG")
+UIConfig:SetAllPoints(UICenter)
+UIConfig:Hide()
 
 
 -------------------------------------------------------------
@@ -2150,6 +2155,9 @@ end)(Engine)
 
 -- Set the UICenter frame as the default keyword
 Engine:RegisterKeywordDefault("UICenter", function() return UICenter end)
+
+-- Add the UIConfig frame too, so all modules can hook to it
+Engine:RegisterKeyword("UIConfig", function() return UIConfig end)
 
 -- Register combat tracking events for our safecall wrapper.
 Engine:RegisterEvent("PLAYER_REGEN_DISABLED", combatStarts)

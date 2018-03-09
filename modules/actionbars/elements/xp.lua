@@ -121,6 +121,14 @@ Bar.Update = function(self) end
 Bar.OnEnter = function(self) end
 Bar.OnLeave = function(self) end
 
+-- Colors
+--local C_XP = "XP"
+--local C_XP_RESTED = "XPRested"
+--local C_XP_BONUS = "XPRestedBonus"
+
+local C_XP = "XPBright"
+local C_XP_RESTED = "XPRestedBright"
+local C_XP_BONUS = "XPBonusBright"
 
 -- XP Bar Methods
 --------------------------------------------------
@@ -129,7 +137,7 @@ Bar_XP.UpdateData = function(self)
 	self.data.restState, self.data.restedName, self.data.mult = GetRestState()
 	self.data.restedLeft, self.data.restedTimeLeft = GetXPExhaustion(), GetTimeToWellRested()
 	self.data.xp, self.data.xpMax = UnitXP("player"), UnitXPMax("player")
-	self.data.color = self.data.restedLeft and "XPRested" or "XP"
+	self.data.color = self.data.restedLeft and C_XP_RESTED or C_XP
 	self.data.mult = (self.data.mult or 1) * 100
 	if self.data.xpMax == 0 then
 		self.data.xpMax = nil
@@ -605,7 +613,7 @@ BarWidget.OnEnable = function(self)
 	rested:SetFrameLevel(1)
 	rested:SetAlpha(art_config.rested.alpha)
 	rested:SetStatusBarTexture(art_config.rested.texture)
-	rested:SetStatusBarColor(unpack(C.General.XPRestedBonus))
+	rested:SetStatusBarColor(unpack(C.General[C_XP_BONUS]))
 	rested:SetSparkTexture(art_config.rested.spark.texture)
 	rested:SetSparkSize(unpack(art_config.rested.spark.size))
 	rested:SetSparkFlash(2.75, 1.25, .175, .425)

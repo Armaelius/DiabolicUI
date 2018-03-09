@@ -863,11 +863,11 @@ Module.OnInit = function(self)
 		if (mouseButton == "LeftButton") then
 			ToggleCalendar()
 		elseif (mouseButton == "MiddleButton") then 
-			db.use24hrClock = not db.use24hrClock
+			db.useGameTime = not db.useGameTime
 			timeClick:UpdateTooltip()
 			self.frame.refreshTime = true
 		elseif (mouseButton == "RightButton") then 
-			db.useGameTime = not db.useGameTime
+			db.use24hrClock = not db.use24hrClock
 			timeClick:UpdateTooltip()
 			self.frame.refreshTime = true
 		end

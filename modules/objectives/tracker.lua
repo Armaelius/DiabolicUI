@@ -177,6 +177,9 @@ local worldQuestCache = {} -- cache of the current world quests
 local itemButtons = {} -- item button cache, mostly for easier naming
 local activeItemButtons = {} -- cache of active and visible item buttons
 
+-- game client locale
+local DEFAULT_CAPS = GetLocale() == "deDE"
+
 -- Broken Isles zones 
 -- used to parse for available world quests.
 local brokenIslesContinent = 1007 -- Broken Isles (The whole continent)
@@ -198,6 +201,7 @@ local brokenIslesZones = {
 }
 
 local proxyZones = {
+	[ 864] = 30, 	-- Northshire 					> Elwynn Forest
 	[1077] = 1018,	-- The Dreamgrove (Druid) 		> Val'sharah
 	[1080] = 1024, 	-- Thunder Totem 				> Highmountain
 	[1072] = 1024 	-- Trueshot Lodge (Hunter) 		> Highmountain
@@ -375,8 +379,9 @@ end
 -- and without them I just keep messing things up. 
 -- I guess my near photographic memory from my teenage years is truly dead. :'(
 local dummy = Engine:CreateFrame("Frame", nil, "UICenter")
-dummy:Place("TOP", "UICenter", "BOTTOM", 0, -1000)
-dummy:SetSize(2,2)
+dummy:Place("TOP", "UICenter", "BOTTOM", 0, -1000) -- this should be offscreen on all setups
+dummy:SetAlpha(0) -- just in case some total lunatic has 9 monitors placed in a grid with the main one in the center
+dummy:SetSize(2,2) 
 
 local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
 	fontString:Hide() -- hide the madness we're about to do
@@ -385,7 +390,12 @@ local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
 	local newHeight, newMsg
 
 	-- Get rid of line breaks, we're making our own later on instead.
-	msg = capitalizeString(stripString(msg))
+	if DEFAULT_CAPS then 
+		msg = stripString(msg)
+	else 
+		-- capitalize words in most locales
+		msg = capitalizeString(stripString(msg))
+	end 
 
 	local dummyString = fontString.dummyString 
 	if (not dummyString) then
@@ -396,13 +406,10 @@ local setTextAndGetSize = function(fontString, msg, minWidth, minHeight)
 		fontString.dummyString = dummyString
 	end
 	dummyString:SetSize(minWidth*10, minHeight*10 + lineSpacing*9)
-	--dummyString:Show() -- need to show it to properly calculate sizes, even though it is offscreen
 
 	-- Parse the string, split into words and calculate all sizes 
 	fontString.fullWidth, fontString.spaceWidth, fontString.wordWidths, 
 	fontString.words = parseString(msg, fontString, fontString.words, fontString.wordWidths)
-
-	--dummyString:Hide()
 
 	-- Because Blizzard keeps changing 20 to 19.9999995
 	-- We also need an extra space's width to avoid the strings
@@ -796,6 +803,19 @@ end
 -----------------------------------------------------
 local Item = Engine:CreateFrame("Button")
 Item_MT = { __index = Item }
+
+
+-- Item Cache 
+-- *purpose is to allow spawning of new buttons
+--  while engaged in combat without risking taint.
+-----------------------------------------------------
+local ItemCache = { stack = {} }
+
+ItemCache.Push = function(self, item)
+end 
+
+ItemCache.Pull = function(self)
+end 
 
 
 -- Entry Title (clickable button)
@@ -1979,6 +1999,7 @@ Module.UpdateTrackerWatches = function(self)
 
 	self.tracker:Update()
 
+	local isInInstance, instanceType = IsInInstance()
 	if isInInstance and (instanceType == "pvp" or instanceType == "arena") then
 		return self.tracker:Hide()
 	end
@@ -2517,6 +2538,19 @@ Module.GatherQuestLogData = function(self, forced)
 	end
 end
 
+Module.AddWorldQuest = function(self, questID)
+end
+
+Module.RemoveWorldQuest = function(self, questID)
+	-- Clear out completed entries
+	worldQuestWatchQueue[questID] = nil
+end 
+
+Module.AddQuest = function(self, questID, questLogIndex)
+end 
+
+Module.RemoveQuest = function(self, questID)
+end
 
 Module.OnEvent = function(self, event, ...)
 	-- Debugging
@@ -2536,7 +2570,25 @@ Module.OnEvent = function(self, event, ...)
 	elseif (event == "PLAYER_REGEN_ENABLED") then
 		self.inLockdown = false
 
-	elseif (event == "QUEST_ACCEPTED") or (event == "QUEST_REMOVED") then
+	elseif (event == "QUEST_ACCEPTED") then
+		local questLogIndex, questID = ...
+
+		self:AddQuest(questID, questLogIndex)
+
+		self:GatherQuestLogData() -- parse the quest log
+		self:UpdateItemButtons() -- update item buttons in case of changed log indices
+
+		if (not WorldMapFrame:IsShown()) then
+			self:GatherQuestZoneData() -- gather quest zone information (fires WORLD_MAP_UPDATE QUEST_LOG_UPDATE)
+		end
+
+		self:UpdateZoneTracking() -- parse the zone for what to track
+
+	elseif (event == "QUEST_REMOVED") then
+		local questID = ...
+
+		self:RemoveQuest(questID)
+
 		self:GatherQuestLogData() -- parse the quest log
 		self:UpdateItemButtons() -- update item buttons in case of changed log indices
 
@@ -2568,8 +2620,7 @@ Module.OnEvent = function(self, event, ...)
 		-- world quest update 
 		local questID, xp, money = ...
 
-		-- Clear out completed entries
-		worldQuestWatchQueue[questID] = nil
+		self:RemoveWorldQuest(questID)
 
 		if (HAS_WORLD_QUESTS and (questID and worldQuestCache[questID])) then
 			self:SendMessage("ENGINE_WORLD_QUEST_COMPLETE", questID, xp, money)
@@ -2617,7 +2668,6 @@ Module.OnEvent = function(self, event, ...)
 	elseif (event == "BAG_UPDATE_COOLDOWN") then
 		self:UpdateItemButtons() -- update item buttons in case of changed log indices
 		self:UpdateItemCooldowns() -- quest item cooldowns
-
 	end
 
 	self:UpdateTrackerWatches() 
@@ -2630,8 +2680,11 @@ Module.SetUpEvents = function(self, event, ...)
 
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent") -- All
 
-	if (not ENGINE_MOP) then
-		self:RegisterEvent("PLAYER_ALIVE", "OnEvent") -- Filter
+	-- Prior to MoP quest data wasn't available until this event
+	-- This event doesn't always fire at the same point in the loading process in WotLK, 
+ 	-- but if we skip it or try to rely on other events, the tracker will fail at the initial startip. 
+	 if (not ENGINE_MOP) then
+		self:RegisterEvent("PLAYER_ALIVE", "OnEvent")
 	end
 
 	self:RegisterEvent("QUEST_ACCEPTED", "OnEvent") -- Filter
@@ -2645,30 +2698,14 @@ Module.SetUpEvents = function(self, event, ...)
 	--self:RegisterEvent("UNIT_INVENTORY_CHANGED", "OnEvent")
 	
 
-	if ENGINE_CATA then
-		self:RegisterEvent("QUEST_AUTOCOMPLETE", "OnEvent")
-	end
-
 	self:RegisterEvent("QUEST_POI_UPDATE", "OnEvent") -- Items
 	self:RegisterEvent("WORLD_MAP_UPDATE", "OnEvent") -- Items
 	self:RegisterEvent("ZONE_CHANGED", "OnEvent") -- Items
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent") -- Filter
 
-
-	if ENGINE_LEGION then
-		self:RegisterEvent("QUEST_TURNED_IN", "OnEvent") -- world quest update
-		self:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL", "OnEvent") -- world quest update
-
-		self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
-	end
-
-	-- Need some fake events to update quest zones 
-	-- that couldn't be retrieved while the map was open
-	WorldMapFrame:HookScript("OnHide", function() self:OnEvent("WORLD_MAP_CLOSED") end)
-	WorldMapFrame:HookScript("OnShow", function() self:OnEvent("WORLD_MAP_OPENED") end)
-
 	if ENGINE_CATA then
+		self:RegisterEvent("QUEST_AUTOCOMPLETE", "OnEvent")
+
 		-- Auto-accept and auto-completion introduced in Cata
 		-- Quests could be automatically accepted in WotLK too, 
 		-- but no specific events existed for it back then.
@@ -2685,16 +2722,17 @@ Module.SetUpEvents = function(self, event, ...)
 			if ENGINE_LEGION then
 				self:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL", "OnEvent") -- world quest update
 				self:RegisterEvent("QUEST_TURNED_IN", "OnEvent") -- local questID, xp, money = ... -- fires on world quests
+		
+				self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
+				self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
 			end
 		end
 	end
 
-	-- Prior to MoP quest data wasn't available until this event
-	-- This event doesn't always fire at the same point in the loading process in WotLK, 
- 	-- but if we skip it or try to rely on other events, the tracker will fail at the initial startip. 
-	if (not ENGINE_MOP) then
-		self:RegisterEvent("PLAYER_ALIVE", "OnEvent")
-	end
+	-- Need some fake events to update quest zones 
+	-- that couldn't be retrieved while the map was open
+	WorldMapFrame:HookScript("OnHide", function() self:OnEvent("WORLD_MAP_CLOSED") end)
+	WorldMapFrame:HookScript("OnShow", function() self:OnEvent("WORLD_MAP_OPENED") end)
 
 	-- Do an initial full update
 	self:OnEvent("PLAYER_ENTERING_WORLD")
