@@ -243,9 +243,9 @@ local math_round = function(n, accuracy)
 	return (math_floor(n*accuracy + .5))/accuracy -- adding the .5 to fix numbers blizzard have rounded down (?)
 end
 
-local math_compare = function(a, b, accuracy) 
-	return not(math_abs(a-b) > 1/accuracy) 
-end
+--local math_compare = function(a, b, accuracy) 
+--	return not(math_abs(a-b) > 1/accuracy) 
+--end
 
 -- Translate keywords to frame handles used for anchoring.
 local parseAnchor = function(anchor)

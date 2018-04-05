@@ -36,6 +36,11 @@ StatusBar.Update = function(self, elapsed)
 	
 	if value == min or max == min then
 		bar:Hide()
+		if spark:IsShown() then
+			spark:Hide()
+			spark:SetAlpha(spark._min_alpha)
+			spark._direction = "IN"
+		end
 	else
 		local new_size
 		local mult = max > min and ((value-min)/(max-min)) or min
@@ -117,44 +122,11 @@ StatusBar.Update = function(self, elapsed)
 			--spark:SetAlpha(current_alpha)
 			spark:SetAlpha(current_alpha)
 		end
-
-		if not bar:IsShown() then
-			bar:Show()
-		end
-	end
-	
-	if (value == max) or (value == min) then
-		if spark:IsShown() then
-			spark:Hide()
-			spark:SetAlpha(spark._min_alpha)
-			spark._direction = "IN"
-		end
-	else
-		if elapsed then
-			local current_alpha = spark:GetAlpha()
-			local target_alpha = spark._direction == "IN" and spark._max_alpha or spark._min_alpha
-			local range = spark._max_alpha - spark._min_alpha
-			local alpha_change = elapsed/(spark._direction == "IN" and spark._duration_in or spark._duration_out) * range
-		
-			if spark._direction == "IN" then
-				if current_alpha + alpha_change < target_alpha then
-					current_alpha = current_alpha + alpha_change
-				else
-					current_alpha = target_alpha
-					spark._direction = "OUT"
-				end
-			elseif spark._direction == "OUT" then
-				if current_alpha + alpha_change > target_alpha then
-					current_alpha = current_alpha - alpha_change
-				else
-					current_alpha = target_alpha
-					spark._direction = "IN"
-				end
-			end
-			spark:SetAlpha(current_alpha)
-		end
 		if not spark:IsShown() then
 			spark:Show()
+		end
+		if not bar:IsShown() then
+			bar:Show()
 		end
 	end
 
@@ -163,6 +135,7 @@ end
 local smooth_minimum_value = 1 -- if a value is lower than this, we won't smoothe
 local smooth_HZ = .2 -- time for the smooth transition to complete
 local smooth_limit = 1/120 -- max updates per second
+
 StatusBar.OnUpdate = function(self, elapsed)
 	self.elapsed = (self.elapsed or 0) + elapsed
 	if self.elapsed < smooth_limit then

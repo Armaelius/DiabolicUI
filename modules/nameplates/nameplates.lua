@@ -2066,7 +2066,6 @@ Module.OnEvent = ENGINE_LEGION and function(self, event, ...)
 		
 	elseif (event == "UNIT_AURA") then
 		local unit = ...
-		local unit = ...
 		local baseFrame = C_NamePlate_GetNamePlateForUnit(unit)
 		local plate = baseFrame and self.allPlates[baseFrame]
 		if plate then
